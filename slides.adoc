@@ -1,0 +1,114 @@
+= Going _farther_ with _CDI_ 1.2
+Antoine Sabot-Durand; Antonin Stefanutti
+:description: Going farther with CDI 1.2
+:website: http://astefanutti.github.io/javaone2014
+:copyright: CC BY-SA 4.0
+:backend: dzslides
+:sectids!:
+:experimental:
+:toc2:
+:sectanchors:
+:idprefix:
+:idseparator: -
+:icons: font
+:source-highlighter: highlightjs
+:source-language: java
+:language: no-highlight
+:macros-on: subs="macros"
+:caption-off: caption=""
+:title-off: title="", caption=""
+:dzslides-aspect: 16-9
+:imagesdir: images
+:next-label: pass:quotes,attributes[*Next* [icon:caret-right[]] 
+:dzslides-style: asciidoctor
+:dzslides-highlight: asciidoctor
+:dzslides-transition: fade
+:dzslides-fonts: family=Neuton:400,700,800,400italic|Cedarville+Cursive
+:hide-uri-scheme:
+
+[.topic.source]
+== Antoine Sabot-Durand
+
+====
+* icon:user[] Senior Software Engineer
+* icon:user[] CDI co-spec lead
+* icon:institution[] Red Hat, Inc.
+* icon:twitter[] @antoine_sd
+* icon:rss[] www.next-presso.com
+* icon:github[] github.com/antoinesd
+====
+
+[.topic.source]
+== Antonin Stefanutti
+
+====
+* icon:user[] Senior Software Engineer
+* icon:institution[] Murex, SAS
+* icon:twitter[] @astefanut
+* icon:github[] github.com/astefanutti
+====
+
+[.topic.source]
+== Agenda
+
+====
+* icon:info-circle[] Legacy code
+* icon:info-circle[] Camel instrumentation
+* icon:info-circle[] Metrics extension
+====
+
+[.topic.intro]
+== Legacy code
+
+====
+injection points, parameterized types, portable extension, programmatic bean
+====
+
+[.topic.source]
+== Diagram
+
+[.topic.intro]
+== Camel instrumentation
+
+====
+Events, portable extension, transactional Observers
+====
+
+[.topic.source]
+== Camel routes AOP
+
+[.topic.intro]
+== Metrics Extension
+
+====
+Annotated types, alternatives, interceptors, portable Extension, producers
+====
+
+[.topic.source]
+== Metrics extension example
+
+[source]
+----
+@Inject
+private Meter hits; <1>
+
+@Timed(name = "calls") <2>
+public void cachedMethod() {
+    if (hit) hits.mark();
+}
+
+@Produces @Metric(name = "cache-hits") <3>
+private Gauge<Double> cacheHitRatioGauge(Meter hits, Timer calls) {
+    return () -> calls.getOneMinuteRate() == 0 ? Double.NaN :
+                 hits.getOneMinuteRate() / calls.getOneMinuteRate();
+}
+----
+<1> `Metric` _injection_ from the registry.
+<2> Method _instrumentation_ with CDI interceptors.
+<3> Produce a custom `Metric` instance by composing others.
+
+[.topic.ending, hrole="name"]
+== Antoine Sabot-Durand Antonin Stefanutti
+
+[.footer]
+icon:twitter[] @antoine_sd @astefanut

@@ -1,0 +1,26 @@
+= Going farther with CDI 1.2
+
+JavaOne 2014 session.
+
+== Build environment
+
+Install http://bundler.io/[Bundler]:
+----
+gem install bundler
+----
+
+Then run:
+----
+bundle install
+----
+
+== Build instructions
+
+To generate the HTML presentation, run the following command:
+----
+asciidoctor -T asciidoctor-backends/slim -a data-uri -a linkcss! slides.adoc
+----
+
+== License
+
+CC BY-SA 4.0

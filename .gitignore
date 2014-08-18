@@ -1,0 +1,13 @@
+## Ruby
+
+## Asciidoctor
+*.html
+
+## Java
+.classpath
+.project
+.settings/
+target/
+logs/
+.idea/
+*.iml

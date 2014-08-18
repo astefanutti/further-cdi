@@ -1,0 +1,9 @@
+[submodule "asciidoctor-backends"]
+	path = asciidoctor-backends
+	url = https://github.com/asciidoctor/asciidoctor-backends.git
+[submodule "dzslides"]
+	path = dzslides
+	url = https://github.com/mojavelinux/dzslides.git
+[submodule "metrics"]
+	path = metrics
+	url = https://github.com/astefanutti/metrics-cdi
