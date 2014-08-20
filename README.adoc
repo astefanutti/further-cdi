@@ -1,6 +1,6 @@
 = Going farther with CDI 1.2
 
-https://www.oracle.com/javaone/[JavaOne] 2014 https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Farther with CDI 1.2 [CON5585]] session materials.
+https://www.oracle.com/javaone/[JavaOne] 2014 https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Farther with CDI 1.2 [CON5585\]] session materials.
 
 == Build environment
 
