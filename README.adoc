@@ -1,6 +1,6 @@
 = Going farther with CDI 1.2
 
-JavaOne 2014 session.
+https://www.oracle.com/javaone/[JavaOne] 2014 https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Farther with CDI 1.2 \[CON5585\]] session.
 
 == Build environment
 
@@ -21,6 +21,15 @@ To generate the HTML presentation, run the following command:
 asciidoctor -T asciidoctor-backends/slim -a data-uri -a linkcss! slides.adoc
 ----
 
+Note that the Git submodules must first be initialiazed by running:
+----
+git submodule init
+----
+Followed with:
+----
+git submodule update
+----
+
 == License
 
-CC BY-SA 4.0
+The content of this project is licensed under the http://creativecommons.org/licenses/by/4.0/[Creative Commons Attribution 4.0 license], and the underlying source code used as examples in that content is licensed under the http://opensource.org/licenses/mit-license.php[MIT license].
