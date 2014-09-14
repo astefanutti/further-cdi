@@ -19,7 +19,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 :title-off: title="", caption=""
 :dzslides-aspect: 16-9
 :imagesdir: images
-:next-label: pass:quotes,attributes[*Next* [icon:caret-right[]] 
+:next-label: pass:quotes,attributes[*Next* [icon:caret-right[]]
 :dzslides-style: asciidoctor
 :dzslides-highlight: asciidoctor
 :dzslides-transition: fade
@@ -38,51 +38,274 @@ Antoine Sabot-Durand; Antonin Stefanutti
 * icon:github[] github.com/antoinesd
 ====
 
+
 [.topic.source]
 == Antonin Stefanutti
 
 ====
-* icon:user[] Senior Software Engineer
+* icon:user[] Software Engineer
 * icon:institution[] Murex, SAS
 * icon:twitter[] @astefanut
 * icon:github[] github.com/astefanutti
 ====
 
+
 [.topic.source]
 == Agenda
 
 ====
-* icon:info-circle[] Legacy code
-* icon:info-circle[] Camel instrumentation
-* icon:info-circle[] Metrics extension
+* icon:info-circle[] Legacy Code Integration
+* icon:info-circle[] Camel CDI Extension
+* icon:info-circle[] Metrics CDI Extension
 ====
+
 
 [.topic.intro]
 == Legacy code
 
 ====
-injection points, parameterized types, portable extension, programmatic bean
+Injection points, parameterized types, programmatic bean
 ====
+
 
 [.topic.source]
 == Diagram
 
+
 [.topic.intro]
-== Camel instrumentation
+== Camel CDI Extension
 
 ====
-Events, portable extension, transactional Observers
+Annotated types, events, injection Targets, transactional Observers
 ====
+
 
 [.topic.source]
-== Camel routes AOP
+== Apache Camel
+
+NOTE: Open-source _integration framework_ based on known Enterprise Integration Patterns
+
+NOTE: _Bean binding and integration_ with Spring, Blueprint, Guice _and CDI_
+
+
+[.topic.source]
+== Camel Annotations
+
+[source]
+----
+@EndpointInject(uri="jms:queue:foo")
+Endpoint endpoint;
+
+@PropertyInject(value = "timeout", defaultValue = "5000")
+int timeout;
+
+@BeanInject("foo")
+FooBean foo;
+
+@Produce(uri = "mock:foo")
+ProducerTemplate producer;
+
+@Consume(uri="jms:queue:foo")
+void onFoo(@Body String body) {
+    ...
+}
+----
+
+
+[.topic.source]
+== Type Discovery
+
+[source]
+.`AnnotatedType<X>`
+----
+public interface AnnotatedType<X> extends Annotated {
+    public Class<X> getJavaClass();
+    public Set<AnnotatedConstructor<X>> getConstructors();
+    public Set<AnnotatedMethod<? super X>> getMethods();
+    public Set<AnnotatedField<? super X>> getFields();
+}
+----
+
+[source]
+.`ProcessAnnotatedType<X>`
+----
+public interface ProcessAnnotatedType<X> {
+    public AnnotatedType<X> getAnnotatedType();
+    public void setAnnotatedType(AnnotatedType<X> type);
+    public void veto();
+}
+----
+
+
+[.topic.source]
+== Injection Target
+
+[source]
+.`InjectionTarget<T>`
+----
+public interface InjectionTarget<T> extends Producer<T> {
+    public void inject(T instance, CreationalContext<T> ctx);
+    public void postConstruct(T instance);
+    public void preDestroy(T instance);
+}
+----
+
+[source]
+.`ProcessInjectionTarget<T>`
+----
+public interface ProcessInjectionTarget<X> {
+    public AnnotatedType<X> getAnnotatedType();
+    public InjectionTarget<X> getInjectionTarget();
+    public void setInjectionTarget(InjectionTarget<X> injectionTarget);
+    public void addDefinitionError(Throwable t);
+}
+----
+
+
+[.topic.source]
+== Camel CDI Extension
+
+[source]
+----
+class CdiCamelExtension implements Extension {
+    Set<AnnotatedType<?>> camelBeans = new HashSet<>());
+
+    void camelAnnotations(@Observes @WithAnnotations({BeanInject.class, <1>
+        Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})
+        ProcessAnnotatedType<?> pat) {
+        camelBeans.add(pat.getAnnotatedType());
+    }
+
+    <T> void camelBeansPostProcessor(@Observes ProcessInjectionTarget<T> pit) {
+        if (camelBeans.contains(pit.getAnnotatedType()))
+            pit.setInjectionTarget(
+                new CdiCamelInjectionTarget<>(pit.getInjectionTarget())); <2>
+    }
+}
+----
+<1> Detect all the types containing Camel annotations with `@WithAnnotations`
+<2> Decorate these types `InjectionTarget` with a custom post-processor
+
+
+[.topic.source]
+== Injection Target Decoration
+
+[source]
+----
+class CdiCamelInjectionTarget<T> implements InjectionTarget<T> {
+    InjectionTarget<T> delegate;
+    DefaultCamelBeanPostProcessor processor;
+
+    CdiCamelInjectionTarget(InjectionTarget<T> target) {
+        delegate = target;
+        processor = new DefaultCamelBeanPostProcessor();
+    }
+
+    @Override
+    public void inject(T instance, CreationalContext<T> ctx) {
+        delegate.inject(instance, ctx);
+        processor.postProcessBeforeInitialization(instance); <1>
+    }
+}
+----
+<1> Call the Camel default bean post-processor after CDI injection
+
+[.topic.source]
+== Camel DSL
+
+[source]
+----
+from("jms:queue:{{input}}?transactionManager=#jtaTM")
+  .id("Input Consumer")
+  .onException().log("Rolling back message with ID ${header.JMSMessageID}")
+    .rollback().id("Rollback Transaction")
+    .end()
+  .log("Receiving message with ID ${header.JMSMessageID}: ${body}")
+  .choice()
+    .when(header("JMSRedelivered").isEqualTo(Boolean.TRUE))
+      .to("jms:queue:{{error}}?transactionManager=#jtaTM").id("Error Producer")
+    .otherwise()
+      .beanRef("transformer").id("Transformer")
+      .to("murex:trade-repository").id("Trade Repository")
+      .choice()
+        .when(not(isInserted))
+          .log("Error received: ${body}").id("Trade Repository Error")
+          .throwException(new CamelExecutionException("Import Failed")))
+        .otherwise()
+          .log("Answer received: ${body}").id("Trade Repository Answer");
+----
+
+
+[.topic.source]
+== Camel AOP
+
+TIP: Camel DSL Aspect Oriented Programming with _CDI observer methods_ as pointcut and advice definitions
+
+[source]
+----
+void interceptProcessor(@Observes @Before @Node("foo") Exchange exchange) {
+    // intercept the exchange before processor with id "foo"
+}
+----
+
+[source]
+----
+void interceptProcessorBody(@Observes @Node("foo") @Body String body) {
+    // use Camel parameter binding annotations for the joint point context
+}
+----
+
+[source]
+----
+void receive(@Observes(during=AFTER_SUCCESS) @Endpoint("bar") Exchange exchange) {
+    // exchange sent to endpoint "bar" when the transaction is committed successfully
+}
+----
+
+
+[.topic.source]
+== Observer Method
+
+[source]
+.`ObserverMethod<T>`
+----
+public interface ObserverMethod<T> {
+    public Class<?> getBeanClass();
+    public Type getObservedType();
+    public Set<Annotation> getObservedQualifiers();
+    public Reception getReception();
+    public TransactionPhase getTransactionPhase();
+    public void notify(T event);
+}
+----
+
+[source]
+.`ProcessObserverMethod<T, X>`
+----
+public interface ProcessObserverMethod<T, X> {
+    public AnnotatedMethod<X> getAnnotatedMethod();
+    public ObserverMethod<T> getObserverMethod();
+    public void addDefinitionError(Throwable t);
+}
+----
+
+
+[.topic.source]
+== Camel CDI Extension
+
+[source]
+----
+
+----
+
 
 [.topic.intro]
-== Metrics Extension
+== Metrics CDI Extension
 
 ====
-Annotated types, alternatives, interceptors, portable Extension, producers
+Annotated types, alternatives, interceptors, producers
 ====
+
 
 [.topic.source]
 == Metrics extension example
@@ -103,9 +326,22 @@ private Gauge<Double> cacheHitRatioGauge(Meter hits, Timer calls) {
                  hits.getOneMinuteRate() / calls.getOneMinuteRate();
 }
 ----
-<1> `Metric` _injection_ from the registry.
-<2> Method _instrumentation_ with CDI interceptors.
-<3> Produce a custom `Metric` instance by composing others.
+<1> `Metric` _injection_ from the registry
+<2> Method _instrumentation_ with CDI interceptors
+<3> Produce a custom `Metric` instance by composing others
+
+
+[.topic.source]
+== References
+
+NOTE: Slides generated with _Asciidoctor_ and _DZSlides_ backend
+
+NOTE: Original slide template - _Dan Allen_ & _Sarah White_
+
+NOTE: Camel CDI Extension - https://github.com/astefanutti/camel-cdi
+
+NOTE: Metrics CDI Extension - https://github.com/astefanutti/metrics-cdi
+
 
 [.topic.ending, hrole="name"]
 == Antoine Sabot-Durand Antonin Stefanutti
