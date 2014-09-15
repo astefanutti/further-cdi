@@ -54,10 +54,25 @@ Antoine Sabot-Durand; Antonin Stefanutti
 == Agenda
 
 ====
+* icon:info-circle[] Introduction
 * icon:info-circle[] Legacy Code Integration
 * icon:info-circle[] Camel CDI Extension
 * icon:info-circle[] Metrics CDI Extension
 ====
+
+
+[.topic.intro]
+== Introduction
+
+
+[.topic.source]
+== CDI Portable Extension
+
+image::powerful.gif[role="middle"]
+
+
+[.topic.source]
+== Lifecycle Events
 
 
 [.topic.intro]
@@ -168,19 +183,18 @@ public interface ProcessInjectionTarget<X> {
 [source]
 ----
 class CdiCamelExtension implements Extension {
-    Set<AnnotatedType<?>> camelBeans = new HashSet<>());
+  Set<AnnotatedType<?>> camelBeans = new HashSet<>());
 
-    void camelAnnotations(@Observes @WithAnnotations({BeanInject.class, <1>
-        Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})
-        ProcessAnnotatedType<?> pat) {
+  void camelAnnotations(@Observes @WithAnnotations({BeanInject.class, <1>
+      Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})
+      ProcessAnnotatedType<?> pat) {
         camelBeans.add(pat.getAnnotatedType());
-    }
+  }
 
-    <T> void camelBeansPostProcessor(@Observes ProcessInjectionTarget<T> pit) {
-        if (camelBeans.contains(pit.getAnnotatedType()))
-            pit.setInjectionTarget(
-                new CdiCamelInjectionTarget<>(pit.getInjectionTarget())); <2>
-    }
+  <T> void camelBeansPostProcessor(@Observes ProcessInjectionTarget<T> pit) {
+      if (camelBeans.contains(pit.getAnnotatedType())) <2>
+        pit.setInjectionTarget(new CamelInjectionTarget<>(pit.getInjectionTarget()));
+  }
 }
 ----
 <1> Detect all the types containing Camel annotations with `@WithAnnotations`
@@ -192,11 +206,11 @@ class CdiCamelExtension implements Extension {
 
 [source]
 ----
-class CdiCamelInjectionTarget<T> implements InjectionTarget<T> {
+class CamelInjectionTarget<T> implements InjectionTarget<T> {
     InjectionTarget<T> delegate;
     DefaultCamelBeanPostProcessor processor;
 
-    CdiCamelInjectionTarget(InjectionTarget<T> target) {
+    CamelInjectionTarget(InjectionTarget<T> target) {
         delegate = target;
         processor = new DefaultCamelBeanPostProcessor();
     }
@@ -308,7 +322,81 @@ Annotated types, alternatives, interceptors, producers
 
 
 [.topic.source]
-== Metrics extension example
+== Dropwizard Metrics
+
+NOTE: Open-source Java library providing monitoring primitives like `Counter`, `Gauge`, `Histogram`, `Meter`, `timer`, ...
+
+NOTE: Provides a `MetricRegistry` that articulates modules and reporters
+
+NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) and _CDI_, e.g.:
+
+[source]
+----
+class TimedMethodBean {
+
+    @Timed
+    void timedMethod() {
+        // Timer name => TimedMethodBean.timedMethod
+    }
+}
+----
+
+
+[.topic.source]
+== The `Bean` Interface
+
+[source]
+----
+public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
+    public Class<?> getBeanClass();
+    public Set<InjectionPoint> getInjectionPoints();
+}
+
+public interface Contextual<T> {
+    public T create(CreationalContext<T> creationalContext);
+    public void destroy(T instance, CreationalContext<T> creationalContext);
+}
+
+public interface BeanAttributes<T> {
+    public Set<Type> getTypes();
+    public Set<Annotation> getQualifiers();
+    public Class<? extends Annotation> getScope();
+    public String getName();
+    public Set<Class<? extends Annotation>> getStereotypes();
+    public boolean isAlternative();
+}
+----
+
+
+[.topic.source]
+== Metrics CDI Extension
+
+[source]
+----
+class CdiMetricsExtension implements Extension {
+
+  void defaultMetricRegistry(@Observes AfterBeanDiscovery abd, BeanManager manager) {
+    if (manager.getBeans(MetricRegistry.class, AnyLiteral.INSTANCE).isEmpty()) <1>
+        abd.addBean(new MetricRegistryBean()); <2>
+    }
+}
+----
+<1> Check if there is a bean of type `MetricRegisty` enabled
+<2> If any add a default `MetricRegisty` bean implementation
+
+[source]
+----
+class MetricRegistryBean implements Bean<MetricRegistry> {
+    @Override
+    public Class<? extends Annotation> getScope() {
+        return ApplicationScoped.class;
+    }
+}
+----
+
+
+[.topic.source]
+== Complete Example
 
 [source]
 ----
