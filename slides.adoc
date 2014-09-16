@@ -54,19 +54,19 @@ Antoine Sabot-Durand; Antonin Stefanutti
 == Agenda
 
 ====
-* icon:info-circle[] Introduction
-* icon:info-circle[] Legacy Code Integration
-* icon:info-circle[] Camel CDI Extension
-* icon:info-circle[] Metrics CDI Extension
+* icon:info-circle[] CDI Extensions
+* icon:info-circle[] Legacy Code
+* icon:info-circle[] Camel CDI
+* icon:info-circle[] Metrics CDI
 ====
 
 
 [.topic.intro]
-== Introduction
+== CDI Extensions
 
 
 [.topic.source]
-== CDI Portable Extension
+== CDI Portable Extensions
 
 NOTE: One of the most powerful feature of the CDI specification
 
@@ -132,7 +132,7 @@ Injection points, parameterized types, programmatic bean
 
 
 [.topic.intro]
-== Camel CDI Extension
+== Camel CDI
 
 ====
 Annotated types, events, injection Targets, transactional Observers
@@ -358,7 +358,7 @@ public interface ProcessObserverMethod<T, X> {
 
 
 [.topic.intro]
-== Metrics CDI Extension
+== Metrics CDI
 
 ====
 Annotated types, alternatives, interceptors, producers
