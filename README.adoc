@@ -1,6 +1,6 @@
-= Going farther with CDI 1.2
+= Going further with CDI 1.2
 
-https://www.oracle.com/javaone/[JavaOne] 2014 https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Farther with CDI 1.2 [CON5585\]] session materials.
+https://www.oracle.com/javaone/[JavaOne] 2014 https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Further with CDI 1.2 [CON5585\]] session materials.
 
 == Build environment
 
@@ -14,14 +14,16 @@ Then run:
 bundle install
 ----
 
+Install http://www.graphviz.org/[Graphviz] and have the `dot` executable in the path.
+
 == Build instructions
 
 To generate the HTML presentation, run the following command:
 ----
-asciidoctor -T asciidoctor-backends/slim -a data-uri -a linkcss! slides.adoc
+asciidoctor -r asciidoctor-diagram -T asciidoctor-backends/slim -a data-uri -a linkcss! slides.adoc
 ----
 
-Note that the Git submodules must first be initialiazed by running:
+Note that the Git submodules must first be initialized by running:
 ----
 git submodule init
 ----

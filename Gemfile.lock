@@ -2,6 +2,10 @@ GEM
   remote: https://rubygems.org/
   specs:
     asciidoctor (1.5.0)
+    asciidoctor-diagram (1.2.1)
+      asciidoctor (~> 1.5.0)
+      rjb (~> 1.4.8)
+    rjb (1.4.9)
     slim (2.0.3)
       temple (~> 0.6.6)
       tilt (>= 1.3.3, < 2.1)
@@ -11,9 +15,12 @@ GEM
 
 PLATFORMS
   ruby
+  x64-mingw32
+  x86-mingw32
 
 DEPENDENCIES
   asciidoctor
+  asciidoctor-diagram
   slim
   thread_safe
   tilt

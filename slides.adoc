@@ -1,4 +1,4 @@
-= Going _farther_ with _CDI_ 1.2
+= Going _further_ with _CDI_ 1.2
 Antoine Sabot-Durand; Antonin Stefanutti
 :description: Going farther with CDI 1.2
 :website: http://astefanutti.github.io/javaone2014
@@ -68,11 +68,55 @@ Antoine Sabot-Durand; Antonin Stefanutti
 [.topic.source]
 == CDI Portable Extension
 
-image::powerful.gif[role="middle"]
+NOTE: One of the most powerful feature of the CDI specification
+
+NOTE: Not really popularized maybe given the high level of abstraction
+
+NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
+
+image::powerful.gif[role="pull-right", width="280"]
 
 
 [.topic.source]
 == Lifecycle Events
+
+[plantuml, "lifecycle", "svg", height="90%"]
+----
+@startuml
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor Peru
+  BackgroundColor<< Once >> Olive
+  BorderColor White
+  FontName Consolas
+  FontColor White
+}
+
+(*) -right-> BeforeBeanDiscovery << Once >>
+
+partition "Type Discovery" {
+  --> ProcessAnnotatedType<T>
+}
+
+--> AfterTypeDiscovery << Once >>
+
+partition "Bean Discovery" {
+  -up-> ProcessInjectionPoint<T, X>
+  --> ProcessInjectionTarget<X>
+  --> ProcessBeanAttributes<T>
+  --> ProcessBean<X>
+  --> ProcessObserverMethod<T, X>
+}
+
+--> AfterBeanDiscovery << Once >>
+
+-right-> AfterDeploymentValidation
+
+-right-> (*)
+
+@enduml
+----
 
 
 [.topic.intro]
