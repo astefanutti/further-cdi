@@ -54,19 +54,19 @@ Antoine Sabot-Durand; Antonin Stefanutti
 == Agenda
 
 ====
-* icon:info-circle[] CDI Extensions
-* icon:info-circle[] Legacy Code
-* icon:info-circle[] Camel CDI
-* icon:info-circle[] Metrics CDI
+* icon:info-circle[] Introduction
+* icon:info-circle[] Legacy Code Integration
+* icon:info-circle[] Camel CDI Extension
+* icon:info-circle[] Metrics CDI Extension
 ====
 
 
 [.topic.intro]
-== CDI Extensions
+== Introduction
 
 
 [.topic.source]
-== CDI Portable Extensions
+== CDI Portable Extension
 
 NOTE: One of the most powerful feature of the CDI specification
 
@@ -80,40 +80,67 @@ image::powerful.gif[role="pull-right", width="280"]
 [.topic.source]
 == Lifecycle Events
 
-[plantuml, "lifecycle", "svg", height="90%"]
+[plantuml, "lifecycle", "svg", height="95%"]
 ----
 @startuml
 
 skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
 skinparam activity {
-  BackgroundColor Peru
-  BackgroundColor<< Once >> Olive
+  BackgroundColor #337788
+  ArrowColor #888888
+  BarColor #888888
   BorderColor White
   FontName Consolas
   FontColor White
+  FontSize 20
 }
 
-(*) -right-> BeforeBeanDiscovery << Once >>
+|<size:30>**Application lifecycle**</size>|
+start
+#BB3322:<color:#FFFFFF>BeforeBeanDiscovery</color>>
 
-partition "Type Discovery" {
-  --> ProcessAnnotatedType<T>
+|<size:30>**Type Discovery**</size>|
+
+while (<size:14><color:#FFFFFF>while types in</color></size>\n<size:14><color:#FFFFFF>deployment archive?</color></size>) is (yes)
+fork
+    :<color:#FFFFFF>ProcessAnnotatedType<X></color>>
+/' fork again
+    :<color:#FFFFFF>ProcessSyntheticAnnotatedType<X></color>> '/
+end fork
+endwhile (no)
+
+|<size:30>**Application lifecycle**</size>|
+#BB3322:<color:#FFFFFF>AfterTypeDiscovery</color>>
+
+|<size:30>**Bean Discovery**</size>|
+fork
+partition "**For each discovered types during type discovery**" {
+    :<color:#FFFFFF>ProcessInjectionPoint<T, X></color>>
+    :<color:#FFFFFF>ProcessInjectionTarget<X></color>>
+    :<color:#FFFFFF>ProcessBeanAttributes<T></color>>
+    :<color:#FFFFFF>ProcessManagedBean<X></color>>
 }
-
---> AfterTypeDiscovery << Once >>
-
-partition "Bean Discovery" {
-  -up-> ProcessInjectionPoint<T, X>
-  --> ProcessInjectionTarget<X>
-  --> ProcessBeanAttributes<T>
-  --> ProcessBean<X>
-  --> ProcessObserverMethod<T, X>
+fork again
+partition "**For each producer methods / fields of enabled beans**" {
+    :<color:#FFFFFF>ProcessInjectionPoint<T, X></color>>
+    :<color:#FFFFFF>ProcessProducer<T, X></color>>
+    :<color:#FFFFFF>ProcessBeanAttributes<T></color>>
+    :<color:#FFFFFF>ProcessProducerMethod<T, X></color>\n<color:#FFFFFF>ProcessProducerField<T, X></color>>
 }
+fork again
+partition "**For each observer methods of enabled beans**" {
+    :<color:#FFFFFF>ProcessInjectionPoint<T, X></color>>
+    :<color:#FFFFFF>ProcessObserverMethod<T, X></color>>
+}
+end fork
 
---> AfterBeanDiscovery << Once >>
-
--right-> AfterDeploymentValidation
-
--right-> (*)
+|<size:30>**Application lifecycle**</size>|
+#BB3322:<color:#FFFFFF>AfterBeanDiscovery</color>>
+#BB3322:<color:#FFFFFF>AfterDeploymentValidation</color>>
+stop
 
 @enduml
 ----
@@ -132,7 +159,7 @@ Injection points, parameterized types, programmatic bean
 
 
 [.topic.intro]
-== Camel CDI
+== Camel CDI Extension
 
 ====
 Annotated types, events, injection Targets, transactional Observers
@@ -358,7 +385,7 @@ public interface ProcessObserverMethod<T, X> {
 
 
 [.topic.intro]
-== Metrics CDI
+== Metrics CDI Extension
 
 ====
 Annotated types, alternatives, interceptors, producers

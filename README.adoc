@@ -14,8 +14,6 @@ Then run:
 bundle install
 ----
 
-Install http://www.graphviz.org/[Graphviz] and have the `dot` executable in the path.
-
 == Build instructions
 
 To generate the HTML presentation, run the following command:
