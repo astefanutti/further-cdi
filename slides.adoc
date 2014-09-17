@@ -54,27 +54,37 @@ Antoine Sabot-Durand; Antonin Stefanutti
 == Agenda
 
 ====
-* icon:info-circle[] Introduction
-* icon:info-circle[] Legacy Code Integration
-* icon:info-circle[] Camel CDI Extension
-* icon:info-circle[] Metrics CDI Extension
+* icon:info-circle[] CDI Extensions
+* icon:info-circle[] Legacy Code
+* icon:info-circle[] Camel CDI
+* icon:info-circle[] Metrics CDI
 ====
 
 
 [.topic.intro]
-== Introduction
+== CDI Extensions
 
 
 [.topic.source]
-== CDI Portable Extension
+== What's this For?
 
 NOTE: One of the most powerful feature of the CDI specification
 
 NOTE: Not really popularized maybe given the high level of abstraction
 
-NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
+NOTE: Comprehensive access to and modification of the _container metadata model_
 
 image::powerful.gif[role="pull-right", width="280"]
+
+
+[.topic.source]
+== What's the Principle?
+
+NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
+
+NOTE: Observer pattern to listen for container _initialization lifecycle events_
+
+image::rubik.gif[role="pull-left", width="240"]
 
 
 [.topic.source]
@@ -159,7 +169,7 @@ Injection points, parameterized types, programmatic bean
 
 
 [.topic.intro]
-== Camel CDI Extension
+== Camel CDI
 
 ====
 Annotated types, events, injection Targets, transactional Observers
@@ -385,7 +395,7 @@ public interface ProcessObserverMethod<T, X> {
 
 
 [.topic.intro]
-== Metrics CDI Extension
+== Metrics CDI
 
 ====
 Annotated types, alternatives, interceptors, producers
