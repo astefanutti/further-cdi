@@ -66,25 +66,45 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 
 [.topic.source]
-== What's this For?
+== Portable Extensions
 
 NOTE: One of the most powerful feature of the CDI specification
 
 NOTE: Not really popularized maybe given the high level of abstraction
 
-NOTE: Comprehensive access to and modification of the _container metadata model_
-
-image::powerful.gif[role="pull-right", width="280"]
+image::powerful.gif[role="pull-right", width="300"]
 
 
 [.topic.source]
-== What's the Principle?
-
-NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
+== Container Metadata
 
 NOTE: Observer pattern to listen for container _initialization lifecycle events_
 
-image::rubik.gif[role="pull-left", width="240"]
+NOTE: Comprehensive access to and modification of the _container metadata model_
+
+image::rubik.gif[role="pull-right", width="250"]
+
+
+[.topic.source]
+== Plugin Architecture
+
+NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
+
+[source]
+----
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.Extension;
+
+class CdiExtension implements Extension {
+
+    void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd) {
+    }
+    ...
+
+    void afterDeploymentValidation(@Observes AfterDeploymentValidation adv) {
+    }
+}
+----
 
 
 [.topic.source]
@@ -183,6 +203,8 @@ NOTE: Open-source _integration framework_ based on known Enterprise Integration 
 
 NOTE: _Bean binding and integration_ with Spring, Blueprint, Guice _and CDI_
 
+image::eip.gif[height="150"]
+
 
 [.topic.source]
 == Camel Annotations
@@ -203,13 +225,12 @@ ProducerTemplate producer;
 
 @Consume(uri="jms:queue:foo")
 void onFoo(@Body String body) {
-    ...
 }
 ----
-
+TIP: Bring support for both Camel and CDI beans...
 
 [.topic.source]
-== Type Discovery
+== The `ProcessAnnotatedType` Event
 
 [source]
 .`AnnotatedType<X>`
@@ -234,7 +255,7 @@ public interface ProcessAnnotatedType<X> {
 
 
 [.topic.source]
-== Injection Target
+== The `ProcessInjectionTarget` Event
 
 [source]
 .`InjectionTarget<T>`
@@ -259,7 +280,7 @@ public interface ProcessInjectionTarget<X> {
 
 
 [.topic.source]
-== Camel CDI Extension
+== Bean Post Processors
 
 [source]
 ----
@@ -279,11 +300,11 @@ class CdiCamelExtension implements Extension {
 }
 ----
 <1> Detect all the types containing Camel annotations with `@WithAnnotations`
-<2> Decorate these types `InjectionTarget` with a custom post-processor
+<2> Decorate the `InjectionTarget` corresponding to these types with a custom post-processor
 
 
 [.topic.source]
-== Injection Target Decoration
+== `InjectionTarget` Decoration
 
 [source]
 ----
@@ -359,7 +380,7 @@ void receive(@Observes(during=AFTER_SUCCESS) @Endpoint("bar") Exchange exchange)
 
 
 [.topic.source]
-== Observer Method
+== The `ProcessObserverMethod` Event
 
 [source]
 .`ObserverMethod<T>`
@@ -426,19 +447,17 @@ class TimedMethodBean {
 [.topic.source]
 == The `Bean` Interface
 
+TIP: Integrate the `MetricRegistry` as a CDI Bean
+
 [source]
 ----
 public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
     public Class<?> getBeanClass();
     public Set<InjectionPoint> getInjectionPoints();
-}
-
-public interface Contextual<T> {
+    // Contextual<T>
     public T create(CreationalContext<T> creationalContext);
     public void destroy(T instance, CreationalContext<T> creationalContext);
-}
-
-public interface BeanAttributes<T> {
+    // BeanAttributes<T>
     public Set<Type> getTypes();
     public Set<Annotation> getQualifiers();
     public Class<? extends Annotation> getScope();
@@ -450,12 +469,51 @@ public interface BeanAttributes<T> {
 
 
 [.topic.source]
-== Metrics CDI Extension
+== The `MetricRegistry` Bean
+
+[source]
+----
+class MetricRegistryBean implements Bean<MetricRegistry> {
+
+    public Set<Annotation> getQualifiers() {
+        return Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList(DefaultLiteral.INSTANCE, AnyLiteral.INSTANCE)));
+    }
+
+    public MetricRegistry create(CreationalContext<MetricRegistry> context) {
+        return new MetricRegistry();
+    }
+
+    public Class<? extends Annotation> getScope() {
+        return ApplicationScoped.class;
+    }
+    ...
+}
+----
+
+
+[.topic.source]
+== The `AfterBeanDiscovery` Event
+
+[source]
+----
+public interface AfterBeanDiscovery {
+    public void addDefinitionError(Throwable t);
+    public void addBean(Bean<?> bean);
+    public void addObserverMethod(ObserverMethod<?> observerMethod);
+    public void addContext(Context context);
+    public <T> AnnotatedType<T> getAnnotatedType(Class<T> type, String id);
+    public <T> Iterable<AnnotatedType<T>> getAnnotatedTypes(Class<T> type);
+}
+----
+
+
+[.topic.source]
+== Add Beans Programmatically
 
 [source]
 ----
 class CdiMetricsExtension implements Extension {
-
   void defaultMetricRegistry(@Observes AfterBeanDiscovery abd, BeanManager manager) {
     if (manager.getBeans(MetricRegistry.class, AnyLiteral.INSTANCE).isEmpty()) <1>
         abd.addBean(new MetricRegistryBean()); <2>
@@ -465,12 +523,64 @@ class CdiMetricsExtension implements Extension {
 <1> Check if there is a bean of type `MetricRegisty` enabled
 <2> If any add a default `MetricRegisty` bean implementation
 
+NOTE: Else, the end-user deployed `MetricRegistry` bean is used, e.g.:
+
 [source]
 ----
-class MetricRegistryBean implements Bean<MetricRegistry> {
-    @Override
-    public Class<? extends Annotation> getScope() {
-        return ApplicationScoped.class;
+@Produces
+@ApplicationScoped
+MetricRegistry customMetricRegistry() {
+}
+----
+
+
+[.topic.source]
+== Add Interceptor Bindings Programmatically
+
+TIP: Use interceptors for Metrics annotation AOP
+
+[source]
+----
+class MetricsExtension implements Extension {
+
+  <X> void metricsAnnotations(@Observes @WithAnnotations(Timed.class)
+    ProcessAnnotatedType<X> pat) {
+    Set<AnnotatedMethod<? super X>> decoratedMethods = new HashSet<>();
+    for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods()) {
+      if (method.isAnnotationPresent(Timed.class)) {
+          decoratedMethods.add(
+            new AnnotatedMethodDecorator<>(method, new TimedBindingLiteral()));
+      }
+    }
+    pat.setAnnotatedType(
+      new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), decoratedMethods));
+  }
+}
+----
+
+
+[.topic.source]
+== Bean Method Interceptors
+
+[source]
+----
+@Interceptor
+@TimedBinding
+@Priority(Interceptor.Priority.LIBRARY_BEFORE)
+class TimedInterceptor {
+
+    @Inject MetricRegistry registry;
+
+    @AroundInvoke
+    Object timedMethod(InvocationContext context) throws Exception {
+        String name = context.getMethod().getAnnotation(Timed.class).name();
+        Timer timer = registry.timer(name);
+        Timer.Context time = timer.time();
+        try {
+            return context.proceed();
+        } finally {
+            time.stop();
+        }
     }
 }
 ----
