@@ -426,7 +426,7 @@ Annotated types, alternatives, interceptors, producers
 [.topic.source]
 == Dropwizard Metrics
 
-NOTE: Open-source Java library providing monitoring primitives like `Counter`, `Gauge`, `Histogram`, `Meter`, `timer`, ...
+NOTE: Open-source Java library providing monitoring primitives like `Counter`, `Gauge`, `Histogram`, `Meter`, `Timer`, ...
 
 NOTE: Provides a `MetricRegistry` that articulates modules and reporters
 
@@ -495,6 +495,8 @@ class MetricRegistryBean implements Bean<MetricRegistry> {
 [.topic.source]
 == The `AfterBeanDiscovery` Event
 
+TIP: Add the default `MetricRegistry` bean after bean discovery
+
 [source]
 ----
 public interface AfterBeanDiscovery {
@@ -543,7 +545,7 @@ TIP: Use interceptors for Metrics annotation AOP
 ----
 class MetricsExtension implements Extension {
 
-  <X> void metricsAnnotations(@Observes @WithAnnotations(Timed.class)
+  <X> void interceptTimedMethod(@Observes @WithAnnotations(Timed.class)
     ProcessAnnotatedType<X> pat) {
     Set<AnnotatedMethod<? super X>> decoratedMethods = new HashSet<>();
     for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods()) {
@@ -587,6 +589,56 @@ class TimedInterceptor {
 
 
 [.topic.source]
+== The `ProcessBean<X>` Events
+
+TIP: Use producer fields / methods to register custom metrics
+
+[source]
+----
+@Produces
+Timer Timer = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
+----
+
+[source]
+.`ProcessProducerMethod<T, X>`
+----
+public interface ProcessProducerMethod<T, X> extends ProcessBean<X> {
+    public AnnotatedMethod<T> getAnnotatedProducerMethod();
+    public AnnotatedParameter<T> getAnnotatedDisposedParameter();
+    // ProcessBean<X>
+    public Annotated getAnnotated();
+    public Bean<X> getBean();
+}
+----
+
+NOTE: `ProcessManagedBean<X>` and `ProcessProducerField<T, X>` are fired for managed beans and producer fields respectively
+
+
+[.topic.source]
+== The `AfterDeploymentValidation` Event
+
+[source]
+----
+class MetricsExtension implements Extension {
+  Map<Bean<?>, AnnotatedMember<?>> metrics = new HashMap<>();
+
+  void producerFields(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
+      metrics.put(ppf.getBean(), ppf.getAnnotatedProducerField()); <1>
+  }
+  void producerMethods(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
+      metrics.put(ppm.getBean(), ppm.getAnnotatedProducerMethod()); <1>
+  }
+  void customMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
+      for (Map.Entry<Bean<?>, AnnotatedMember<?>> metric : metrics.entrySet())
+        registry.register(metricName(member), manager.getReference(metric.getKey(), <2>
+            metric.getValue().getBaseType(), manager.createCreationalContext(null)));
+  }
+}
+----
+<1> Collect the custom `Metric` producer fields and methods
+<2> Instantiate the custom metrics into the Metrics registry
+
+[.topic.source]
 == Complete Example
 
 [source]
@@ -613,7 +665,7 @@ private Gauge<Double> cacheHitRatioGauge(Meter hits, Timer calls) {
 [.topic.source]
 == References
 
-NOTE: Slides generated with _Asciidoctor_ and _DZSlides_ backend
+NOTE: Slides generated with _Asciidoctor_, _PlantUML_ and _DZSlides_ backend
 
 NOTE: Original slide template - _Dan Allen_ & _Sarah White_
 
