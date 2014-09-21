@@ -21,7 +21,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 :imagesdir: images
 :next-label: pass:quotes,attributes[*Next* [icon:caret-right[]]
 :dzslides-style: asciidoctor
-:dzslides-highlight: asciidoctor
+:dzslides-highlight: github
 :dzslides-transition: fade
 :dzslides-fonts: family=Neuton:400,700,800,400italic|Cedarville+Cursive
 :hide-uri-scheme:
@@ -70,7 +70,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 One of the _most powerful feature_ of the CDI specification
 
-Not really popularized maybe given the _high level of abstraction_
+Not really popularized in partly due to the _high level of abstraction_
 
 image::powerful.gif[role="pull-right", width="300"]
 
@@ -90,18 +90,18 @@ image::rubik.gif[role="pull-right", width="250"]
 
 NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
 
-class CdiExtension implements Extension {
+class CdiExtension [highlight]#implements Extension# {
 
-    void beforeBeanDiscovery(@Observes BeforeBeanDiscovery bbd) {
+    void beforeBeanDiscovery([highlight]#@Observes BeforeBeanDiscovery# bbd) {
     }
     ...
 
-    void afterDeploymentValidation(@Observes AfterDeploymentValidation adv) {
+    void afterDeploymentValidation([highlight]#@Observes AfterDeploymentValidation# adv) {
     }
 }
 ----
@@ -185,7 +185,207 @@ Injection points, parameterized types, programmatic bean
 
 
 [.topic.source]
-== Diagram
+== A (not so fictional) Legacy Component
+
+
+[.topic.source]
+== The CDI Way
+
+TIP: A functional interface:
+
+[source]
+----
+public interface Transformer<I, O> {
+    O transform(I input);
+}
+----
+
+TIP: And a CDI qualifier with transformation metadata:
+
+[source, subs="verbatim,quotes"]
+----
+import javax.enterprise.util.Nonbinding;
+import javax.inject.Qualifier;
+
+[highlight]#@Qualifier#
+public @interface Transformation {
+    [highlight]#@Nonbinding#
+    String value() default ""; // The transformation name
+}
+----
+
+
+[.topic.source]
+== Configuration at Injection Points
+
+[source, subs="verbatim,quotes"]
+----
+@Inject
+[highlight]#@Transformation("transformation")#
+Transformer<InputType, OutputType> transformer;
+
+InputType input;
+OutputType result = transformer.transform(input);
+----
+
+TIP: Distribute configuration closest to the code:
+
+[source, subs="verbatim,quotes"]
+----
+@Inject
+[highlight]#@Transformation("transformation~i~")#
+Transformer<InputType~i~, OutputType~i~> transformer~i~;
+...
+@Inject
+[highlight]#@Transformation("transformation~j~")#
+Transformer<InputType~j~, OutputType~j~> transformer~j~;
+----
+
+
+[.topic.source]
+== The `ProcessInjectionPoint` Event
+
+TIP: Collect all the `@Transformation` metadata required to instantiate the legacy component
+
+[source]
+----
+public interface ProcessInjectionPoint<T, X> {
+    public InjectionPoint getInjectionPoint();
+    public void setInjectionPoint(InjectionPoint injectionPoint);
+    public void addDefinitionError(Throwable t);
+}
+----
+
+
+[.topic.source]
+== Collect Injection Points Metadata
+
+[source, subs="verbatim,quotes"]
+----
+class TransformationExtension implements Extension {
+
+  Set<String> transformations = new HashSet<>();
+
+  void collectConfiguration(@Observes [highlight]#ProcessInjectionPoint<?, Transformer># pit) { <1>
+    Annotated annotated = pit.getInjectionPoint().getAnnotated();
+    if (annotated.isAnnotationPresent(Transformation.class)) {
+      transformations.add(annotated.getAnnotation(Transformation.class).value()); <2>
+    }
+  }
+}
+----
+<1> Observe every `Transformer` injection point on any declaring bean
+<2> Collect the injection point `@Transformation` metadata
+
+
+[.topic.source]
+== The `Bean` Interface
+
+TIP: Integrate the legacy component as a CDI Bean
+
+[source]
+----
+public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
+    public Class<?> getBeanClass();
+    public Set<InjectionPoint> getInjectionPoints();
+    // Contextual<T>
+    public T create(CreationalContext<T> creationalContext);
+    public void destroy(T instance, CreationalContext<T> creationalContext);
+    // BeanAttributes<T>
+    public Set<Type> getTypes();
+    public Set<Annotation> getQualifiers();
+    public Class<? extends Annotation> getScope();
+    public String getName();
+    public Set<Class<? extends Annotation>> getStereotypes();
+    public boolean isAlternative();
+}
+----
+
+
+[.topic.source]
+== Define Beans Programmatically
+
+[source, subs="verbatim,quotes"]
+----
+class LegacyTransformerBean [highlight]#implements Bean<LegacyTransformer># {
+    Set<String> transformations = new HashSet<>();
+    LegacyTransformerBean(Set<String> transformations) {
+        this.transformations = transformations;
+    }
+    public LegacyTransformer create(CreationalContext<LegacyTransformer> context) {
+        LegacyTransformer transformer = [highlight]#new LegacyTransformer()#;
+        tranformer.load(transformations);
+        return LegacyTransformer;
+    }
+    public Set<Annotation> getQualifiers() {
+        return Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList([highlight]#DefaultLiteral.INSTANCE#, [highlight]#AnyLiteral.INSTANCE#)));
+    }
+    public Class<? extends Annotation> getScope() {
+        return [highlight]#ApplicationScoped.class#;
+    }
+}
+----
+
+
+[.topic.source]
+== The `AfterBeanDiscovery` Event
+
+TIP: Add the legacy component bean after bean discovery
+
+[source]
+----
+public interface AfterBeanDiscovery {
+    public void addDefinitionError(Throwable t);
+    public void addBean(Bean<?> bean);
+    public void addObserverMethod(ObserverMethod<?> observerMethod);
+    public void addContext(Context context);
+    public <T> AnnotatedType<T> getAnnotatedType(Class<T> type, String id);
+    public <T> Iterable<AnnotatedType<T>> getAnnotatedTypes(Class<T> type);
+}
+----
+
+
+[.topic.source]
+== Add Beans Programmatically
+
+[source, subs="verbatim,quotes"]
+----
+class TransformationExtension implements Extension {
+
+  Set<String> transformations = new HashSet<>();
+
+  void collectConfiguration(@Observes ProcessInjectionPoint<?, Transformer> pit) {
+    Annotated annotated = pit.getInjectionPoint().getAnnotated();
+    if (annotated.isAnnotationPresent(Transformation.class))
+      transformations.add(annotated.getAnnotation(Transformation.class).value());
+  }
+  void addLegacyTransformerBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
+    LegacyTransformer legacyTransformer = new LegacyTransformer(transformations);
+    abd.[highlight]#addBean(new LegacyTransformerBean>(transformations))#;
+  }
+}
+----
+
+
+[.topic.source]
+== Generics as Metadata
+
+TIP: Parameterized types are not erased by CDI
+
+[source, subs="verbatim,quotes"]
+----
+@Produces
+@Transformation
+[highlight]#<I, O> Transformer<I, O># legacyTransformerFacade(*LegacyTransformer legacyTransformer*,
+  InjectionPoint injectionPoint) {
+  Transformation transformation = getQualifierByType(injectionPoint.getQualifiers(),
+                                                     Transformation.class);
+
+  return new LegacyTransformerFacade<I, O>(legacyTransformer, transformation.value(),
+    [highlight]#injectionPoint.getType()#));
+}
+----
 
 
 [.topic.intro]
@@ -209,21 +409,21 @@ image::eip.gif[height="150"]
 [.topic.source]
 == Camel Annotations
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
-@EndpointInject(uri="jms:queue:foo")
+[highlight]#@EndpointInject#(uri="jms:queue:foo")
 Endpoint endpoint;
 
-@PropertyInject(value = "timeout", defaultValue = "5000")
+[highlight]#@PropertyInject#(value = "timeout", defaultValue = "5000")
 int timeout;
 
-@BeanInject("foo")
+[highlight]#@BeanInject#("foo")
 FooBean foo;
 
-@Produce(uri = "mock:foo")
+[highlight]#@Produce#(uri = "mock:foo")
 ProducerTemplate producer;
 
-@Consume(uri="jms:queue:foo")
+[highlight]#@Consume#(uri="jms:queue:foo")
 void onFoo(@Body String body) {
 }
 ----
@@ -282,18 +482,18 @@ public interface ProcessInjectionTarget<X> {
 [.topic.source]
 == Bean Post Processors
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
 class CdiCamelExtension implements Extension {
   Set<AnnotatedType<?>> camelBeans = new HashSet<>());
 
-  void camelAnnotations(@Observes @WithAnnotations({BeanInject.class, <1>
-      Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})
+  void camelAnnotations(@Observes [highlight]#@WithAnnotations({BeanInject.class, <1>
+      Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})#
       ProcessAnnotatedType<?> pat) {
         camelBeans.add(pat.getAnnotatedType());
   }
 
-  <T> void camelBeansPostProcessor(@Observes ProcessInjectionTarget<T> pit) {
+  <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit) {
       if (camelBeans.contains(pit.getAnnotatedType())) <2>
         pit.setInjectionTarget(new CamelInjectionTarget<>(pit.getInjectionTarget()));
   }
@@ -306,9 +506,9 @@ class CdiCamelExtension implements Extension {
 [.topic.source]
 == `InjectionTarget` Decoration
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
-class CamelInjectionTarget<T> implements InjectionTarget<T> {
+class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
     InjectionTarget<T> delegate;
     DefaultCamelBeanPostProcessor processor;
 
@@ -318,9 +518,9 @@ class CamelInjectionTarget<T> implements InjectionTarget<T> {
     }
 
     @Override
-    public void inject(T instance, CreationalContext<T> ctx) {
+    public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
         delegate.inject(instance, ctx);
-        processor.postProcessBeforeInitialization(instance); <1>
+        [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
     }
 }
 ----
@@ -432,106 +632,14 @@ NOTE: Provides a `MetricRegistry` that articulates modules and reporters
 
 NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) and _CDI_, e.g.:
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
 class TimedMethodBean {
 
-    @Timed
+    [highlight]#@Timed#
     void timedMethod() {
         // Timer name => TimedMethodBean.timedMethod
     }
-}
-----
-
-
-[.topic.source]
-== The `Bean` Interface
-
-TIP: Integrate the `MetricRegistry` as a CDI Bean
-
-[source]
-----
-public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
-    public Class<?> getBeanClass();
-    public Set<InjectionPoint> getInjectionPoints();
-    // Contextual<T>
-    public T create(CreationalContext<T> creationalContext);
-    public void destroy(T instance, CreationalContext<T> creationalContext);
-    // BeanAttributes<T>
-    public Set<Type> getTypes();
-    public Set<Annotation> getQualifiers();
-    public Class<? extends Annotation> getScope();
-    public String getName();
-    public Set<Class<? extends Annotation>> getStereotypes();
-    public boolean isAlternative();
-}
-----
-
-
-[.topic.source]
-== The `MetricRegistry` Bean
-
-[source]
-----
-class MetricRegistryBean implements Bean<MetricRegistry> {
-
-    public Set<Annotation> getQualifiers() {
-        return Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(DefaultLiteral.INSTANCE, AnyLiteral.INSTANCE)));
-    }
-
-    public MetricRegistry create(CreationalContext<MetricRegistry> context) {
-        return new MetricRegistry();
-    }
-
-    public Class<? extends Annotation> getScope() {
-        return ApplicationScoped.class;
-    }
-    ...
-}
-----
-
-
-[.topic.source]
-== The `AfterBeanDiscovery` Event
-
-TIP: Add the default `MetricRegistry` bean after bean discovery
-
-[source]
-----
-public interface AfterBeanDiscovery {
-    public void addDefinitionError(Throwable t);
-    public void addBean(Bean<?> bean);
-    public void addObserverMethod(ObserverMethod<?> observerMethod);
-    public void addContext(Context context);
-    public <T> AnnotatedType<T> getAnnotatedType(Class<T> type, String id);
-    public <T> Iterable<AnnotatedType<T>> getAnnotatedTypes(Class<T> type);
-}
-----
-
-
-[.topic.source]
-== Add Beans Programmatically
-
-[source]
-----
-class CdiMetricsExtension implements Extension {
-  void defaultMetricRegistry(@Observes AfterBeanDiscovery abd, BeanManager manager) {
-    if (manager.getBeans(MetricRegistry.class, AnyLiteral.INSTANCE).isEmpty()) <1>
-        abd.addBean(new MetricRegistryBean()); <2>
-    }
-}
-----
-<1> Check if there is a bean of type `MetricRegisty` enabled
-<2> If any add a default `MetricRegisty` bean implementation
-
-NOTE: Else, the end-user deployed `MetricRegistry` bean is used, e.g.:
-
-[source]
-----
-@Produces
-@ApplicationScoped
-MetricRegistry customMetricRegistry() {
 }
 ----
 
@@ -541,19 +649,19 @@ MetricRegistry customMetricRegistry() {
 
 TIP: Use interceptors for Metrics annotation AOP
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
 class MetricsExtension implements Extension {
 
-  <X> void interceptTimedMethod(@Observes @WithAnnotations(Timed.class)
+  <X> void interceptTimedMethod(@Observes [highlight]#@WithAnnotations(Timed.class)#
     ProcessAnnotatedType<X> pat) {
     Set<AnnotatedMethod<? super X>> decoratedMethods = new HashSet<>();
-    for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods()) {
-      if (method.isAnnotationPresent(Timed.class)) {
+
+    for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods())
+      if (method.isAnnotationPresent(Timed.class))
           decoratedMethods.add(
-            new AnnotatedMethodDecorator<>(method, new TimedBindingLiteral()));
-      }
-    }
+            new AnnotatedMethodDecorator<>(method, [highlight]#new TimedBindingLiteral()#));
+
     pat.setAnnotatedType(
       new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), decoratedMethods));
   }
@@ -564,22 +672,22 @@ class MetricsExtension implements Extension {
 [.topic.source]
 == Bean Method Interceptors
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
-@Interceptor
-@TimedBinding
-@Priority(Interceptor.Priority.LIBRARY_BEFORE)
+[highlight]#@Interceptor#
+[highlight]#@TimedBinding#
+[highlight]#@Priority(Interceptor.Priority.LIBRARY_BEFORE)#
 class TimedInterceptor {
 
     @Inject MetricRegistry registry;
 
-    @AroundInvoke
+    [highlight]#@AroundInvoke#
     Object timedMethod(InvocationContext context) throws Exception {
         String name = context.getMethod().getAnnotation(Timed.class).name();
         Timer timer = registry.timer(name);
         Timer.Context time = timer.time();
         try {
-            return context.proceed();
+            return [highlight]#context.proceed()#;
         } finally {
             time.stop();
         }
@@ -593,9 +701,9 @@ class TimedInterceptor {
 
 TIP: Use producer fields / methods to register custom metrics
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
-@Produces
+[highlight]#@Produces#
 Timer Timer = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
 ----
 
@@ -617,21 +725,21 @@ NOTE: `ProcessManagedBean<X>` and `ProcessProducerField<T, X>` are fired for man
 [.topic.source]
 == The `AfterDeploymentValidation` Event
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
 class MetricsExtension implements Extension {
   Map<Bean<?>, AnnotatedMember<?>> metrics = new HashMap<>();
 
-  void producerFields(@Observes ProcessProducerField<? extends Metric, ?> ppf) {
-      metrics.put(ppf.getBean(), ppf.getAnnotatedProducerField()); <1>
+  void producerFields(@Observes [highlight]#ProcessProducerField<? extends Metric, ?># ppf) {
+    metrics.put(ppf.getBean(), ppf.getAnnotatedProducerField()); <1>
   }
-  void producerMethods(@Observes ProcessProducerMethod<? extends Metric, ?> ppm) {
-      metrics.put(ppm.getBean(), ppm.getAnnotatedProducerMethod()); <1>
+  void producerMethods(@Observes [highlight]#ProcessProducerMethod<? extends Metric, ?># ppm) {
+    metrics.put(ppm.getBean(), ppm.getAnnotatedProducerMethod()); <1>
   }
-  void customMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
-      for (Map.Entry<Bean<?>, AnnotatedMember<?>> metric : metrics.entrySet())
-        registry.register(metricName(member), manager.getReference(metric.getKey(), <2>
-            metric.getValue().getBaseType(), manager.createCreationalContext(null)));
+  void customMetrics(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager manager) {
+    for (Map.Entry<Bean<?>, AnnotatedMember<?>> metric : metrics.entrySet())
+      registry.register(metricName(member), manager.getReference(metric.getKey(), <2>
+        metric.getValue().getBaseType(), manager.createCreationalContext(null)));
   }
 }
 ----
