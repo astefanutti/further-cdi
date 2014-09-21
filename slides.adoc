@@ -70,7 +70,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 One of the _most powerful feature_ of the CDI specification
 
-Not really popularized in partly due to the _high level of abstraction_
+Not really popularized partly due to the _high level of abstraction_
 
 image::powerful.gif[role="pull-right", width="300"]
 
