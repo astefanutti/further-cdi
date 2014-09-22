@@ -189,7 +189,127 @@ Injection Points, Qualifiers Metadata, Programmatic Beans, Parameterized Types
 
 
 [.topic.source]
-== A (not so fictional) Legacy Component
+== A `/\*Not So Fictional*/` Legacy Component
+
+[plantuml, "legacy", "svg", width="100%", height="95%"]
+----
+@startuml
+scale 600 width
+scale 400 height
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam class {
+  BackgroundColor #337788
+  ArrowColor #888888
+  BarColor #888888
+  BorderColor White
+  FontName Consolas
+  FontColor White
+  FontSize 20
+  AttributeFontColor White
+}
+
+interface Executor {
+    + DataDictionaryFormulaResult executeFormula(String, SDDParameterProvider)
+    + byte[] executeTemplate(String, SDDParameterProvider)
+    + void close()
+}
+note top of Executor: Transformation Engine
+
+abstract class AbstractExecutor {
+    + DataDictionaryFormulaResult executeFormula(String, SDDParameterProvider)
+    + byte[] executeTemplate(String, SDDParameterProvider)
+    + CacheConfig createCacheFromFile(String)
+    + ManageableCache getCache(String)
+    + void removeFromDictionaryCaches(Set<String>)
+    + void close()
+}
+Executor <|.. AbstractExecutor
+
+class OfflineExecutor {
+    + OfflineExecutor(ResourceLoader, BoRepositoryService, String, String, String)
+    + OfflineExecutor(ResourceLoader, BoRepositoryService, String, String, String, ClassLoader)
+    __
+    + void setContextClassLoader(ClassLoader)
+    + setOverridenResource(Object)
+}
+AbstractExecutor <|-- OfflineExecutor
+
+interface ResourceLoader {
+    + Version getVersion()
+    + List<DDOFormula> readFormulae()
+    + List<DDOSkeleton> readSkeletons()
+    + List<DDOContext> readContexts()
+    + List<DDOTemplate> readTemplates()
+    + DDOFormula readFormula(String)
+    + DDOSkeleton readSkeleton(String)
+    + DDOContext readContext(String)
+    + DDOTemplate readTemplate(String)
+    + DDOTemplate readTemplate(String, String)
+    + boolean isFormulaExists(String)
+    + int getType()
+    + String getLocation()
+    + void cleanUp()
+    + byte[] getClazz(String)
+    + byte[] getJavaClass(String)
+}
+note top of ResourceLoader: Transformation Configuration / Logic
+OfflineExecutor -left-> ResourceLoader
+
+class SDDParameterProvider {
+    + String getExtractionFormula()
+    + void setExtractionFormula(String)
+    + boolean isEmpty()
+    + SDDParameterProvider clone()
+    + setMxObject(Object)
+    + updateWithXmlEntry(XmlEntry)
+    + Set<String> getContexts()
+    + Map<String, Object> getFields()
+}
+note top of SDDParameterProvider: Transformation Input Model
+Executor -left- SDDParameterProvider : input >
+
+abstract Class AbstractParameterProvider {
+    + Map<String, Object> getFields()
+    + Map<String, Object> getParameters()
+    + TraceableDocument getDocument(String)
+    + Object getField(String)
+    + Object getParameter(String)
+    + String getLocalParameter(String)
+    + String getGlobalParameter(String)
+    + Map<String, TraceableDocument> getDocuments()
+    + Object getBO()
+    + Serializable getKey(String)
+}
+SDDParameterProvider -down-|> AbstractParameterProvider
+
+class DataDictionaryFormulaResult {
+    + String getFormulaReturnTypeAsString(int)
+    + int getFormulaReturnTypeAsInt(int)
+    + void cleanUp()
+    + void createObject(int, int)
+    + int getLineCount()
+    + int getColumnCount()
+    + Object getObjectValue(int, int)
+    + String getValue(int, int)
+    + void createObject(Element)
+    + void createObject(SAXSerializable)
+    + void createObject(DataDictionaryFormulaResultCell[][])
+    + void setColumnTitles(String [])
+    + boolean isTreeResult()
+    + boolean isObjectResult()
+    + void setValueAt(int, int, DataDictionaryFormulaResultCell[][])
+    + void setColumnTitleAt(int, String)
+    + Object[][] getObjectResult()
+}
+note top of DataDictionaryFormulaResult: Transformation Output Model / Type Conversion
+Executor -- DataDictionaryFormulaResult : output >
+
+@enduml
+----
 
 
 [.topic.source]
@@ -277,7 +397,7 @@ class TransformationExtension implements Extension {
   }
 }
 ----
-<1> Observe every `Transformer` injection point on any declaring bean
+<1> Observe every injection point of type `Transformer` on any declaring bean
 <2> Collect the injection point `@Transformation` metadata
 
 
@@ -375,7 +495,7 @@ class TransformationExtension implements Extension {
 [.topic.source]
 == Generics as Metadata
 
-TIP: Parameterized types are not erased by CDI
+TIP: *Parameterized types are not erased by CDI* so that they can be used as metadata, for example for type conversion:
 
 [source, subs="verbatim,quotes"]
 ----
@@ -405,7 +525,7 @@ Annotated Types, Injection Targets, Observer Methods
 
 NOTE: Open-source _integration framework_ based on known Enterprise Integration Patterns
 
-NOTE: _Bean binding and integration_ with Spring, Blueprint, Guice _and CDI_
+NOTE: _Bean binding and integration_ with Spring, Blueprint, Guice *and CDI*
 
 image::eip.gif[height="150"]
 
@@ -559,25 +679,25 @@ from("jms:queue:{{input}}?transactionManager=#jtaTM")
 [.topic.source]
 == Camel AOP
 
-TIP: Camel DSL Aspect Oriented Programming with _CDI observer methods_ as pointcut and advice definitions
+TIP: Camel DSL Aspect Oriented Programming with node IDs and endpoint URLs as joinpoints and *CDI observer methods as pointcut and advice definitions*
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
-void interceptProcessor(@Observes @Before @Node("foo") Exchange exchange) {
+void interceptProcessor(@Observes [highlight]#@Before @Node("foo")# Exchange exchange) {
     // intercept the exchange before processor with id "foo"
 }
 ----
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
-void interceptProcessorBody(@Observes @Node("foo") @Body String body) {
+void interceptProcessorBody(@Observes @Node("foo") [highlight]#@Body String body#) {
     // use Camel parameter binding annotations for the joint point context
 }
 ----
 
-[source]
+[source, subs="verbatim,quotes"]
 ----
-void receive(@Observes(during=AFTER_SUCCESS) @Endpoint("bar") Exchange exchange) {
+void receive(@Observes([highlight]#during=AFTER_SUCCESS) @Endpoint("bar")# Exchange exchange) {
     // exchange sent to endpoint "bar" when the transaction is committed successfully
 }
 ----
@@ -634,7 +754,7 @@ NOTE: Open-source Java library providing monitoring primitives like `Counter`, `
 
 NOTE: Provides a `MetricRegistry` that articulates modules and reporters
 
-NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) and _CDI_, e.g.:
+NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) *and CDI*, e.g.:
 
 [source, subs="verbatim,quotes"]
 ----
@@ -650,7 +770,7 @@ class TimedMethodBean {
 [.topic.source]
 == Add Interceptor Bindings Programmatically
 
-TIP: Use interceptors for Metrics annotation AOP
+TIP: Use *Java interceptors* for Metrics annotation AOP
 
 [source, subs="verbatim,quotes"]
 ----
@@ -701,7 +821,7 @@ class TimedInterceptor {
 [.topic.source]
 == The `ProcessBean<X>` Events
 
-TIP: Use producer fields / methods to register custom metrics
+TIP: Use *producer fields / methods* to register custom metrics
 
 [source, subs="verbatim,quotes"]
 ----
@@ -744,7 +864,7 @@ class MetricsExtension implements Extension {
 }
 ----
 <1> Collect the custom `Metric` producer fields and methods
-<2> Instantiate the custom metrics into the Metrics registry
+<2> Instantiate and register the custom metrics into the Metrics registry
 
 [.topic.source]
 == Complete Example
@@ -766,7 +886,7 @@ private Gauge<Double> cacheHitRatioGauge(Meter hits, Timer calls) {
 }
 ----
 <1> `Metric` _injection_ from the registry
-<2> Method _instrumentation_ with CDI interceptors
+<2> Method _instrumentation_ with interceptors
 <3> Produce a custom `Metric` instance by composing others
 
 
