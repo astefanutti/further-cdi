@@ -7,3 +7,6 @@
 [submodule "camel"]
 	path = camel
 	url = https://github.com/astefanutti/camel-cdi.git
+[submodule "dzslides"]
+	path = dzslides
+	url = https://github.com/astefanutti/dzslides.git
