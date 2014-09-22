@@ -64,6 +64,10 @@ Antoine Sabot-Durand; Antonin Stefanutti
 [.topic.intro]
 == CDI Extensions
 
+====
+Introduction
+====
+
 
 [.topic.source]
 == Portable Extensions
@@ -177,10 +181,10 @@ stop
 
 
 [.topic.intro]
-== Legacy code
+== Legacy Code
 
 ====
-Injection points, parameterized types, programmatic bean
+Injection Points, Qualifiers Metadata, Programmatic Beans, Parameterized Types
 ====
 
 
@@ -206,7 +210,6 @@ TIP: And a CDI qualifier with transformation metadata:
 ----
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
-
 [highlight]#@Qualifier#
 public @interface Transformation {
     [highlight]#@Nonbinding#
@@ -220,8 +223,7 @@ public @interface Transformation {
 
 [source, subs="verbatim,quotes"]
 ----
-@Inject
-[highlight]#@Transformation("transformation")#
+@Inject [highlight]#@Transformation("transformation")#
 Transformer<InputType, OutputType> transformer;
 
 InputType input;
@@ -248,6 +250,7 @@ Transformer<InputType~j~, OutputType~j~> transformer~j~;
 TIP: Collect all the `@Transformation` metadata required to instantiate the legacy component
 
 [source]
+.`ProcessInjectionPoint<T, X>`
 ----
 public interface ProcessInjectionPoint<T, X> {
     public InjectionPoint getInjectionPoint();
@@ -334,6 +337,7 @@ class LegacyTransformerBean [highlight]#implements Bean<LegacyTransformer># {
 TIP: Add the legacy component bean after bean discovery
 
 [source]
+.`AfterBeanDiscovery`
 ----
 public interface AfterBeanDiscovery {
     public void addDefinitionError(Throwable t);
@@ -392,7 +396,7 @@ TIP: Parameterized types are not erased by CDI
 == Camel CDI
 
 ====
-Annotated types, events, injection Targets, transactional Observers
+Annotated Types, Injection Targets, Observer Methods
 ====
 
 
@@ -510,13 +514,13 @@ class CdiCamelExtension implements Extension {
 ----
 class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
     InjectionTarget<T> delegate;
+
     DefaultCamelBeanPostProcessor processor;
 
     CamelInjectionTarget(InjectionTarget<T> target) {
         delegate = target;
         processor = new DefaultCamelBeanPostProcessor();
     }
-
     @Override
     public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
         delegate.inject(instance, ctx);
@@ -619,7 +623,7 @@ public interface ProcessObserverMethod<T, X> {
 == Metrics CDI
 
 ====
-Annotated types, alternatives, interceptors, producers
+Annotated Types, Interceptors, Producer Fields, Producer Methods
 ====
 
 
@@ -635,7 +639,6 @@ NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AO
 [source, subs="verbatim,quotes"]
 ----
 class TimedMethodBean {
-
     [highlight]#@Timed#
     void timedMethod() {
         // Timer name => TimedMethodBean.timedMethod
@@ -678,7 +681,6 @@ class MetricsExtension implements Extension {
 [highlight]#@TimedBinding#
 [highlight]#@Priority(Interceptor.Priority.LIBRARY_BEFORE)#
 class TimedInterceptor {
-
     @Inject MetricRegistry registry;
 
     [highlight]#@AroundInvoke#
@@ -703,8 +705,7 @@ TIP: Use producer fields / methods to register custom metrics
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Produces#
-Timer Timer = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
+[highlight]#@Produces# Timer Timer = new Timer(new SlidingWindowReservoir(100));
 ----
 
 [source]
@@ -729,7 +730,6 @@ NOTE: `ProcessManagedBean<X>` and `ProcessProducerField<T, X>` are fired for man
 ----
 class MetricsExtension implements Extension {
   Map<Bean<?>, AnnotatedMember<?>> metrics = new HashMap<>();
-
   void producerFields(@Observes [highlight]#ProcessProducerField<? extends Metric, ?># ppf) {
     metrics.put(ppf.getBean(), ppf.getAnnotatedProducerField()); <1>
   }
