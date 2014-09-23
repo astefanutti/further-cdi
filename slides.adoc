@@ -51,6 +51,22 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 
 [.topic.source]
+== Should I stay or should I go ?
+
+====
+* icon:cogs[] A talk about CDI *advanced*
+====
+
+====
+* icon:reply[] Might be hard for beginners
+====
+
+====
+* icon:share[] Don't need to be a CDI guru
+====
+
+
+[.topic.source]
 == Agenda
 
 ====
@@ -62,7 +78,20 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 
 [.topic.intro]
-== CDI Extensions
+== Introducing CDI portable extensions
+
+[.topic.source]
+== CDI portable extensions
+
+====
+* Extending CDI and Java EE
+* Change CDI meta data
+* Link to BeanManager Lifecycle
+====
+
+
+[.topic.intro]
+== Legacy code
 
 ====
 Introduction
