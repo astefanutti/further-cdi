@@ -65,10 +65,24 @@ Antoine Sabot-Durand; Antonin Stefanutti
 * icon:share[] Don't need to be a CDI guru
 ====
 
+[.topic.source]
+== Should I stay or should I go ?
+
+TIP: If you know the most of these you can stay
+
+[.split]
+* `@Inject`
+* `@Produces`
+* `Event<T>`
+* `@Observes`
+* `@Qualifier`
+* `InjectionPoint`
+
 
 [.topic.source]
 == Agenda
 
+[.recap]
 ====
 * icon:info-circle[] CDI Extensions
 * icon:info-circle[] Legacy Code
@@ -77,7 +91,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 ====
 
 
-[.topic.intro]
+[.intro]
 == Introducing CDI portable extensions
 
 [.topic.source]
@@ -85,8 +99,14 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 ====
 * Extending CDI and Java EE
+====
+
+====
 * Change CDI meta data
-* Link to BeanManager Lifecycle
+====
+
+====
+* Linked to BeanManager Lifecycle
 ====
 
 
@@ -135,7 +155,7 @@ class CdiExtension [highlight]#implements Extension# {
 [.topic.source]
 == Lifecycle for dummies
 
-image::simple-lifecycle.svg[width="100%"]
+image::simple-lifecycle.svg[height="95%",width="95%"]
 
 
 [.topic.source]
@@ -227,12 +247,12 @@ public class VetoEntity implements Extension {
 == Remember
 WARNING: Extensions are launched during bootstrap and are based on CDI events
 
-WARNING: Once application is bootstrapped, the Bean Manager is in read only mode (no dynamic bean registration)
+WARNING: Once application is bootstrapped, the Bean Manager is in read-only mode (no runtime bean registration)
 
-WARNING: You only have to @Observes built-in CDI event to create your extensions
+WARNING: You only have to `@Observes` built-in CDI event to create your extensions
 
 
-[.topic.intro]
+[.intro]
 == Legacy Code
 
 ====
@@ -431,6 +451,10 @@ public interface ProcessInjectionPoint<T, X> {
 }
 ----
 
+[.topic.source]
+== The `ProcessInjectionPoint` Event in Lifecycle
+
+image::processIP.svg[height="95%", width="95%"]
 
 [.topic.source]
 == Collect Injection Points Metadata
@@ -521,6 +545,11 @@ public interface AfterBeanDiscovery {
 }
 ----
 
+[.topic.source]
+== AfterBeanDiscovery in Lifecycle
+
+image::abd.svg[height="95%",width="95%"]
+
 
 [.topic.source]
 == Add Beans Programmatically
@@ -538,7 +567,7 @@ class TransformationExtension implements Extension {
   }
   void addLegacyTransformerBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
     LegacyTransformer legacyTransformer = new LegacyTransformer(transformations);
-    abd.[highlight]#addBean(new LegacyTransformerBean>(transformations))#;
+    abd.[highlight]#addBean(new LegacyTransformerBean(transformations))#;
   }
 }
 ----
