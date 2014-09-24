@@ -90,13 +90,6 @@ Antoine Sabot-Durand; Antonin Stefanutti
 ====
 
 
-[.topic.intro]
-== Legacy code
-
-====
-Introduction
-====
-
 
 [.topic.source]
 == Portable Extensions
@@ -138,6 +131,11 @@ class CdiExtension [highlight]#implements Extension# {
     }
 }
 ----
+
+[.topic.source]
+== Lifecycle for dummies
+
+image::simple-lifecycle.svg[width="100%"]
 
 
 [.topic.source]
@@ -207,6 +205,31 @@ stop
 
 @enduml
 ----
+
+[.topic.source]
+== Example: Ignoring JPA entities
+
+TIP: The following extension prevents CDI to manage entities
+
+NOTE: This is a commonly admitted good practice
+
+[source]
+----
+public class VetoEntity implements Extension {
+    public void vetoEntity(@Observes @WithAnnotations({ Entity.class })
+                           ProcessAnnotatedType<?> pat) {
+        pat.veto();
+    }
+}
+----
+
+[.topic.source]
+== Remember
+WARNING: Extensions are launched during bootstrap and are based on CDI events
+
+WARNING: Once application is bootstrapped, the Bean Manager is in read only mode (no dynamic bean registration)
+
+WARNING: You only have to @Observes built-in CDI event to create your extensions
 
 
 [.topic.intro]
