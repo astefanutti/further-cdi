@@ -1,0 +1,225 @@
+[.topic.intro]
+== Camel CDI
+
+====
+Annotated Types, Injection Targets, Observer Methods
+====
+
+
+[.topic.source]
+== Apache Camel
+
+NOTE: Open-source _integration framework_ based on known Enterprise Integration Patterns
+
+NOTE: _Bean binding and integration_ with Spring, Blueprint, Guice *and CDI*
+
+image::eip.gif[height="150"]
+
+
+[.topic.source]
+== Camel Annotations
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@EndpointInject#(uri="jms:queue:foo")
+Endpoint endpoint;
+
+[highlight]#@PropertyInject#(value = "timeout", defaultValue = "5000")
+int timeout;
+
+[highlight]#@BeanInject#("foo")
+FooBean foo;
+
+[highlight]#@Produce#(uri = "mock:foo")
+ProducerTemplate producer;
+
+[highlight]#@Consume#(uri="jms:queue:foo")
+void onFoo(@Body String body) {
+}
+----
+TIP: Bring support for both Camel and CDI beans...
+
+[.topic.source]
+== The `ProcessAnnotatedType` Event
+
+[source]
+.`AnnotatedType<X>`
+----
+public interface AnnotatedType<X> extends Annotated {
+    public Class<X> getJavaClass();
+    public Set<AnnotatedConstructor<X>> getConstructors();
+    public Set<AnnotatedMethod<? super X>> getMethods();
+    public Set<AnnotatedField<? super X>> getFields();
+}
+----
+
+[source]
+.`ProcessAnnotatedType<X>`
+----
+public interface ProcessAnnotatedType<X> {
+    public AnnotatedType<X> getAnnotatedType();
+    public void setAnnotatedType(AnnotatedType<X> type);
+    public void veto();
+}
+----
+
+
+[.topic.source]
+== The `ProcessInjectionTarget` Event
+
+[source]
+.`InjectionTarget<T>`
+----
+public interface InjectionTarget<T> extends Producer<T> {
+    public void inject(T instance, CreationalContext<T> ctx);
+    public void postConstruct(T instance);
+    public void preDestroy(T instance);
+}
+----
+
+[source]
+.`ProcessInjectionTarget<T>`
+----
+public interface ProcessInjectionTarget<X> {
+    public AnnotatedType<X> getAnnotatedType();
+    public InjectionTarget<X> getInjectionTarget();
+    public void setInjectionTarget(InjectionTarget<X> injectionTarget);
+    public void addDefinitionError(Throwable t);
+}
+----
+
+
+[.topic.source]
+== Bean Post Processors
+
+[source, subs="verbatim,quotes"]
+----
+class CdiCamelExtension implements Extension {
+  Set<AnnotatedType<?>> camelBeans = new HashSet<>());
+
+  void camelAnnotations(@Observes [highlight]#@WithAnnotations({BeanInject.class, <1>
+      Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})#
+      ProcessAnnotatedType<?> pat) {
+        camelBeans.add(pat.getAnnotatedType());
+  }
+
+  <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit) {
+      if (camelBeans.contains(pit.getAnnotatedType())) <2>
+        pit.setInjectionTarget(new CamelInjectionTarget<>(pit.getInjectionTarget()));
+  }
+}
+----
+<1> Detect all the types containing Camel annotations with `@WithAnnotations`
+<2> Decorate the `InjectionTarget` corresponding to these types with a custom post-processor
+
+
+[.topic.source]
+== `InjectionTarget` Decoration
+
+[source, subs="verbatim,quotes"]
+----
+class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
+    InjectionTarget<T> delegate;
+
+    DefaultCamelBeanPostProcessor processor;
+
+    CamelInjectionTarget(InjectionTarget<T> target) {
+        delegate = target;
+        processor = new DefaultCamelBeanPostProcessor();
+    }
+    @Override
+    public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
+        delegate.inject(instance, ctx);
+        [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
+    }
+}
+----
+<1> Call the Camel default bean post-processor after CDI injection
+
+[.topic.source]
+== Camel DSL
+
+[source]
+----
+from("jms:queue:{{input}}?transactionManager=#jtaTM")
+  .id("Input Consumer")
+  .onException().log("Rolling back message with ID ${header.JMSMessageID}")
+    .rollback().id("Rollback Transaction")
+    .end()
+  .log("Receiving message with ID ${header.JMSMessageID}: ${body}")
+  .choice()
+    .when(header("JMSRedelivered").isEqualTo(Boolean.TRUE))
+      .to("jms:queue:{{error}}?transactionManager=#jtaTM").id("Error Producer")
+    .otherwise()
+      .beanRef("transformer").id("Transformer")
+      .to("murex:trade-repository").id("Trade Repository")
+      .choice()
+        .when(not(isInserted))
+          .log("Error received: ${body}").id("Trade Repository Error")
+          .throwException(new CamelExecutionException("Import Failed")))
+        .otherwise()
+          .log("Answer received: ${body}").id("Trade Repository Answer");
+----
+
+
+[.topic.source]
+== Camel AOP
+
+TIP: Camel DSL Aspect Oriented Programming with node IDs and endpoint URLs as joinpoints and *CDI observer methods as pointcut and advice definitions*
+
+[source, subs="verbatim,quotes"]
+----
+void interceptProcessor(@Observes [highlight]#@Before @Node("foo")# Exchange exchange) {
+    // intercept the exchange before processor with id "foo"
+}
+----
+
+[source, subs="verbatim,quotes"]
+----
+void interceptProcessorBody(@Observes @Node("foo") [highlight]#@Body String body#) {
+    // use Camel parameter binding annotations for the joint point context
+}
+----
+
+[source, subs="verbatim,quotes"]
+----
+void receive(@Observes([highlight]#during=AFTER_SUCCESS) @Endpoint("bar")# Exchange exchange) {
+    // exchange sent to endpoint "bar" when the transaction is committed successfully
+}
+----
+
+
+[.topic.source]
+== The `ProcessObserverMethod` Event
+
+[source]
+.`ObserverMethod<T>`
+----
+public interface ObserverMethod<T> {
+    public Class<?> getBeanClass();
+    public Type getObservedType();
+    public Set<Annotation> getObservedQualifiers();
+    public Reception getReception();
+    public TransactionPhase getTransactionPhase();
+    public void notify(T event);
+}
+----
+
+[source]
+.`ProcessObserverMethod<T, X>`
+----
+public interface ProcessObserverMethod<T, X> {
+    public AnnotatedMethod<X> getAnnotatedMethod();
+    public ObserverMethod<T> getObserverMethod();
+    public void addDefinitionError(Throwable t);
+}
+----
+
+
+[.topic.source]
+== Camel CDI Extension
+
+[source]
+----
+
+----

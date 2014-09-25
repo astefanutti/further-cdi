@@ -1,0 +1,339 @@
+[.intro]
+== Legacy Code
+
+====
+Injection Points, Qualifiers Metadata, Programmatic Beans, Parameterized Types
+====
+
+
+[.topic.source]
+== A `/\*Not So Fictional*/` Legacy Component
+
+[plantuml, "legacy", "svg", width="100%", height="95%"]
+----
+@startuml
+scale 600 width
+scale 400 height
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam class {
+  BackgroundColor #337788
+  ArrowColor #888888
+  BarColor #888888
+  BorderColor White
+  FontName Consolas
+  FontColor White
+  FontSize 20
+  AttributeFontColor White
+}
+
+interface Executor {
+    + DataDictionaryFormulaResult executeFormula(String, SDDParameterProvider)
+    + byte[] executeTemplate(String, SDDParameterProvider)
+    + void close()
+}
+note top of Executor: Transformation Engine
+
+abstract class AbstractExecutor {
+    + DataDictionaryFormulaResult executeFormula(String, SDDParameterProvider)
+    + byte[] executeTemplate(String, SDDParameterProvider)
+    + CacheConfig createCacheFromFile(String)
+    + ManageableCache getCache(String)
+    + void removeFromDictionaryCaches(Set<String>)
+    + void close()
+}
+Executor <|.. AbstractExecutor
+
+class OfflineExecutor {
+    + OfflineExecutor(ResourceLoader, BoRepositoryService, String, String, String)
+    + OfflineExecutor(ResourceLoader, BoRepositoryService, String, String, String, ClassLoader)
+    __
+    + void setContextClassLoader(ClassLoader)
+    + setOverridenResource(Object)
+}
+AbstractExecutor <|-- OfflineExecutor
+
+interface ResourceLoader {
+    + Version getVersion()
+    + List<DDOFormula> readFormulae()
+    + List<DDOSkeleton> readSkeletons()
+    + List<DDOContext> readContexts()
+    + List<DDOTemplate> readTemplates()
+    + DDOFormula readFormula(String)
+    + DDOSkeleton readSkeleton(String)
+    + DDOContext readContext(String)
+    + DDOTemplate readTemplate(String)
+    + DDOTemplate readTemplate(String, String)
+    + boolean isFormulaExists(String)
+    + int getType()
+    + String getLocation()
+    + void cleanUp()
+    + byte[] getClazz(String)
+    + byte[] getJavaClass(String)
+}
+note top of ResourceLoader: Transformation Configuration / Logic
+OfflineExecutor -left-> ResourceLoader
+
+class SDDParameterProvider {
+    + String getExtractionFormula()
+    + void setExtractionFormula(String)
+    + boolean isEmpty()
+    + SDDParameterProvider clone()
+    + setMxObject(Object)
+    + updateWithXmlEntry(XmlEntry)
+    + Set<String> getContexts()
+    + Map<String, Object> getFields()
+}
+note top of SDDParameterProvider: Transformation Input Model
+Executor -left- SDDParameterProvider : input >
+
+abstract Class AbstractParameterProvider {
+    + Map<String, Object> getFields()
+    + Map<String, Object> getParameters()
+    + TraceableDocument getDocument(String)
+    + Object getField(String)
+    + Object getParameter(String)
+    + String getLocalParameter(String)
+    + String getGlobalParameter(String)
+    + Map<String, TraceableDocument> getDocuments()
+    + Object getBO()
+    + Serializable getKey(String)
+}
+SDDParameterProvider -down-|> AbstractParameterProvider
+
+class DataDictionaryFormulaResult {
+    + String getFormulaReturnTypeAsString(int)
+    + int getFormulaReturnTypeAsInt(int)
+    + void cleanUp()
+    + void createObject(int, int)
+    + int getLineCount()
+    + int getColumnCount()
+    + Object getObjectValue(int, int)
+    + String getValue(int, int)
+    + void createObject(Element)
+    + void createObject(SAXSerializable)
+    + void createObject(DataDictionaryFormulaResultCell[][])
+    + void setColumnTitles(String [])
+    + boolean isTreeResult()
+    + boolean isObjectResult()
+    + void setValueAt(int, int, DataDictionaryFormulaResultCell[][])
+    + void setColumnTitleAt(int, String)
+    + Object[][] getObjectResult()
+}
+note top of DataDictionaryFormulaResult: Transformation Output Model / Type Conversion
+Executor -- DataDictionaryFormulaResult : output >
+
+@enduml
+----
+
+
+[.topic.source]
+== The CDI Way
+
+TIP: A functional interface:
+
+[source]
+----
+public interface Transformer<I, O> {
+    O transform(I input);
+}
+----
+
+TIP: And a CDI qualifier with transformation metadata:
+
+[source, subs="verbatim,quotes"]
+----
+import javax.enterprise.util.Nonbinding;
+import javax.inject.Qualifier;
+[highlight]#@Qualifier#
+public @interface Transformation {
+    [highlight]#@Nonbinding#
+    String value() default ""; // The transformation name
+}
+----
+
+
+[.topic.source]
+== Configuration at Injection Points
+
+[source, subs="verbatim,quotes"]
+----
+@Inject [highlight]#@Transformation("transformation")#
+Transformer<InputType, OutputType> transformer;
+
+InputType input;
+OutputType result = transformer.transform(input);
+----
+
+TIP: Distribute configuration closest to the code:
+
+[source, subs="verbatim,quotes"]
+----
+@Inject
+[highlight]#@Transformation("transformation~i~")#
+Transformer<InputType~i~, OutputType~i~> transformer~i~;
+...
+@Inject
+[highlight]#@Transformation("transformation~j~")#
+Transformer<InputType~j~, OutputType~j~> transformer~j~;
+----
+
+
+[.topic.source]
+== The `ProcessInjectionPoint` Event
+
+TIP: Collect all the `@Transformation` metadata required to instantiate the legacy component
+
+[source]
+.`ProcessInjectionPoint<T, X>`
+----
+public interface ProcessInjectionPoint<T, X> {
+    public InjectionPoint getInjectionPoint();
+    public void setInjectionPoint(InjectionPoint injectionPoint);
+    public void addDefinitionError(Throwable t);
+}
+----
+
+[.topic.source]
+== The `ProcessInjectionPoint` Event in Lifecycle
+
+image::processIP.svg[height="95%", width="95%"]
+
+[.topic.source]
+== Collect Injection Points Metadata
+
+[source, subs="verbatim,quotes"]
+----
+class TransformationExtension implements Extension {
+
+  Set<String> transformations = new HashSet<>();
+
+  void collectConfiguration(@Observes [highlight]#ProcessInjectionPoint<?, Transformer># pit) { <1>
+    Annotated annotated = pit.getInjectionPoint().getAnnotated();
+    if (annotated.isAnnotationPresent(Transformation.class)) {
+      transformations.add(annotated.getAnnotation(Transformation.class).value()); <2>
+    }
+  }
+}
+----
+<1> Observe every injection point of type `Transformer` on any declaring bean
+<2> Collect the injection point `@Transformation` metadata
+
+
+[.topic.source]
+== The `Bean` Interface
+
+TIP: Integrate the legacy component as a CDI Bean
+
+[source]
+----
+public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
+    public Class<?> getBeanClass();
+    public Set<InjectionPoint> getInjectionPoints();
+    // Contextual<T>
+    public T create(CreationalContext<T> creationalContext);
+    public void destroy(T instance, CreationalContext<T> creationalContext);
+    // BeanAttributes<T>
+    public Set<Type> getTypes();
+    public Set<Annotation> getQualifiers();
+    public Class<? extends Annotation> getScope();
+    public String getName();
+    public Set<Class<? extends Annotation>> getStereotypes();
+    public boolean isAlternative();
+}
+----
+
+
+[.topic.source]
+== Define Beans Programmatically
+
+[source, subs="verbatim,quotes"]
+----
+class LegacyTransformerBean [highlight]#implements Bean<LegacyTransformer># {
+    Set<String> transformations = new HashSet<>();
+    LegacyTransformerBean(Set<String> transformations) {
+        this.transformations = transformations;
+    }
+    public LegacyTransformer create(CreationalContext<LegacyTransformer> context) {
+        LegacyTransformer transformer = [highlight]#new LegacyTransformer()#;
+        tranformer.load(transformations);
+        return LegacyTransformer;
+    }
+    public Set<Annotation> getQualifiers() {
+        return Collections.unmodifiableSet(new HashSet<>(
+            Arrays.asList([highlight]#DefaultLiteral.INSTANCE#, [highlight]#AnyLiteral.INSTANCE#)));
+    }
+    public Class<? extends Annotation> getScope() {
+        return [highlight]#ApplicationScoped.class#;
+    }
+}
+----
+
+
+[.topic.source]
+== The `AfterBeanDiscovery` Event
+
+TIP: Add the legacy component bean after bean discovery
+
+[source]
+.`AfterBeanDiscovery`
+----
+public interface AfterBeanDiscovery {
+    public void addDefinitionError(Throwable t);
+    public void addBean(Bean<?> bean);
+    public void addObserverMethod(ObserverMethod<?> observerMethod);
+    public void addContext(Context context);
+    public <T> AnnotatedType<T> getAnnotatedType(Class<T> type, String id);
+    public <T> Iterable<AnnotatedType<T>> getAnnotatedTypes(Class<T> type);
+}
+----
+
+[.topic.source]
+== AfterBeanDiscovery in Lifecycle
+
+image::abd.svg[height="95%",width="95%"]
+
+
+[.topic.source]
+== Add Beans Programmatically
+
+[source, subs="verbatim,quotes"]
+----
+class TransformationExtension implements Extension {
+
+  Set<String> transformations = new HashSet<>();
+
+  void collectConfiguration(@Observes ProcessInjectionPoint<?, Transformer> pit) {
+    Annotated annotated = pit.getInjectionPoint().getAnnotated();
+    if (annotated.isAnnotationPresent(Transformation.class))
+      transformations.add(annotated.getAnnotation(Transformation.class).value());
+  }
+  void addLegacyTransformerBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
+    LegacyTransformer legacyTransformer = new LegacyTransformer(transformations);
+    abd.[highlight]#addBean(new LegacyTransformerBean(transformations))#;
+  }
+}
+----
+
+
+[.topic.source]
+== Generics as Metadata
+
+TIP: *Parameterized types are not erased by CDI* so that they can be used as metadata, for example for type conversion:
+
+[source, subs="verbatim,quotes"]
+----
+@Produces
+@Transformation
+[highlight]#<I, O> Transformer<I, O># legacyTransformerFacade(*LegacyTransformer legacyTransformer*,
+  InjectionPoint injectionPoint) {
+  Transformation transformation = getQualifierByType(injectionPoint.getQualifiers(),
+                                                     Transformation.class);
+
+  return new LegacyTransformerFacade<I, O>(legacyTransformer, transformation.value(),
+    [highlight]#injectionPoint.getType()#));
+}
+----
