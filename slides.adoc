@@ -65,6 +65,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 * icon:share[] Don't need to be a CDI guru
 ====
 
+
 [.topic.source]
 == Should I stay or should I go ?
 
@@ -108,7 +109,6 @@ TIP: If you know the most of these you can stay
 ====
 * Linked to BeanManager Lifecycle
 ====
-
 
 
 [.topic.source]
@@ -189,9 +189,9 @@ WARNING: You only have to `@Observes` built-in CDI event to create your extensio
 
 include::partial/legacy.part[]
 
-//include::partial/camel.part[]
-
 include::partial/metrics.part[]
+
+//include::partial/camel.part[]
 
 
 [.topic.source]
@@ -201,9 +201,9 @@ NOTE: Slides generated with _Asciidoctor_, _PlantUML_ and _DZSlides_ backend
 
 NOTE: Original slide template - _Dan Allen_ & _Sarah White_
 
-NOTE: Camel CDI Extension - https://github.com/astefanutti/camel-cdi
-
 NOTE: Metrics CDI Extension - https://github.com/astefanutti/metrics-cdi
+
+//NOTE: Camel CDI Extension - https://github.com/astefanutti/camel-cdi
 
 
 [.topic.ending, hrole="name"]

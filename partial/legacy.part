@@ -2,7 +2,7 @@
 == Legacy Code
 
 ====
-Injection Points, Qualifiers Metadata, Programmatic Beans, Parameterized Types
+Modernize a Legacy Component with the CDI Programming Model
 ====
 
 
@@ -142,14 +142,14 @@ public interface Transformer<I, O> {
 }
 ----
 
-TIP: And a CDI qualifier with transformation metadata:
+TIP: And a CDI qualifier with legacy transformation metadata:
 
 [source, subs="verbatim,quotes"]
 ----
 import javax.enterprise.util.Nonbinding;
 import javax.inject.Qualifier;
 [highlight]#@Qualifier#
-public @interface Transformation {
+public @interface Legacy {
     [highlight]#@Nonbinding#
     String value() default ""; // The transformation name
 }
@@ -161,7 +161,7 @@ public @interface Transformation {
 
 [source, subs="verbatim,quotes"]
 ----
-@Inject [highlight]#@Transformation("transformation")#
+@Inject [highlight]#@Legacy("transformation")#
 Transformer<InputType, OutputType> transformer;
 
 InputType input;
@@ -173,19 +173,40 @@ TIP: Distribute configuration closest to the code:
 [source, subs="verbatim,quotes"]
 ----
 @Inject
-[highlight]#@Transformation("transformation~i~")#
+[highlight]#@Legacy("transformation~i~")#
 Transformer<InputType~i~, OutputType~i~> transformer~i~;
 ...
 @Inject
-[highlight]#@Transformation("transformation~j~")#
+[highlight]#@Legacy("transformation~j~")#
 Transformer<InputType~j~, OutputType~j~> transformer~j~;
 ----
 
 
 [.topic.source]
+== Parameterized Types as Metadata
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@Produces#
+[highlight]#@Legacy#
+[highlight]#<I, O> Transformer<I, O># produceTransformer(*LegacyComponent legacyComponent*, <1>
+  InjectionPoint injectionPoint) {
+  Legacy legacy = injectionPoint.getAnnotated().getAnnotation(Legacy.class);
+
+  return new LegacyTransformerFacade<I, O>(legacyComponent, legacy.value(),
+    [highlight]#injectionPoint.getType()#)); <2>
+}
+----
+<1> Get the legacy component bean instance
+<2> Produce a typesafe `Transformer` facade
+
+TIP: *Parameterized types are not erased by CDI* so that they can be used as metadata, for example for _type check_ / _conversion_
+
+
+[.topic.source]
 == The `ProcessInjectionPoint` Event
 
-TIP: Collect all the `@Transformation` metadata required to instantiate the legacy component
+TIP: Collect all the `@Legacy` metadata required to instantiate the legacy component
 
 [source]
 .`ProcessInjectionPoint<T, X>`
@@ -207,20 +228,19 @@ image::processIP.svg[height="95%", width="95%"]
 
 [source, subs="verbatim,quotes"]
 ----
-class TransformationExtension implements Extension {
+class LegacyComponentExtension implements Extension {
 
-  Set<String> transformations = new HashSet<>();
+  Set<String> configuration = new HashSet<>();
 
   void collectConfiguration(@Observes [highlight]#ProcessInjectionPoint<?, Transformer># pit) { <1>
     Annotated annotated = pit.getInjectionPoint().getAnnotated();
-    if (annotated.isAnnotationPresent(Transformation.class)) {
-      transformations.add(annotated.getAnnotation(Transformation.class).value()); <2>
-    }
+    if (annotated.isAnnotationPresent(Legacy.class))
+        configuration.add(annotated.getAnnotation(Legacy.class).value()); <2>
   }
 }
 ----
 <1> Observe every injection point of type `Transformer` on any declaring bean
-<2> Collect the injection point `@Transformation` metadata
+<2> Collect the injection point `@Legacy` metadata if any
 
 
 [.topic.source]
@@ -252,19 +272,19 @@ public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
 
 [source, subs="verbatim,quotes"]
 ----
-class LegacyTransformerBean [highlight]#implements Bean<LegacyTransformer># {
-    Set<String> transformations = new HashSet<>();
-    LegacyTransformerBean(Set<String> transformations) {
-        this.transformations = transformations;
+class LegacyComponentBean [highlight]#implements Bean<LegacyComponent># {
+    Set<String> configuration = new HashSet<>();
+    LegacyComponentBean(Set<String> configuration) {
+        this.configuration = configuration;
     }
-    public LegacyTransformer create(CreationalContext<LegacyTransformer> context) {
-        LegacyTransformer transformer = [highlight]#new LegacyTransformer()#;
-        tranformer.load(transformations);
-        return LegacyTransformer;
+    public LegacyComponent create(CreationalContext<LegacyComponent> context) {
+        LegacyComponent legacyComponent = [highlight]#new LegacyComponent()#;
+        legacyComponent./\*CENSORED!*/(configuration);
+        return legacyComponent;
     }
-    public Set<Annotation> getQualifiers() {
-        return Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList([highlight]#DefaultLiteral.INSTANCE#, [highlight]#AnyLiteral.INSTANCE#)));
+    public void destroy(LegacyComponent legacyComponent,
+                        CreationalContext<LegacyComponent> context) {
+        legacyComponent./\*CENSORED!*/();
     }
     public Class<? extends Annotation> getScope() {
         return [highlight]#ApplicationScoped.class#;
@@ -302,38 +322,18 @@ image::abd.svg[height="95%",width="95%"]
 
 [source, subs="verbatim,quotes"]
 ----
-class TransformationExtension implements Extension {
+class LegacyComponentExtension implements Extension {
 
-  Set<String> transformations = new HashSet<>();
+  Set<String> configuration = new HashSet<>();
 
   void collectConfiguration(@Observes ProcessInjectionPoint<?, Transformer> pit) {
     Annotated annotated = pit.getInjectionPoint().getAnnotated();
-    if (annotated.isAnnotationPresent(Transformation.class))
-      transformations.add(annotated.getAnnotation(Transformation.class).value());
+    if (annotated.isAnnotationPresent(Legacy.class))
+      configuration.add(annotated.getAnnotation(Legacy.class).value());
   }
-  void addLegacyTransformerBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
-    LegacyTransformer legacyTransformer = new LegacyTransformer(transformations);
-    abd.[highlight]#addBean(new LegacyTransformerBean(transformations))#;
+
+  void addLegacyComponentBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
+    abd.[highlight]#addBean(new LegacyComponentBean(configuration))#;
   }
-}
-----
-
-
-[.topic.source]
-== Generics as Metadata
-
-TIP: *Parameterized types are not erased by CDI* so that they can be used as metadata, for example for type conversion:
-
-[source, subs="verbatim,quotes"]
-----
-@Produces
-@Transformation
-[highlight]#<I, O> Transformer<I, O># legacyTransformerFacade(*LegacyTransformer legacyTransformer*,
-  InjectionPoint injectionPoint) {
-  Transformation transformation = getQualifierByType(injectionPoint.getQualifiers(),
-                                                     Transformation.class);
-
-  return new LegacyTransformerFacade<I, O>(legacyTransformer, transformation.value(),
-    [highlight]#injectionPoint.getType()#));
 }
 ----
