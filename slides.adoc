@@ -161,7 +161,7 @@ image::simple-lifecycle.svg[height="95%",width="95%"]
 include::partial/complete_lifecycle.part[]
 
 [.topic.source]
-== Example: Ignoring JPA entities
+== Example: Ignoring JPA Entities
 
 TIP: The following extension prevents CDI to manage entities
 
@@ -189,7 +189,7 @@ WARNING: You only have to `@Observes` built-in CDI event to create your extensio
 
 include::partial/legacy.part[]
 
-include::partial/camel.part[]
+//include::partial/camel.part[]
 
 include::partial/metrics.part[]
 

@@ -2,7 +2,7 @@
 == Metrics CDI
 
 ====
-Annotated Types, Interceptors, Producer Fields, Producer Methods
+What CDI Extensions can do to Integrate a Third-party Library into the CDI Programming Model?
 ====
 
 
@@ -18,35 +18,10 @@ NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AO
 [source, subs="verbatim,quotes"]
 ----
 class TimedMethodBean {
-    [highlight]#@Timed#
+    [highlight]#@Timed(name = "timer")#
     void timedMethod() {
-        // Timer name => TimedMethodBean.timedMethod
+        // Timer name => TimedMethodBean.timer
     }
-}
-----
-
-
-[.topic.source]
-== Add Interceptor Bindings Programmatically
-
-TIP: Use *Java interceptors* for Metrics annotation AOP
-
-[source, subs="verbatim,quotes"]
-----
-class MetricsExtension implements Extension {
-
-  <X> void interceptTimedMethod(@Observes [highlight]#@WithAnnotations(Timed.class)#
-    ProcessAnnotatedType<X> pat) {
-    Set<AnnotatedMethod<? super X>> decoratedMethods = new HashSet<>();
-
-    for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods())
-      if (method.isAnnotationPresent(Timed.class))
-          decoratedMethods.add(
-            new AnnotatedMethodDecorator<>(method, [highlight]#new TimedBindingLiteral()#));
-
-    pat.setAnnotatedType(
-      new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), decoratedMethods));
-  }
 }
 ----
 
@@ -54,14 +29,14 @@ class MetricsExtension implements Extension {
 [.topic.source]
 == Bean Method Interceptors
 
+TIP: Use *Java interceptors* for Metrics annotation AOP
+
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Interceptor#
-[highlight]#@TimedBinding#
+[highlight]#@Interceptor# [highlight]#@TimedBinding#
 [highlight]#@Priority(Interceptor.Priority.LIBRARY_BEFORE)#
 class TimedInterceptor {
     @Inject MetricRegistry registry;
-
     [highlight]#@AroundInvoke#
     Object timedMethod(InvocationContext context) throws Exception {
         String name = context.getMethod().getAnnotation(Timed.class).name();
@@ -78,20 +53,117 @@ class TimedInterceptor {
 
 
 [.topic.source]
+== Java Interceptor Bindings
+
+TIP: Use *Java interceptor bindings* to associate the interceptor
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@InterceptorBinding#
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+@interface TimedBinding {
+}
+----
+
+WARNING: Forces to add the binding manually!
+
+[source, subs="verbatim,quotes"]
+----
+class TimedMethodBean {
+    @Timed
+    [highlight]#@TimedBinding#
+    void timedMethod() {
+    }
+}
+----
+
+
+[.topic.source]
+== The `ProcessAnnotatedType<X>` Event
+
+TIP: Add the interceptor binding programmatically
+
+[source, subs="verbatim,quotes"]
+----
+public interface ProcessAnnotatedType<X> {
+    public AnnotatedType<X> getAnnotatedType();
+    public void setAnnotatedType(AnnotatedType<X> type);
+    public void veto();
+}
+----
+
+
+[.topic.source]
+== `ProcessAnnotatedType` in Lifecycle
+
+
+[.topic.source]
+== Add Interceptor Bindings Programmatically
+
+[source, subs="verbatim,quotes"]
+----
+class MetricsExtension implements Extension {
+
+  <X> void bindTimedMethodInterceptor(@Observes [highlight]#@WithAnnotations(Timed.class)#
+    ProcessAnnotatedType<X> pat) { <1>
+    Set<AnnotatedMethod<? super X>> decoratedMethods = new HashSet<>();
+    for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods())
+      if (method.isAnnotationPresent(Timed.class))
+          decoratedMethods.add(
+            new AnnotatedMethodDecorator<>(method, [highlight]#new TimedBindingLiteral()#)); <2>
+
+    pat.setAnnotatedType(
+      new AnnotatedTypeDecorator<>(pat.getAnnotatedType(), decoratedMethods));
+  }
+}
+----
+<1> Observe types containing the `@Timed` annotation
+<2> Add the interceptor binding to the annotated methods
+
+
+[.topic.recap]
+== Custom `Timer`?
+
+[source, subs="verbatim,quotes"]
+----
+@Interceptor
+@TimedBinding
+@Priority(Interceptor.Priority.LIBRARY_BEFORE)
+class TimedInterceptor {
+    @Inject MetricRegistry registry;
+    @AroundInvoke
+    Object timedMethod(InvocationContext context) throws Exception {
+        String name = context.getMethod().getAnnotation(Timed.class).name();
+        [highlight]#Timer timer = registry.timer(name)#; <1>
+        Timer.Context time = timer.time();
+        try {
+            return context.proceed();
+        } finally {
+            time.stop();
+        }
+    }
+}
+----
+<1> Default `Timer` histogram is exponentially biased to the past 5 minutes of measurements
+
+
+[.topic.source]
 == The `ProcessBean<X>` Events
 
 TIP: Use *producer fields / methods* to register custom metrics
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Produces# Timer Timer = new Timer(new SlidingWindowReservoir(100));
+[highlight]#@Produces#
+Timer Timer = new Timer([highlight]#new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES)#);
 ----
 
 [source]
-.`ProcessProducerMethod<T, X>`
+.`ProcessProducerField<T, X>`
 ----
-public interface ProcessProducerMethod<T, X> extends ProcessBean<X> {
-    public AnnotatedMethod<T> getAnnotatedProducerMethod();
+public interface ProcessProducerField<T, X> extends ProcessBean<X> {
+    public AnnotatedField<T> getAnnotatedProducerField();
     public AnnotatedParameter<T> getAnnotatedDisposedParameter();
     // ProcessBean<X>
     public Annotated getAnnotated();
@@ -99,7 +171,7 @@ public interface ProcessProducerMethod<T, X> extends ProcessBean<X> {
 }
 ----
 
-NOTE: `ProcessManagedBean<X>` and `ProcessProducerField<T, X>` are fired for managed beans and producer fields respectively
+NOTE: `ProcessManagedBean<X>` and `ProcessProducerMethod<T, X>` are fired for managed beans and producer methods respectively
 
 
 [.topic.source]
@@ -125,21 +197,22 @@ class MetricsExtension implements Extension {
 <1> Collect the custom `Metric` producer fields and methods
 <2> Instantiate and register the custom metrics into the Metrics registry
 
-[.topic.source]
-== Complete Example
 
-[source]
+[.topic.source]
+== Example: Composition of Metrics
+
+[source, subs="verbatim,quotes"]
 ----
 @Inject
-private Meter hits; <1>
+private Meter [highlight]#hits#; <1>
 
-@Timed(name = "calls") <2>
+@Timed(name = "[highlight]#calls#") <2>
 public void cachedMethod() {
     if (hit) hits.mark();
 }
 
-@Produces @Metric(name = "cache-hits") <3>
-private Gauge<Double> cacheHitRatioGauge(Meter hits, Timer calls) {
+@Produces @Metric(name = "[highlight]#cache-hits#") <3>
+private Gauge<Double> cacheHitRatioGauge(Meter [highlight]#hits#, Timer [highlight]#calls#) {
     return () -> calls.getOneMinuteRate() == 0 ? Double.NaN :
                  hits.getOneMinuteRate() / calls.getOneMinuteRate();
 }

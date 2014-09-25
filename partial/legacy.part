@@ -292,7 +292,7 @@ public interface AfterBeanDiscovery {
 ----
 
 [.topic.source]
-== AfterBeanDiscovery in Lifecycle
+== `AfterBeanDiscovery` in Lifecycle
 
 image::abd.svg[height="95%",width="95%"]
 
