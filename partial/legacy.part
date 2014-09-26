@@ -221,7 +221,7 @@ public interface ProcessInjectionPoint<T, X> {
 [.topic.source]
 == The `ProcessInjectionPoint` Event in Lifecycle
 
-image::processIP.svg[height="95%", width="95%"]
+image::processIP.png[height="95%", width="95%"]
 
 [.topic.source]
 == Collect Injection Points Metadata
@@ -314,7 +314,7 @@ public interface AfterBeanDiscovery {
 [.topic.source]
 == `AfterBeanDiscovery` in Lifecycle
 
-image::abd.svg[height="95%",width="95%"]
+image::abd.png[height="95%",width="95%"]
 
 
 [.topic.source]

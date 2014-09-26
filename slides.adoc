@@ -155,8 +155,7 @@ class CdiExtension [highlight]#implements Extension# {
 [.topic.source]
 == Bean Manager Lifecycle
 
-image::simple-lifecycle.svg[height="95%",width="95%"]
-
+image::simple-lifecycle.png[height="95%",width="95%"]
 
 include::partial/complete_lifecycle.part[]
 
