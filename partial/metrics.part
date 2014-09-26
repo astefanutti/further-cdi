@@ -66,7 +66,7 @@ TIP: Use *Java interceptor bindings* to associate the interceptor
 }
 ----
 
-WARNING: Forces to add the binding manually!
+CAUTION: Forces to add the binding manually!
 
 [source, subs="verbatim,quotes"]
 ----
@@ -155,8 +155,7 @@ TIP: Use *producer fields / methods* to register custom metrics
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Produces#
-Timer Timer = new Timer([highlight]#new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES)#);
+[highlight]#@Produces# Timer t = new Timer([highlight]#new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES)#);
 ----
 
 [source]

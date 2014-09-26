@@ -7,7 +7,7 @@ Modernize a Legacy Component with the CDI Programming Model
 
 
 [.topic.source]
-== A `/\*Not So Fictional*/` Legacy Component
+== A `/* Not So Fictional */` Legacy Component
 
 [plantuml, "legacy", "svg", width="100%", height="95%"]
 ----
@@ -130,6 +130,19 @@ Executor -- DataDictionaryFormulaResult : output >
 ----
 
 
+[.topic.recap]
+== Challenges
+
+====
+icon:thumbs-o-up[] Improve the _public API_ +
+  and make it _typesafe_
+
+icon:thumbs-o-up[] Integrate the component into the _CDI programming model_
+
+icon:ban[] Without touching the _component source_ / _binary_
+====
+
+
 [.topic.source]
 == The CDI Way
 
@@ -200,7 +213,7 @@ Transformer<InputType~j~, OutputType~j~> transformer~j~;
 <1> Get the legacy component bean instance
 <2> Produce a typesafe `Transformer` facade
 
-TIP: *Parameterized types are not erased by CDI* so that they can be used as metadata, for example for _type check_ / _conversion_
+TIP: *Parameterized types are not erased by CDI* so that they can be used as metadata, for example for _type check_ / _conversion_ during container initialization
 
 
 [.topic.source]
@@ -234,7 +247,7 @@ class LegacyComponentExtension implements Extension {
 
   void collectConfiguration(@Observes [highlight]#ProcessInjectionPoint<?, Transformer># pit) { <1>
     Annotated annotated = pit.getInjectionPoint().getAnnotated();
-    if (annotated.isAnnotationPresent(Legacy.class))
+    if (annotated.isAnnotationPresent([highlight]#Legacy.class#))
         configuration.add(annotated.getAnnotation(Legacy.class).value()); <2>
   }
 }

@@ -45,9 +45,16 @@ Antoine Sabot-Durand; Antonin Stefanutti
 ====
 * icon:user[] Software Engineer
 * icon:institution[] Murex, SAS
+* icon:globe[] www.murex.com
 * icon:twitter[] @astefanut
 * icon:github[] github.com/astefanutti
 ====
+
+
+[.topic.source]
+== CDI @ Murex
+
+image::murex.png[width="100%"]
 
 
 [.topic.source]
@@ -93,7 +100,7 @@ TIP: If you know the most of these you can stay
 
 
 [.intro]
-== Introducing CDI portable extensions
+== Introducing CDI Portable Extensions
 
 [.topic.source]
 == CDI portable extensions
@@ -157,7 +164,7 @@ class CdiExtension [highlight]#implements Extension# {
 
 image::simple-lifecycle.png[height="95%",width="95%"]
 
-include::partial/complete_lifecycle.part[]
+//include::partial/complete_lifecycle.part[]
 
 [.topic.source]
 == Example: Ignoring JPA Entities
@@ -176,14 +183,16 @@ public class VetoEntity implements Extension {
 }
 ----
 
-[.topic.source]
+[.topic.recap]
 == Remember
 
-WARNING: Extensions are launched during bootstrap and are based on CDI events
+icon:warning[] Extensions are _launched during +
+  bootstrap_ and are _based on CDI events_
 
-WARNING: Once application is bootstrapped, the Bean Manager is in read-only mode (no runtime bean registration)
+icon:warning[] Once the application is bootstrapped, +
+  the Bean Manager is in _read-only mode_ (no runtime bean registration)
 
-WARNING: You only have to `@Observes` built-in CDI event to create your extensions
+icon:warning[] You only have to `@Observes` _built-in CDI events_ to create your extensions
 
 
 include::partial/legacy.part[]
@@ -200,7 +209,9 @@ NOTE: Slides generated with _Asciidoctor_, _PlantUML_ and _DZSlides_ backend
 
 NOTE: Original slide template - _Dan Allen_ & _Sarah White_
 
-NOTE: Metrics CDI Extension - https://github.com/astefanutti/metrics-cdi
+NOTE: Slides sources - https://github.com/astefanutti/further-cdi
+
+NOTE: Metrics CDI sources - https://github.com/astefanutti/metrics-cdi
 
 //NOTE: Camel CDI Extension - https://github.com/astefanutti/camel-cdi
 
