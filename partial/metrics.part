@@ -96,6 +96,7 @@ public interface ProcessAnnotatedType<X> {
 
 [.topic.source]
 == `ProcessAnnotatedType` in Lifecycle
+image::pat.png[height="95%", width="95%"]
 
 
 [.topic.source]
