@@ -186,12 +186,12 @@ TIP: Distribute configuration closest to the code:
 [source, subs="verbatim,quotes"]
 ----
 @Inject
-[highlight]#@Legacy("transformation~i~")#
-Transformer<InputType~i~, OutputType~i~> transformer~i~;
+[highlight]#@Legacy("transformation_1")#
+Transformer<InputType1, OutputType1> transformer_1;
 ...
 @Inject
-[highlight]#@Legacy("transformation~j~")#
-Transformer<InputType~j~, OutputType~j~> transformer~j~;
+[highlight]#@Legacy("transformation_N")#
+Transformer<InputTypeN, OutputTypeN> transformer_N;
 ----
 
 
@@ -213,7 +213,7 @@ Transformer<InputType~j~, OutputType~j~> transformer~j~;
 <1> Get the legacy component bean instance
 <2> Produce a typesafe `Transformer` facade
 
-TIP: *Parameterized types are not erased by CDI* so that they can be used as metadata, for example for _type check_ / _conversion_ during container initialization
+TIP: *Parameterized types are not erased by CDI*, so that they can be used as metadata. For example for _type check_ / _conversion_ during container initialization
 
 
 [.topic.source]
@@ -253,7 +253,7 @@ class LegacyComponentExtension implements Extension {
 }
 ----
 <1> Observe every injection point of type `Transformer` on any declaring bean
-<2> Collect the injection point `@Legacy` metadata if any
+<2> Collect the injection point `@Legacy` metadata, if any
 
 
 [.topic.source]
