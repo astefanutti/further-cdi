@@ -44,7 +44,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 ====
 * icon:user[] Software Engineer
-* icon:institution[] Murex, SAS
+* icon:institution[] Murex
 * icon:globe[] www.murex.com
 * icon:twitter[] @astefanut
 * icon:github[] github.com/astefanutti
@@ -58,7 +58,7 @@ image::murex.png[width="100%"]
 
 
 [.topic.source]
-== Should I stay or should I go ?
+== Should I stay or should I go?
 
 ====
 * icon:cogs[] A talk about *advanced* CDI
@@ -159,12 +159,14 @@ class CdiExtension [highlight]#implements Extension# {
 }
 ----
 
+
 [.topic.source]
 == Bean Manager Lifecycle
 
 image::simple-lifecycle.png[height="95%",width="95%"]
 
 //include::partial/complete_lifecycle.part[]
+
 
 [.topic.source]
 == Example: Ignoring JPA Entities
@@ -176,12 +178,14 @@ NOTE: This is a commonly admitted good practice
 [source]
 ----
 public class VetoEntity implements Extension {
-    public void vetoEntity(@Observes @WithAnnotations({ Entity.class })
-                           ProcessAnnotatedType<?> pat) {
+
+    void vetoEntity(@Observes @WithAnnotations(Entity.class)
+                    ProcessAnnotatedType<?> pat) {
         pat.veto();
     }
 }
 ----
+
 
 [.topic.recap]
 == Remember

@@ -131,16 +131,14 @@ Executor -- DataDictionaryFormulaResult : output >
 
 
 [.topic.recap]
-== Challenges
+== Objectives
 
-====
-icon:thumbs-o-up[] Improve the _public API_ +
+icon:lightbulb-o[] Improve the _public API_ +
   and make it _typesafe_
 
-icon:thumbs-o-up[] Integrate the component into the _CDI programming model_
+icon:lightbulb-o[] Integrate the component into the _CDI programming model_
 
 icon:ban[] Without touching the _component source_ / _binary_
-====
 
 
 [.topic.source]
@@ -350,3 +348,14 @@ class LegacyComponentExtension implements Extension {
   }
 }
 ----
+
+
+[.topic.recap]
+== [line-through]#Objectives#
+
+icon:thumbs-o-up[] Improve the _public API_ +
+  and make it _typesafe_
+
+icon:thumbs-o-up[] Integrate the component into the _CDI programming model_
+
+icon:ban[] Without touching the _component source_ / _binary_

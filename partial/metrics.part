@@ -13,23 +13,39 @@ NOTE: Open-source Java library providing monitoring primitives like `Counter`, `
 
 NOTE: Provides a `MetricRegistry` that articulates modules and reporters
 
-NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) *and CDI*, e.g.:
+NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) *and CDI*: `@Counted`, `@ExceptionMetered`, `@Metered`, `@Timed`, ...
+
+
+[.topic.recap]
+== Objectives
+
+icon:lightbulb-o[] Metrics annotations AOP
 
 [source, subs="verbatim,quotes"]
 ----
 class TimedMethodBean {
-    [highlight]#@Timed(name = "timer")#
-    void timedMethod() {
-        // Timer name => TimedMethodBean.timer
-    }
+    [highlight]#@Timed#
+    void timedMethod() {} // Timer name => TimedMethodBean.timedMethod
 }
 ----
+
+icon:lightbulb-o[] Inject from / produce metrics into the registry
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@Inject# Timer timedMethod;
+
+[highlight]#@Produces# @Metric(name = "timedMethod")
+Timer t = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
+----
+
+icon:ban[] Without introducing extra API for the end-user
 
 
 [.topic.source]
 == Bean Method Interceptors
 
-TIP: Use *Java interceptors* for Metrics annotation AOP
+TIP: Use *Java interceptors* for Metrics annotations AOP
 
 [source, subs="verbatim,quotes"]
 ----
