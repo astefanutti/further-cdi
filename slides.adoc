@@ -281,6 +281,8 @@ NOTE: Slides generated with _Asciidoctor_, _PlantUML_ and _DZSlides_ backend
 
 NOTE: Original slide template - _Dan Allen_ & _Sarah White_
 
+NOTE: CDI Specification - http://cdi-spec.org
+
 NOTE: Slides sources - https://github.com/astefanutti/further-cdi
 
 NOTE: Metrics CDI sources - https://github.com/astefanutti/metrics-cdi
