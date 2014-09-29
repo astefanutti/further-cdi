@@ -11,7 +11,7 @@ Integrate a Third-party Library into the CDI Programming Model
 
 NOTE: Open-source Java library providing monitoring primitives like `Counter`, `Gauge`, `Histogram`, `Meter`, `Timer`, ...
 
-NOTE: Provides a `MetricRegistry` that articulates modules and reporters
+NOTE: Provides a `MetricRegistry` that articulates application / module metrics and metrics reporters
 
 NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) *and CDI*: `@Counted`, `@ExceptionMetered`, `@Metered`, `@Timed`, ...
 
@@ -54,7 +54,7 @@ TIP: Use *Java interceptors* for Metrics annotations AOP
 class TimedInterceptor {
     @Inject MetricRegistry registry;
     [highlight]#@AroundInvoke#
-    Object timedMethod(InvocationContext context) throws Exception {
+    Object timeMethod(InvocationContext context) throws Exception {
         String name = context.getMethod().getAnnotation(Timed.class).name();
         Timer timer = registry.timer(name);
         Timer.Context time = timer.time();
@@ -205,8 +205,8 @@ skinparam activity {
 ----
 class MetricsExtension implements Extension {
 
-  <X> void bindTimedMethodInterceptor(@Observes [highlight]#@WithAnnotations(Timed.class)#
-    ProcessAnnotatedType<X> pat) { <1>
+  <X> void bindTimedMethodInterceptor(@Observes [highlight]#@WithAnnotations(Timed.class)
+    ProcessAnnotatedType<X># pat) { <1>
     Set<AnnotatedMethod<? super X>> decoratedMethods = new HashSet<>();
     for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods())
       if (method.isAnnotationPresent(Timed.class))

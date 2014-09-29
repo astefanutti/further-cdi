@@ -153,7 +153,7 @@ public interface Transformer<I, O> {
 }
 ----
 
-TIP: And a CDI qualifier with legacy transformation metadata:
+TIP: And a CDI qualifier with configuration metadata:
 
 [source, subs="verbatim,quotes"]
 ----
@@ -341,7 +341,7 @@ class LegacyComponentExtension implements Extension {
 [.topic.source]
 == The `Bean` Interface
 
-TIP: Integrate the legacy component as a CDI Bean
+TIP: Integrate the legacy component as a CDI bean
 
 [source]
 ----
