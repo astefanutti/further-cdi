@@ -82,7 +82,7 @@ TIP: Use *Java interceptor bindings* to associate the interceptor
 }
 ----
 
-CAUTION: Forces to add the binding manually!
+CAUTION: Forces to add the binding manually :-(
 
 [source, subs="verbatim,quotes"]
 ----

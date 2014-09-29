@@ -54,8 +54,9 @@ Antoine Sabot-Durand; Antonin Stefanutti
 [.topic.source]
 == CDI @ Murex
 
-image::murex.png[width="100%"]
+image::murex.png[height="86%"]
 
+NOTE: CDI as the *productivity ecosystem* to build *connectivity interfaces*
 
 [.topic.source]
 == Should I stay or should I go?
