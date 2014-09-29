@@ -124,18 +124,24 @@ skinparam backgroundColor transparent
 skinparam defaultFontName Consolas
 
 skinparam activity {
-  BackgroundColor #white
-  BackgroundColor<< Internal >> #white
-  BackgroundColor<< Once >> #white
-  ArrowColor #888888
-  BarColor #888888
-  BorderColor #888888
-  FontName Consolas
-  FontColor #888888
   FontSize 20
-  BackgroundColor<< Highlight >> #337788
+  FontName Consolas
+  FontColor #337788
+  ArrowColor #888888
+  BorderColor #337788
+  BackgroundColor #white
+
+  FontColor<< Internal >> #888888
+  BorderColor<< Internal >> #888888
+  BackgroundColor<< Internal >> #white
+
+  FontColor<< Once >> #BB3322
+  BorderColor<< Once >> #BB3322
+  BackgroundColor<< Once >> #white
+
   FontColor<< Highlight >> white
   BorderColor<< Highlight >> #337788
+  BackgroundColor<< Highlight >> #337788
 }
 
 (*) -right-> "Deployment\nStart" << Internal >>
@@ -160,7 +166,7 @@ skinparam activity {
 @enduml
 ----
 
-[plantuml, "lifecycle-legend", "svg", height="40", width="300", role="pull-right"]
+[plantuml, "lifecycle-legend-light", "svg", height="10%", width="230", role="pull-right"]
 ----
 @startuml
 
@@ -169,21 +175,24 @@ skinparam backgroundColor transparent
 skinparam defaultFontName Consolas
 
 skinparam activity {
-  StartColor white
-  BackgroundColor #337788
-  BackgroundColor<< Internal >> #888888
-  BackgroundColor<< Once >> #BB3322
-  ArrowColor white
-  BarColor #888888
-  BorderColor White
+  FontSize 25
   FontName Consolas
-  FontColor White
-  FontSize 20
+  StartColor white
+  ArrowColor white
+  BorderColor White
+  BackgroundColor White
+
+  BorderColor<< Once >> #BB3322
+  FontColor<< Once >> #BB3322
+  BorderColor<< Loop >> #337788
+  FontColor<< Loop >> #337788
+  BorderColor<< Internal >> #888888
+  FontColor<< Internal >> #888888
 }
 
 (*) -down-> "Internal Step" << Internal >>
--right-> "Happen Once" <<Once>>
--right-> "Loop on Elements"
+-right-> "Happen Once" << Once >>
+-right-> "Loop on Elements" << Loop >>
 
 @enduml
 ----

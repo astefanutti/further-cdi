@@ -207,7 +207,7 @@ skinparam activity {
 @enduml
 ----
 
-[plantuml, "lifecycle-legend", "svg", height="40", width="300", role="pull-right"]
+[plantuml, "lifecycle-legend", "svg", height="40", width="230", role="pull-right"]
 ----
 @startuml
 
