@@ -1,7 +1,11 @@
-[.topic.source]
-== Lifecycle Events
+[.topic.intro]
+== Annexes
 
-[plantuml, "lifecycle", "svg", height="95%"]
+
+[.topic.source]
+== Complete Lifecycle Events
+
+[plantuml, "lifecycle-complete", "svg", height="95%"]
 ----
 @startuml
 

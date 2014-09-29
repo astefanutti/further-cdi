@@ -293,3 +293,6 @@ NOTE: Metrics CDI sources - https://github.com/astefanutti/metrics-cdi
 
 [.footer]
 icon:twitter[] @antoine_sd @astefanut
+
+
+include::partial/lifecycle.part[]
