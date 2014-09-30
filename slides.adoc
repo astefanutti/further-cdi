@@ -164,8 +164,6 @@ class CdiExtension [highlight]#implements Extension# {
 [.topic.source]
 == Bean Manager Lifecycle
 
-//image::simple-lifecycle.png[height="95%", width="95%"]
-
 [plantuml, "lifecycle-simple", "svg", height="85%", width="95%"]
 ----
 @startuml
@@ -268,11 +266,11 @@ icon:warning[] Once the application is bootstrapped, +
 icon:warning[] You only have to `@Observes` _built-in CDI events_ to create your extensions
 
 
-include::partial/legacy.part[]
+include::parts/legacy.adoc[]
 
-include::partial/metrics.part[]
+include::parts/metrics.adoc[]
 
-//include::partial/camel.part[]
+//include::parts/camel.adoc[]
 
 [.topic.intro]
 == Conclusion
@@ -301,4 +299,4 @@ NOTE: Original slide template - _Dan Allen_ & _Sarah White_
 icon:twitter[] @antoine_sd @astefanut
 
 
-include::partial/lifecycle.part[]
+include::parts/lifecycle.adoc[]

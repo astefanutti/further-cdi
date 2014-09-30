@@ -113,8 +113,6 @@ public interface ProcessAnnotatedType<X> {
 [.topic.source]
 == `ProcessAnnotatedType` in Lifecycle
 
-//image::pat.png[height="95%", width="95%"]
-
 [plantuml, "lifecycle-pat", "svg", height="85%", width="95%"]
 ----
 @startuml
@@ -166,36 +164,7 @@ skinparam activity {
 @enduml
 ----
 
-[plantuml, "lifecycle-legend-light", "svg", height="10%", width="230", role="pull-right"]
-----
-@startuml
-
-skinparam shadowing false
-skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
-
-skinparam activity {
-  FontSize 25
-  FontName Consolas
-  StartColor white
-  ArrowColor white
-  BorderColor White
-  BackgroundColor White
-
-  BorderColor<< Once >> #BB3322
-  FontColor<< Once >> #BB3322
-  BorderColor<< Loop >> #337788
-  FontColor<< Loop >> #337788
-  BorderColor<< Internal >> #888888
-  FontColor<< Internal >> #888888
-}
-
-(*) -down-> "Internal Step" << Internal >>
--right-> "Happen Once" << Once >>
--right-> "Loop on Elements" << Loop >>
-
-@enduml
-----
+include::legend.adoc[]
 
 
 [.topic.source]
