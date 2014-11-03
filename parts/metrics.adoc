@@ -145,16 +145,16 @@ skinparam activity {
 (*) -right-> "Deployment\nStart" << Internal >>
 -right-> "Before\nBean\nDiscovery" << Once >>
 -right-> "Scan\nArchive" << Internal >>
--right-> "Process\nAnnotated\nType" << Highlight >>
+-right-> "Process\nAnnotated\nType" <<Highlight>>
 -right-> "After\nType\nDiscovery" << Once >>
--down-> "Process\nBean\nAttributes"
--left-> "Process\nInjection\nTarget"
+-down-> "Bean\nEligibility\nCheck" << Internal >>
 -left-> "Process\nInjection\nPoint"
--left-> "Bean\nEligibility\nCheck" << Internal >>
+-left-> "Process\nInjection\nTarget"
+-left-> "Process\nBean\nAttributes"
 -down-> "Process\nBean"
 -right-> "Process\nProducer"
 -right-> "Process\nObserver\nMethod"
--right-> "After\nBean\nDiscovery"  << Once >>
+-right-> "After\nBean\nDiscovery" << Once >>
 -down-> "After\nDeployment\nValidation" << Once >>
 -left-> "Application\nRunning" << Internal >>
 -left-> "Before\nShutdown" << Once >>
