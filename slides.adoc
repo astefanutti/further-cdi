@@ -99,6 +99,7 @@ TIP: If you know the most of these you can stay
 * icon:info-circle[] Metrics CDI
 ====
 
+include::parts/spi.adoc[]
 
 include::parts/extensions.adoc[]
 

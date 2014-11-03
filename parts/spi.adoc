@@ -1,0 +1,280 @@
+[.intro]
+== Meet CDI SPI
+
+[.topic.source]
+== SPI can be split in 4 parts
+
+====
+* Type meta-model
+====
+
+====
+* CDI meta-model
+====
+
+====
+* CDI entry points
+====
+
+====
+* SPI dedicated to entensions
+====
+
+
+[.topic.source]
+== SPI for Type meta-model
+
+[plantuml, "type-meta", "svg", height="120%"]
+----
+@startuml
+
+Annotated <|-- AnnotatedMember
+Annotated <|-- AnnotatedParameter
+Annotated <|-- AnnotatedType
+AnnotatedMember <|-- AnnotatedCallable
+AnnotatedMember <|-- AnnotatedField
+AnnotatedCallable <|-- AnnotatedConstructor
+AnnotatedCallable <|-- AnnotatedMethod
+
+interface Annotated {
+    +Type getBaseType()
+    +Set<Type> getTypeClosure()
+    +<T extends Annotation> getAnnotation(Class<T>)
+    +Set<Annotation> getAnnotations()
+    +boolean isAnnotationPresent(Class<? extends Annotation>)
+}
+
+
+interface AnnotatedMember<X> {
+    +Member getJavaMember()
+    +boolean isStatic()
+    +AnnotatedType<X> getDeclaringType()
+}
+
+
+interface AnnotatedParameter<X> {
+    +int getPosition()
+    +AnnotatedCallable<X> getDeclaringCallable()
+}
+
+
+interface AnnotatedType<X> {
+    +Class<X> getJavaClass()
+    +Set<AnnotatedConstructor<X>> getConstructors()
+    +Set<AnnotatedMethod<? super X>> getMethods()
+    +Set<AnnotatedField<? super X>> getFields()
+}
+
+
+interface AnnotatedCallable<X> {
+    +List<AnnotatedParameter<X>> getParameters()
+}
+
+
+interface AnnotatedField<X> {
+    +Field getJavaMember()
+}
+
+
+interface AnnotatedConstructor<X> {
+    +Constructor<X> getJavaMember()
+}
+
+
+interface AnnotatedMethod<X> {
+    +Method getJavaMember()
+}
+
+
+@enduml
+----
+
+[.topic.source]
+== Why Having a Type Meta-Model?
+
+Because `@Annotations` are configuration
+
+but they are also read-only
+
+So to configure we need a mutable meta-model
+
+for annotated types
+
+[.topic.source]
+== SPI Dedicated to CDI Meta-Model
+
+[plantuml, "cdi-meta", "svg", width="100%"]
+----
+@startuml
+
+BeanAttributes <|-- Bean
+Bean <|-- Interceptor
+Bean <|-- Decorator
+Producer <|-- InjectionTarget
+
+
+interface InjectionPoint {
+    +Type getType()
+    +Set<Annotation> getQualifiers()
+    +Bean<?> getBean()
+    +Member getMember()
+    +Annotated getAnnotated()
+    +boolean isDelegate()
+    +boolean isTransient()
+}
+
+
+interface BeanAttributes<T> {
+    +Set<Type> getTypes()
+    +Set<Annotation> getQualifiers()
+    +Class<? extends Annotation> getScope()
+    +String getName()
+    +Set<Class<? extends Annotation>> getStereotypes()
+    +boolean isAlternative()
+}
+
+
+interface Bean<T> {
+    +Class<?> getBeanClass()
+    +Set<InjectionPoint> getInjectionPoints()
+    +boolean isNullable()
+}
+
+
+interface Interceptor<T> {
+    +Set<Annotation> getInterceptorBindings()
+    +boolean intercepts(InterceptionType type)
+    +Object intercept(InterceptionType, T, InvocationContext)
+}
+
+interface Decorator<T> {
+    +Type getDelegateType()
+    +Set<Annotation> getDelegateQualifiers()
+    +Set<Type> getDecoratedTypes()
+}
+
+
+interface Producer<T> {
+    +T produce(CreationalContext<T>)
+    +void dispose(T)
+    +Set<InjectionPoint> getInjectionPoints()
+}
+
+interface InjectionTarget<T> {
+    +void inject(T, CreationalContext<T>)
+    +void postConstruct(T)
+    +void preDestroy(T)
+}
+
+interface ObserverMethod<T> {
+    +Class<?> getBeanClass()
+    +Type getObservedType()
+    +Set<Annotation> getObservedQualifiers()
+    +Reception getReception()
+    +TransactionPhase getTransactionPhase()
+    +void notify(T)
+}
+
+class Unmanaged<T> {
+    +Unmanaged(BeanManager, Class<T>)
+    +Unmanaged(Class<T>)
+    +UnmanagedInstance<T> newInstance()
+}
+
+interface EventMetadata {
+    +Set<Annotation> getQualifiers()
+    +InjectionPoint getInjectionPoint()
+    +Type getType()
+}
+
+@enduml
+----
+
+[.topic.source]
+== This SPI can be used in your code 1
+
+TIP: `InjectionPoint` can be used to get info about what's being injected
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@Qualifier#
+@Retention(RUNTIME)
+@Target({TYPE, METHOD, FIELD, PARAMETER})
+public @interface [HighLight]#HttpParam# {
+  [highlight]#@Nonbinding# public String value();
+}
+...
+@Produces [highlight]#@HttpParam("")#
+[highlight]#String# getParamValue([highlight]#InjectionPoint# ip,[highlight]#HttpServletRequest# req) {
+  return req.getParameter(ip.getAnnotated().getAnnotation(HttpParam.class).value());
+}
+...
+[highlight]#@HttpParam("productId")# @Inject [highlight]#String# productId;
+----
+
+
+
+[.topic.source]
+== This SPI can be used in your code 2
+
+TIP: `InjectionPoint` contains info about requested type at `@Inject`
+
+[source, subs="verbatim,quotes"]
+----
+public class MyMapProducer() {
+  [highlight]#@Produces#
+   public <K, V> Map<K, V> produceMap([highlight]#InjectionPoint ip#) { 
+       if (valueIsNumber(((ParameterizedType)ip.getType())))
+           return new TreeMap<K, V>(); 
+       return new HashMap<K, V>();
+  }
+
+  private boolean valueIsNumber(ParameterizedType t) {
+        Class<?> valueClass = (Class<?>) t.getActualTypeArguments()[1];
+        return Number.class.isAssignableFrom(valueClass);
+  }
+}
+----
+
+[.topic.source]
+== This SPI can be used in your code 3
+
+TIP: An abstract superclass can use meta to provide generic resolution
+
+[source, subs="verbatim,quotes"]
+----
+public [highlight]#abstract# class AbstractService { 
+  //resolver with same qualifiers than the current bean
+  private Resolver resolver;
+
+  [highlight]#@Inject# //@Inject can be used on an initializer method
+  void initResolver([highlight]#Bean#<AbstractService> meta, [highlight]#@Any# [highlight]#Instance#<Resolver> resolvers)  {
+    Annotation[] beanQualifiers = (Annotation[]) meta.getQualifiers().toArray(); 
+    resolver = resolvers.select(beanQualifiers).get(); 
+  } 
+
+  public Resolver getResolver() {
+    return resolver;
+  }
+}
+----
+
+[.topic.source]
+== This SPI can be used in your code 4
+
+TIP: `EventMetadata` contains type and qualifier info about the event
+
+[source, subs="verbatim,quotes"]
+----
+@ApplicationScoped
+public class MyService {
+
+  private void strictListen([highlight]#@Observes# @Qualified Payload evt, [highlight]#EventMetadata# meta)  { 
+    if(meta.getQualifiers().contains(new QualifiedLiteral())
+       && meta.getType().equals(Payload.class)) 
+         System.out.println("Do something");
+       else 
+         System.out.println("ignore"); 
+  } 
+}
+----
