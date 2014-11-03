@@ -1,0 +1,164 @@
+[.intro]
+== Introducing CDI Portable Extensions
+
+[.topic.source]
+== CDI portable extensions
+
+====
+* Extending CDI and Java EE
+====
+
+====
+* Change CDI meta data
+====
+
+====
+* Linked to BeanManager Lifecycle
+====
+
+
+[.topic.source]
+== Portable Extensions
+
+One of the _most powerful feature_ of the CDI specification
+
+Not really popularized, partly due to the _high level of abstraction_
+
+image::powerful.gif[role="pull-right", width="300"]
+
+
+[.topic.source]
+== Container Metadata
+
+Observer pattern to listen for container _initialization lifecycle events_
+
+Comprehensive access to and modification of the _container metadata model_
+
+image::rubik.gif[role="pull-right", width="250"]
+
+
+[.topic.source]
+== Plugin Architecture
+
+NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
+
+[source, subs="verbatim,quotes"]
+----
+import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.Extension;
+
+class CdiExtension [highlight]#implements Extension# {
+
+    void beforeBeanDiscovery([highlight]#@Observes BeforeBeanDiscovery# bbd) {
+    }
+    ...
+
+    void afterDeploymentValidation([highlight]#@Observes AfterDeploymentValidation# adv) {
+    }
+}
+----
+
+
+[.topic.source]
+== Bean Manager Lifecycle
+
+[plantuml, "lifecycle-simple", "svg", height="85%", width="95%"]
+----
+@startuml
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam activity {
+  BackgroundColor #337788
+  BackgroundColor<< Internal >> #888888
+  BackgroundColor<< Once >> #BB3322
+  ArrowColor #888888
+  BarColor #888888
+  BorderColor White
+  FontName Consolas
+  FontColor White
+  FontSize 20
+}
+
+(*) -right-> "Deployment\nStart" << Internal >>
+-right-> "Before\nBean\nDiscovery" << Once >>
+-right-> "Scan\nArchive" << Internal >>
+-right-> "Process\nAnnotated\nType"
+-right-> "After\nType\nDiscovery" << Once >>
+-down-> "Bean\nEligibility\nCheck" << Internal >>
+-left-> "Process\nInjection\nPoint"
+-left-> "Process\nInjection\nTarget"
+-left-> "Process\nBean\nAttributes"
+-down-> "Process\nBean"
+-right-> "Process\nProducer"
+-right-> "Process\nObserver\nMethod"
+-right-> "After\nBean\nDiscovery" << Once >>
+-down-> "After\nDeployment\nValidation" << Once >>
+-left-> "Application\nRunning" << Internal >>
+-left-> "Before\nShutdown" << Once >>
+-left-> "Undeploy\nApplication" << Internal >>
+-left-> (*)
+
+@enduml
+----
+
+[plantuml, "lifecycle-legend", "svg", height="40", width="230", role="pull-right"]
+----
+@startuml
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam activity {
+  StartColor white
+  BackgroundColor #337788
+  BackgroundColor<< Internal >> #888888
+  BackgroundColor<< Once >> #BB3322
+  ArrowColor white
+  BarColor #888888
+  BorderColor White
+  FontName Consolas
+  FontColor White
+  FontSize 20
+}
+
+(*) -down-> "Internal Step" << Internal >>
+-right-> "Happen Once" <<Once>>
+-right-> "Loop on Elements"
+
+@enduml
+----
+
+
+[.topic.source]
+== Example: Ignoring JPA Entities
+
+TIP: The following extension prevents CDI to manage entities
+
+NOTE: This is a commonly admitted good practice
+
+[source]
+----
+public class VetoEntity implements Extension {
+
+    void vetoEntity(@Observes @WithAnnotations(Entity.class)
+                    ProcessAnnotatedType<?> pat) {
+        pat.veto();
+    }
+}
+----
+
+
+[.topic.recap]
+== Remember
+
+icon:warning[] Extensions are _launched during +
+  bootstrap_ and are _based on CDI events_
+
+icon:warning[] Once the application is bootstrapped, +
+  the Bean Manager is in _read-only mode_ (no runtime bean registration)
+
+icon:warning[] You only have to `@Observes` _built-in CDI events_ to create your extensions
