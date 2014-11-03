@@ -16,43 +16,90 @@ NOTE: Provides a `MetricRegistry` that articulates application / module metrics 
 NOTE: Defines annotations for AOP frameworks like Spring AOP, AspectJ, Guice (AOP Alliance) *and CDI*: `@Counted`, `@ExceptionMetered`, `@Metered`, `@Timed`, ...
 
 
-[.topic.recap]
-== Objectives
+[.topic.source]
+== Without a CDI Extension
 
-icon:lightbulb-o[] Metrics annotations AOP
+[source, subs="verbatim,quotes"]
+----
+class MetricRegistryBean {
+    @Produces @ApplicationScoped MetricRegistry registry = new MetricRegistry();
+}
+----
 
 [source, subs="verbatim,quotes"]
 ----
 class TimedMethodBean {
-    [highlight]#@Timed#
-    void timedMethod() {} // Timer name => TimedMethodBean.timedMethod
+    @Inject MetricRegistry registry;
+
+    void timedMethod() {
+        Timer timer = registry.timer("timer");
+        Timer.Context time = timer.time();
+        try {
+            // method logic
+        } finally {
+            time.stop();
+        }
+    }
 }
 ----
 
-icon:lightbulb-o[] Inject from / produce metrics into the registry
+
+[.topic.source]
+== With a CDI Extension
+
+TIP: Encapsulate the `Timer` retrieval and timing logic
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Inject# Timer timedMethod;
+import com.codahale.metrics.annotation.Timed;
 
-[highlight]#@Produces# @Metric(name = "timedMethod")
-Timer t = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
+class TimedMethodBean {
+
+    @Timed("timer")
+    void timedMethod() {
+        // method logic
+    }
+}
 ----
-
-icon:ban[] Without introducing extra API for the end-user
 
 
 [.topic.source]
-== Bean Method Interceptors
+== Java Interceptors and Bindings
 
 TIP: Use *Java interceptors* for Metrics annotations AOP
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Interceptor# [highlight]#@TimedBinding#
-[highlight]#@Priority(Interceptor.Priority.LIBRARY_BEFORE)#
+import javax.interceptor.Interceptor;
+import javax.interceptor.InterceptorBinding;
+
+import javax.annotation.Priority;
+
+----
+
+TIP: Use *Java interceptor bindings* to associate the interceptor
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@InterceptorBinding#
+@Target({ ElementType.TYPE, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+@interface TimedBinding {
+}
+----
+
+
+[.topic.source]
+== `AroundInvoke` Interceptor
+
+[source, subs="verbatim,quotes"]
+----
+@Interceptor
+[highlight]#@TimedBinding#
+@Priority(Interceptor.Priority.LIBRARY_BEFORE)
 class TimedInterceptor {
     @Inject MetricRegistry registry;
+
     [highlight]#@AroundInvoke#
     Object timeMethod(InvocationContext context) throws Exception {
         String name = context.getMethod().getAnnotation(Timed.class).name();
@@ -69,25 +116,14 @@ class TimedInterceptor {
 
 
 [.topic.source]
-== Java Interceptor Bindings
-
-TIP: Use *Java interceptor bindings* to associate the interceptor
-
-[source, subs="verbatim,quotes"]
-----
-[highlight]#@InterceptorBinding#
-@Target({ ElementType.TYPE, ElementType.METHOD })
-@Retention(RetentionPolicy.RUNTIME)
-@interface TimedBinding {
-}
-----
+== Bean Method Interceptor
 
 CAUTION: Forces to add the binding manually :-(
 
 [source, subs="verbatim,quotes"]
 ----
 class TimedMethodBean {
-    @Timed
+    @Timed("timer")
     [highlight]#@TimedBinding#
     void timedMethod() {
     }
@@ -98,7 +134,7 @@ class TimedMethodBean {
 [.topic.source]
 == The `ProcessAnnotatedType<X>` Event
 
-TIP: Add the interceptor binding programmatically
+TIP: Use the CDI SPI to add the interceptor binding in a CDI extension programmatically
 
 [source, subs="verbatim,quotes"]
 ----
@@ -191,26 +227,43 @@ class MetricsExtension implements Extension {
 <2> Add the interceptor binding to the annotated methods
 
 
-[.topic.recap]
-== Custom `Timer`?
+[.topic.source]
+== Declare Interceptor Bindings Directly
+
+TIP: Use the CDI SPI to directly declare the `@Timed` annotation as interceptor binding
 
 [source, subs="verbatim,quotes"]
 ----
-@Interceptor
-@TimedBinding
-@Priority(Interceptor.Priority.LIBRARY_BEFORE)
-class TimedInterceptor {
-    @Inject MetricRegistry registry;
-    @AroundInvoke
-    Object timedMethod(InvocationContext context) throws Exception {
-        String name = context.getMethod().getAnnotation(Timed.class).name();
-        [highlight]#Timer timer = registry.timer(name)#; <1>
-        Timer.Context time = timer.time();
-        try {
-            return context.proceed();
-        } finally {
-            time.stop();
-        }
+class MetricsExtension implements Extension {
+
+  <X> void addInterceptorBinding(@Observes [highlight]#BeforeBeanDiscovery# bbd) {
+    AnnotatedType<Timed> annotated = manager.createAnnotatedType(Timed.class);
+    Set<AnnotatedMethod<? super Timed>> methods = new HashSet<>();
+    for (AnnotatedMethod<? super Timed> method : annotated.getMethods())
+        methods.add(new AnnotatedMethodDecorator<>(method, new NonbindingLiteral()));
+
+    bbd.addInterceptorBinding(new AnnotatedTypeDecorator<>(annotated, methods));
+  }
+}
+----
+
+
+[.topic.source]
+== Metrics Customization
+
+icon:question-circle[] How to customize the metric instances
+
+[source, subs="verbatim,quotes"]
+----
+@AroundInvoke
+Object timedMethod(InvocationContext context) throws Exception {
+    String name = context.getMethod().getAnnotation(Timed.class).name();
+    [highlight]#Timer timer = registry.timer(name)#; <1>
+    Timer.Context time = timer.time();
+    try {
+        return context.proceed();
+    } finally {
+        time.stop();
     }
 }
 ----
@@ -218,14 +271,52 @@ class TimedInterceptor {
 
 
 [.topic.source]
-== The `ProcessBean<X>` Events
-
-TIP: Use *producer fields / methods* to register custom metrics
+== Without a CDI Extension
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Produces# Timer t = new Timer([highlight]#new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES)#);
+class TimedMethodBean {
+
+    @Inject
+    TimedMethodBean(MetricRegistry registry) {
+        Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
+        if (!registry.getMetrics().containsKey("timer"))
+            registry.register("timer", timer);
+    }
+
+    @Timed("timer")
+    void timedMethod() {
+    }
+}
 ----
+
+
+[.topic.source]
+== With a CDI Extension
+
+TIP: Use *producer fields / methods* to declare custom metrics
+
+[source, subs="verbatim,quotes"]
+----
+
+class TimedMethodBean {
+
+    [highlight]#@Produces#
+    static Timer timer() {
+        return new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
+    }
+
+    @Timed("timer")
+    void timedMethod() {
+    }
+}
+----
+
+
+[.topic.source]
+== The `ProcessBean<X>` Events
+
+TIP: Use the producer fields and methods to instantiate and register the metrics at deployment time
 
 [source]
 .`ProcessProducerField<T, X>`
@@ -243,6 +334,63 @@ NOTE: `ProcessManagedBean<X>` and `ProcessProducerMethod<T, X>` are fired for ma
 
 
 [.topic.source]
+== `ProcessProducer` in Lifecycle
+
+[plantuml, "lifecycle-pp", "svg", height="85%", width="95%"]
+----
+@startuml
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam activity {
+  FontSize 20
+  FontName Consolas
+  FontColor #337788
+  ArrowColor #888888
+  BorderColor #337788
+  BackgroundColor #white
+
+  FontColor<< Internal >> #888888
+  BorderColor<< Internal >> #888888
+  BackgroundColor<< Internal >> #white
+
+  FontColor<< Once >> #BB3322
+  BorderColor<< Once >> #BB3322
+  BackgroundColor<< Once >> #white
+
+  FontColor<< Highlight >> white
+  BorderColor<< Highlight >> #337788
+  BackgroundColor<< Highlight >> #337788
+}
+
+(*) -right-> "Deployment\nStart" << Internal >>
+-right-> "Before\nBean\nDiscovery" << Once >>
+-right-> "Scan\nArchive" << Internal >>
+-right-> "Process\nAnnotated\nType"
+-right-> "After\nType\nDiscovery" << Once >>
+-down-> "Bean\nEligibility\nCheck" << Internal >>
+-left-> "Process\nInjection\nPoint"
+-left-> "Process\nInjection\nTarget"
+-left-> "Process\nBean\nAttributes"
+-down-> "Process\nBean"
+-right-> "Process\nProducer" <<Highlight>>
+-right-> "Process\nObserver\nMethod"
+-right-> "After\nBean\nDiscovery" << Once >>
+-down-> "After\nDeployment\nValidation" << Once >>
+-left-> "Application\nRunning" << Internal >>
+-left-> "Before\nShutdown" << Once >>
+-left-> "Undeploy\nApplication" << Internal >>
+-left-> (*)
+
+@enduml
+----
+
+include::legend.adoc[]
+
+
+[.topic.source]
 == The `AfterDeploymentValidation` Event
 
 [source, subs="verbatim,quotes"]
@@ -257,7 +405,7 @@ class MetricsExtension implements Extension {
   }
   void customMetrics(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager manager) {
     for (Map.Entry<Bean<?>, AnnotatedMember<?>> metric : metrics.entrySet())
-      registry.register(metricName(member), manager.getReference(metric.getKey(), <2>
+      registry.register(member.getName(), manager.getReference(metric.getKey(), <2>
         metric.getValue().getBaseType(), manager.createCreationalContext(null)));
   }
 }
