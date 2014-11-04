@@ -1,30 +1,30 @@
-[.intro]
+[.topic.intro]
 == Meet CDI SPI
+image:3d-chess.png[width="110%"]
+==!
 
-[.topic.source]
+[.topic]
 == SPI can be split in 4 parts
 
+[.statement]
 ====
-* Type meta-model
-====
+[.incremental]
+NOTE: Type meta-model
 
-====
-* CDI meta-model
-====
+[.incremental]
+NOTE: CDI meta-model
 
-====
-* CDI entry points
-====
+[.incremental]
+NOTE: CDI entry points
 
+[.incremental]
+NOTE: SPI dedicated to extensions
 ====
-* SPI dedicated to entensions
-====
-
 
 [.topic.source]
 == SPI for Type meta-model
 
-[plantuml, "type-meta", "svg", height="120%"]
+[plantuml, "type-meta", "svg", height="90%"]
 ----
 @startuml
 
@@ -175,11 +175,6 @@ interface ObserverMethod<T> {
     +void notify(T)
 }
 
-class Unmanaged<T> {
-    +Unmanaged(BeanManager, Class<T>)
-    +Unmanaged(Class<T>)
-    +UnmanagedInstance<T> newInstance()
-}
 
 interface EventMetadata {
     +Set<Annotation> getQualifiers()
@@ -201,15 +196,15 @@ TIP: `InjectionPoint` can be used to get info about what's being injected
 @Retention(RUNTIME)
 @Target({TYPE, METHOD, FIELD, PARAMETER})
 public @interface [HighLight]#HttpParam# {
-  [highlight]#@Nonbinding# public String value();
+  [highlight]#@Nonbinding# public String value()
 }
 ...
 @Produces [highlight]#@HttpParam("")#
 [highlight]#String# getParamValue([highlight]#InjectionPoint# ip,[highlight]#HttpServletRequest# req) {
-  return req.getParameter(ip.getAnnotated().getAnnotation(HttpParam.class).value());
+  return req.getParameter(ip.getAnnotated().getAnnotation(HttpParam.class).value())
 }
 ...
-[highlight]#@HttpParam("productId")# @Inject [highlight]#String# productId;
+[highlight]#@HttpParam("productId")# @Inject [highlight]#String# productId
 ----
 
 
@@ -225,13 +220,13 @@ public class MyMapProducer() {
   [highlight]#@Produces#
    public <K, V> Map<K, V> produceMap([highlight]#InjectionPoint ip#) { 
        if (valueIsNumber(((ParameterizedType)ip.getType())))
-           return new TreeMap<K, V>(); 
-       return new HashMap<K, V>();
+           return new TreeMap<K, V>() 
+       return new HashMap<K, V>()
   }
 
   private boolean valueIsNumber(ParameterizedType t) {
-        Class<?> valueClass = (Class<?>) t.getActualTypeArguments()[1];
-        return Number.class.isAssignableFrom(valueClass);
+        Class<?> valueClass = (Class<?>) t.getActualTypeArguments()[1]
+        return Number.class.isAssignableFrom(valueClass)
   }
 }
 ----
@@ -245,16 +240,16 @@ TIP: An abstract superclass can use meta to provide generic resolution
 ----
 public [highlight]#abstract# class AbstractService { 
   //resolver with same qualifiers than the current bean
-  private Resolver resolver;
+  private Resolver resolver
 
   [highlight]#@Inject# //@Inject can be used on an initializer method
   void initResolver([highlight]#Bean#<AbstractService> meta, [highlight]#@Any# [highlight]#Instance#<Resolver> resolvers)  {
-    Annotation[] beanQualifiers = (Annotation[]) meta.getQualifiers().toArray(); 
-    resolver = resolvers.select(beanQualifiers).get(); 
+    Annotation[] beanQualifiers = (Annotation[]) meta.getQualifiers().toArray() 
+    resolver = resolvers.select(beanQualifiers).get() 
   } 
 
   public Resolver getResolver() {
-    return resolver;
+    return resolver
   }
 }
 ----
@@ -272,9 +267,172 @@ public class MyService {
   private void strictListen([highlight]#@Observes# @Qualified Payload evt, [highlight]#EventMetadata# meta)  { 
     if(meta.getQualifiers().contains(new QualifiedLiteral())
        && meta.getType().equals(Payload.class)) 
-         System.out.println("Do something");
+         System.out.println("Do something")
        else 
-         System.out.println("ignore"); 
+         System.out.println("ignore") 
   } 
 }
 ----
+
+[.topic.source]
+== SPI providing CDI Entry points
+
+[plantuml, "entry-points", "svg", height="95%", width="100%"]
+----
+@startuml
+
+
+Unmanaged *-- UnmanagedInstance
+
+class Unmanaged<T> {
+    +Unmanaged(BeanManager, Class<T>)
+    +Unmanaged(Class<T>)
+    +UnmanagedInstance<T> newInstance()
+}
+
+
+class UnmanagedInstance<T> {
+    +T get()
+    +UnmanagedInstance<T> produce()
+    +UnmanagedInstance<T> inject()
+    +UnmanagedInstance<T> postConstruct()
+    +UnmanagedInstance<T> preDestroy()
+    +UnmanagedInstance<T> dispose()
+}
+
+interface CDIProvider {
+    +CDI<Object> getCDI()
+}
+
+interface BeanManager {
+    +Object getReference(Bean<?>, Type, CreationalContext<?> )
+    +Object getInjectableReference(InjectionPoint, CreationalContext<?> )
+    +Set<Bean<?>> getBeans(Type, Annotation[])
+    +Bean<? extends X> resolve(Set<Bean<? extends X>>)
+    +void validate(InjectionPoint)
+    +void fireEvent(Object, Annotation[])
+    .. some methods skiped ..
+    +boolean isQualifier(Class<? extends Annotation>)
+    +boolean isStereotype(Class<? extends Annotation>)
+    +boolean areQualifiersEquivalent(Annotation, Annotation)
+    +boolean areInterceptorBindingsEquivalent(Annotation, Annotation)
+    +Context getContext(Class<? extends Annotation>)
+    +ELResolver getELResolver()
+    +ExpressionFactory wrapExpressionFactory(ExpressionFactory)
+    +AnnotatedType<T> createAnnotatedType(Class<T>)
+    +InjectionTarget<T> createInjectionTarget(AnnotatedType<T>)
+    +InjectionTargetFactory<T> getInjectionTargetFactory(AnnotatedType<T>)
+    +BeanAttributes<T> createBeanAttributes(AnnotatedType<T>)
+    +Bean<T> createBean(BeanAttributes<T>, Class<X>, ProducerFactory<X>)
+    +InjectionPoint createInjectionPoint(AnnotatedField<?>)
+}
+
+
+
+class CDI<T> {
+
+    # {static} Set<CDIProvider> discoveredProviders
+    # {static} CDIProvider configuredProvider
+    + {static} CDI<Object> current()
+    + {static} void setCDIProvider(CDIProvider provider)
+    + {abstract} BeanManager getBeanManager()
+}
+
+
+@enduml
+----
+
+
+[.topic.source]
+== SPI Dedicated to Extensions
+
+[plantuml, "spi-extensions", "svg", height="100%", width="100%"]
+----
+@startuml
+
+interface BeforeBeanDiscovery {
+    +addQualifier(Class<? extends Annotation>)
+    +addScope(Class<? extends Annotation>, boolean, boolean)
+    +addStereotype(Class<? extends Annotation>, Annotation[])
+    +addInterceptorBinding(Class<? extends Annotation>, Annotation[])
+    +addAnnotatedType(AnnotatedType<?>)
+}
+
+interface AfterTypeDiscovery {
+    +List<Class<?>> getAlternatives()
+    +List<Class<?>> getInterceptors()
+    +List<Class<?>> getDecorators()
+    +addAnnotatedType(AnnotatedType<?>, String)
+}
+
+
+interface AfterDeploymentValidation {
+}
+
+interface BeforeShutdown {
+}
+
+interface AfterBeanDiscovery {
+    +addBean(Bean<?>)
+    +addObserverMethod(ObserverMethod<?>)
+    +addContext(Context)
+    +AnnotatedType<T> getAnnotatedType(Class<T>, String)
+    +Iterable<AnnotatedType<T>> getAnnotatedTypes(Class<T>)
+}
+
+interface ProcessAnnotatedType<X> {
+    +AnnotatedType<X> getAnnotatedType()
+    +void setAnnotatedType(AnnotatedType<X>)
+    +veto()
+}
+
+interface ProcessBean<X> {
+    +Annotated getAnnotated()
+    +Bean<X> getBean()
+}
+
+interface ProcessBeanAttributes<T> {
+    +Annotated getAnnotated()
+    +BeanAttributes<T> getBeanAttributes()
+    +setBeanAttributes(BeanAttributes<T>)
+    +veto()
+}
+
+interface ProcessInjectionPoint<T, X> {
+    +InjectionPoint getInjectionPoint()
+    +setInjectionPoint(InjectionPoint)
+}
+
+interface ProcessInjectionTarget<X> {
+    +AnnotatedType<X> getAnnotatedType()
+    +InjectionTarget<X> getInjectionTarget()
+    +setInjectionTarget(InjectionTarget<X>)
+}
+
+interface ProcessObserverMethod<T, X> {
+    +AnnotatedMethod<X> getAnnotatedMethod()
+    +ObserverMethod<T> getObserverMethod()
+}
+
+
+interface ProcessProducer<T, X> {
+    +AnnotatedMember<T> getAnnotatedMember()
+    +Producer<X> getProducer()
+    +setProducer(Producer<X>)
+}
+
+@enduml
+----
+
+[.topic.source]
+== All these SPI interaces are events containing meta-model SPI
+
+NOTE: These events fired at boot time can only be observed in a CDI extension
+
+NOTE: For instance:
+
+image:processAnnotatedTypeCart.png[width="280",role="pull-left"]
+
+TIP: A `ProcessAnnotatedType<T>` event is triggered for each type discovered at boot time
+
+TIP: Observing `ProcessAnnotatedType<Foo>` allow you to prevent `Foo` to become a bean by calling `ProcessAnnotatedType#veto()`
