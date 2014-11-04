@@ -24,7 +24,7 @@
 [.topic.source]
 == SPI for Type meta-model
 
-[plantuml, "type-meta", "svg", height="120%"]
+[plantuml, "type-meta", "svg", width="100%", height="95%"]
 ----
 @startuml
 
