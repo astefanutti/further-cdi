@@ -2,7 +2,7 @@
 == Legacy Code
 
 ====
-Modernize a Legacy Component with the CDI Programming Model
+How to modernize Legacy Components with the CDI Programming Model
 ====
 
 
