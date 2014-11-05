@@ -1,0 +1,138 @@
+[.topic.source]
+== `AroundInvoke` Interceptor
+
+[source, subs="verbatim,quotes"]
+----
+@Interceptor
+[highlight]#@TimedBinding#
+@Priority(Interceptor.Priority.LIBRARY_BEFORE)
+class TimedInterceptor {
+    @Inject MetricRegistry registry;
+
+    [highlight]#@AroundInvoke#
+    Object timeMethod(InvocationContext context) throws Exception {
+        String name = context.getMethod().getAnnotation(Timed.class).name();
+        Timer timer = registry.timer(name);
+        Timer.Context time = timer.time();
+        try {
+            return [highlight]#context.proceed()#;
+        } finally {
+            time.stop();
+        }
+    }
+}
+----
+
+
+[.topic.source]
+== Bean Method Interceptor
+
+CAUTION: Forces to add the binding manually :-(
+
+[source, subs="verbatim,quotes"]
+----
+class TimedMethodBean {
+
+    [highlight]#@TimedBinding#
+    @Timed("timer")
+    void timedMethod() {
+    }
+}
+----
+
+
+[.topic.source]
+== The `ProcessAnnotatedType<X>` Event
+
+TIP: Use the *CDI SPI* to add the interceptor binding to the annotated methods programmatically in a *CDI extension*
+
+[source, subs="verbatim,quotes"]
+----
+package javax.enterprise.inject.spi;
+
+public interface ProcessAnnotatedType<X> {
+    public AnnotatedType<X> getAnnotatedType();
+    public void setAnnotatedType(AnnotatedType<X> type);
+    public void veto();
+}
+----
+
+
+[.topic.source]
+== `ProcessAnnotatedType` in Lifecycle
+
+[plantuml, "lifecycle-pat", "svg", height="85%", width="95%"]
+----
+@startuml
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam activity {
+  FontSize 20
+  FontName Consolas
+  FontColor #337788
+  ArrowColor #888888
+  BorderColor #337788
+  BackgroundColor #white
+
+  FontColor<< Internal >> #888888
+  BorderColor<< Internal >> #888888
+  BackgroundColor<< Internal >> #white
+
+  FontColor<< Once >> #BB3322
+  BorderColor<< Once >> #BB3322
+  BackgroundColor<< Once >> #white
+
+  FontColor<< Highlight >> white
+  BorderColor<< Highlight >> #337788
+  BackgroundColor<< Highlight >> #337788
+}
+
+(*) -right-> "Deployment\nStart" << Internal >>
+-right-> "Before\nBean\nDiscovery" << Once >>
+-right-> "Scan\nArchive" << Internal >>
+-right-> "Process\nAnnotated\nType" <<Highlight>>
+-right-> "After\nType\nDiscovery" << Once >>
+-down-> "Bean\nEligibility\nCheck" << Internal >>
+-left-> "Process\nInjection\nPoint"
+-left-> "Process\nInjection\nTarget"
+-left-> "Process\nBean\nAttributes"
+-down-> "Process\nBean"
+-right-> "Process\nProducer"
+-right-> "Process\nObserver\nMethod"
+-right-> "After\nBean\nDiscovery" << Once >>
+-down-> "After\nDeployment\nValidation" << Once >>
+-left-> "Application\nRunning" << Internal >>
+-left-> "Before\nShutdown" << Once >>
+-left-> "Undeploy\nApplication" << Internal >>
+-left-> (*)
+
+@enduml
+----
+
+include::legend.adoc[]
+
+
+[.topic.source]
+== Add Interceptor Bindings Programmatically
+
+[source, subs="verbatim,quotes"]
+----
+class MetricsExtension implements [highlight]#Extension# {
+
+  <X> void bindTimedMethodInterceptor(@Observes [highlight]#@WithAnnotations(Timed.class)
+    ProcessAnnotatedType<X># pat) { <1>
+    AnnotatedTypeBuilder<X> atb = new AnnotatedTypeBuilder<>();
+    atb.readFromType(pat.getAnnotatedType());
+    for (AnnotatedMethod<? super X> method : pat.getAnnotatedType().getMethods())
+      if (method.isAnnotationPresent(Timed.class))
+        atb.addToMethod(method, [highlight]#new AnnotationLiteral<TimedBinding>(){}#)); <2>
+
+    pat.setAnnotatedType(atb.create());
+  }
+}
+----
+<1> Observe types containing the `@Timed` annotation
+<2> Add the interceptor binding to the annotated methods
