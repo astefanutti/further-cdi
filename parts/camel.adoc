@@ -2,22 +2,119 @@
 == Camel CDI
 
 ====
-Annotated Types, Injection Targets, Observer Methods
+How to use CDI as dependency injection container for an integration framework (Apache Camel)
 ====
 
 
 [.topic.source]
-== Apache Camel
+== About Apache Camel
 
 NOTE: Open-source _integration framework_ based on known Enterprise Integration Patterns
 
-NOTE: _Bean binding and integration_ with Spring, Blueprint, Guice *and CDI*
+NOTE: Provides a variety of DSLs to write routing and mediation rules
+
+NOTE: Provides support for _bean binding_ and seamless integration with DI frameworks
 
 image::eip.gif[height="150"]
 
 
+== !
+
+[.statement]
+Discover how did we create CDI integration module for Camel
+
+
 [.topic.source]
-== Camel Annotations
+== Camel out of the box (NO CDI)
+
+[source, subs="verbatim,quotes"]
+----
+class CamelMain {
+    static CamelContext camelContext = new DefaultCamelContext();
+    static CountDownLatch latch = new CountDownLatch(1);
+
+    public static void main(String[] args) {
+        SjmsComponent component = new SjmsComponent();
+        component.setConnectionFactory(/\*...*/);
+        camelContext.addComponent("sjms", component);
+        camelContext.addRoutes(new RouteBuilder() {
+            public void configure() {
+                from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
+            }
+        });
+        camelContext.start();
+        latch.await(); // Shutdown hook
+        camelContext.stop();
+    }
+}
+----
+
+
+[.topic.source]
+== Basic CDI integration...
+
+[source, subs="verbatim,quotes"]
+----
+class JmsComponentFactoryBean {
+
+    @Produces
+    @ApplicationScoped
+    SjmsComponent sjmsComponent() {
+        SjmsComponent component = new SjmsComponent();
+        component.setConnectionFactory(/\*...*/);
+        return component;
+    }
+}
+
+class FileToJmsRouteBean extends RouteBuilder {
+    @Override
+    public void configure() {
+        from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
+    }
+}
+----
+
+
+[.topic.source]
+== Basic CDI integration...
+
+[source, subs="verbatim,quotes"]
+----
+@ApplicationScoped
+class CamelContextBean extends DefaultCamelContext {
+    @Inject
+    CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) {
+        addComponent("sjms", sjmsComponent);
+        addRoutes(route);
+    }
+    @PostConstruct
+    void postConstruct() {
+        super.start();
+    }
+    @PreDestroy
+    void preDestroy() {
+        super.stop();
+    }
+}
+----
+TIP: We could have a lot more with advanced *CDI* features
+
+
+[.topic.source]
+== Our Goals
+
+. Avoid assembling and configuring the `CamelContext` manually
+
+. Access CDI beans from the Camel DSL
+
+[source, subs="verbatim,quotes"]
+----
+.to("[highlight]#sjms#:queue:outputDest");
+.bean([highlight]#MyBean.class#);
+.beanRef([highlight]#"beanName"#);
+----
+
+. Support Camel annotations in CDI beans
 
 [source, subs="verbatim,quotes"]
 ----
@@ -29,15 +126,25 @@ int timeout;
 
 [highlight]#@BeanInject#("foo")
 FooBean foo;
-
-[highlight]#@Produce#(uri = "mock:foo")
-ProducerTemplate producer;
-
-[highlight]#@Consume#(uri="jms:queue:foo")
-void onFoo(@Body String body) {
-}
 ----
-TIP: Bring support for both Camel and CDI beans...
+
+
+[.topic]
+== Steps to integrate Camel and CDI
+
+[.statement]
+====
+TIP: Create a CDI extension that declares and assembles the `CamelContext` bean
+
+TIP: Bind the `CamelContext` lifecycle to the CDI container events
+
+TIP: Implements the Camel SPI to look up CDI bean references
+
+TIP: Use a custom `InjectionTarget` for CDI beans containing Camel annotations
+
+TIP: Use the Magic
+====
+
 
 [.topic.source]
 == The `ProcessAnnotatedType` Event
@@ -135,91 +242,3 @@ class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 }
 ----
 <1> Call the Camel default bean post-processor after CDI injection
-
-[.topic.source]
-== Camel DSL
-
-[source]
-----
-from("jms:queue:{{input}}?transactionManager=#jtaTM")
-  .id("Input Consumer")
-  .onException().log("Rolling back message with ID ${header.JMSMessageID}")
-    .rollback().id("Rollback Transaction")
-    .end()
-  .log("Receiving message with ID ${header.JMSMessageID}: ${body}")
-  .choice()
-    .when(header("JMSRedelivered").isEqualTo(Boolean.TRUE))
-      .to("jms:queue:{{error}}?transactionManager=#jtaTM").id("Error Producer")
-    .otherwise()
-      .beanRef("transformer").id("Transformer")
-      .to("murex:trade-repository").id("Trade Repository")
-      .choice()
-        .when(not(isInserted))
-          .log("Error received: ${body}").id("Trade Repository Error")
-          .throwException(new CamelExecutionException("Import Failed")))
-        .otherwise()
-          .log("Answer received: ${body}").id("Trade Repository Answer");
-----
-
-
-[.topic.source]
-== Camel AOP
-
-TIP: Camel DSL Aspect Oriented Programming with node IDs and endpoint URLs as joinpoints and *CDI observer methods as pointcut and advice definitions*
-
-[source, subs="verbatim,quotes"]
-----
-void interceptProcessor(@Observes [highlight]#@Before @Node("foo")# Exchange exchange) {
-    // intercept the exchange before processor with id "foo"
-}
-----
-
-[source, subs="verbatim,quotes"]
-----
-void interceptProcessorBody(@Observes @Node("foo") [highlight]#@Body String body#) {
-    // use Camel parameter binding annotations for the joint point context
-}
-----
-
-[source, subs="verbatim,quotes"]
-----
-void receive(@Observes([highlight]#during=AFTER_SUCCESS) @Endpoint("bar")# Exchange exchange) {
-    // exchange sent to endpoint "bar" when the transaction is committed successfully
-}
-----
-
-
-[.topic.source]
-== The `ProcessObserverMethod` Event
-
-[source]
-.`ObserverMethod<T>`
-----
-public interface ObserverMethod<T> {
-    public Class<?> getBeanClass();
-    public Type getObservedType();
-    public Set<Annotation> getObservedQualifiers();
-    public Reception getReception();
-    public TransactionPhase getTransactionPhase();
-    public void notify(T event);
-}
-----
-
-[source]
-.`ProcessObserverMethod<T, X>`
-----
-public interface ProcessObserverMethod<T, X> {
-    public AnnotatedMethod<X> getAnnotatedMethod();
-    public ObserverMethod<T> getObserverMethod();
-    public void addDefinitionError(Throwable t);
-}
-----
-
-
-[.topic.source]
-== Camel CDI Extension
-
-[source]
-----
-
-----

@@ -136,3 +136,94 @@ class MetricsExtension implements [highlight]#Extension# {
 ----
 <1> Observe types containing the `@Timed` annotation
 <2> Add the interceptor binding to the annotated methods
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+[.topic.source]
+== Camel DSL
+
+[source]
+----
+from("jms:queue:{{input}}?transactionManager=#jtaTM")
+  .id("Input Consumer")
+  .onException().log("Rolling back message with ID ${header.JMSMessageID}")
+    .rollback().id("Rollback Transaction")
+    .end()
+  .log("Receiving message with ID ${header.JMSMessageID}: ${body}")
+  .choice()
+    .when(header("JMSRedelivered").isEqualTo(Boolean.TRUE))
+      .to("jms:queue:{{error}}?transactionManager=#jtaTM").id("Error Producer")
+    .otherwise()
+      .beanRef("transformer").id("Transformer")
+      .to("murex:trade-repository").id("Trade Repository")
+      .choice()
+        .when(not(isInserted))
+          .log("Error received: ${body}").id("Trade Repository Error")
+          .throwException(new CamelExecutionException("Import Failed")))
+        .otherwise()
+          .log("Answer received: ${body}").id("Trade Repository Answer");
+----
+
+
+[.topic.source]
+== Camel AOP
+
+TIP: Camel DSL Aspect Oriented Programming with node IDs and endpoint URLs as joinpoints and *CDI observer methods as pointcut and advice definitions*
+
+[source, subs="verbatim,quotes"]
+----
+void interceptProcessor(@Observes [highlight]#@Before @Node("foo")# Exchange exchange) {
+    // intercept the exchange before processor with id "foo"
+}
+----
+
+[source, subs="verbatim,quotes"]
+----
+void interceptProcessorBody(@Observes @Node("foo") [highlight]#@Body String body#) {
+    // use Camel parameter binding annotations for the joint point context
+}
+----
+
+[source, subs="verbatim,quotes"]
+----
+void receive(@Observes([highlight]#during=AFTER_SUCCESS) @Endpoint("bar")# Exchange exchange) {
+    // exchange sent to endpoint "bar" when the transaction is committed successfully
+}
+----
+
+
+[.topic.source]
+== The `ProcessObserverMethod` Event
+
+[source]
+.`ObserverMethod<T>`
+----
+public interface ObserverMethod<T> {
+    public Class<?> getBeanClass();
+    public Type getObservedType();
+    public Set<Annotation> getObservedQualifiers();
+    public Reception getReception();
+    public TransactionPhase getTransactionPhase();
+    public void notify(T event);
+}
+----
+
+[source]
+.`ProcessObserverMethod<T, X>`
+----
+public interface ProcessObserverMethod<T, X> {
+    public AnnotatedMethod<X> getAnnotatedMethod();
+    public ObserverMethod<T> getObserverMethod();
+    public void addDefinitionError(Throwable t);
+}
+----
+
+
+[.topic.source]
+== Camel CDI Extension
+
+[source]
+----
+
+----

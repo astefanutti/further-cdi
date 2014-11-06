@@ -93,9 +93,10 @@ TIP: If you know the most of these you can stay
 
 [.recap]
 ====
-* icon:info-circle[] CDI Extensions
+* icon:info-circle[] Meet CDI SPI
+* icon:info-circle[] Introducing CDI Extensions
 * icon:info-circle[] Legacy Code
-//* icon:info-circle[] Camel CDI
+* icon:info-circle[] Camel CDI
 * icon:info-circle[] Metrics CDI
 ====
 
@@ -105,9 +106,9 @@ include::parts/extensions.adoc[]
 
 include::parts/legacy.adoc[]
 
-include::parts/metrics.adoc[]
+include::parts/camel.adoc[]
 
-//include::parts/camel.adoc[]
+include::parts/metrics.adoc[]
 
 [.topic.intro]
 == Conclusion
@@ -120,7 +121,7 @@ NOTE: CDI Specification - http://cdi-spec.org
 
 NOTE: Metrics CDI sources - https://github.com/astefanutti/metrics-cdi
 
-//NOTE: Camel CDI Extension - https://github.com/astefanutti/camel-cdi
+NOTE: Camel CDI sources - https://github.com/astefanutti/camel-cdi
 
 NOTE: Slides sources - https://github.com/astefanutti/further-cdi
 
