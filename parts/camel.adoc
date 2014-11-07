@@ -109,9 +109,9 @@ TIP: We could have a lot more with advanced *CDI* features
 
 [source, subs="verbatim,quotes"]
 ----
-.to("[highlight]#sjms#:queue:outputDest");
-.bean([highlight]#MyBean.class#);
-.beanRef([highlight]#"beanName"#);
+.to("[highlight]#sjms#:queue:outputDest"); // lookup by name sjms and type Component
+.bean([highlight]#MyBean.class#); // lookup by type
+.beanRef([highlight]#"beanName"#); // lookup by name
 ----
 
 . Support Camel annotations in CDI beans
@@ -134,16 +134,366 @@ FooBean foo;
 
 [.statement]
 ====
-TIP: Create a CDI extension that declares and assembles the `CamelContext` bean
+TIP: Manage the creation and the configuration of the `CamelContext` bean
 
 TIP: Bind the `CamelContext` lifecycle to the CDI container events
 
-TIP: Implements the Camel SPI to look up CDI bean references
+TIP: Implement the Camel SPI to look up CDI bean references
 
 TIP: Use a custom `InjectionTarget` for CDI beans containing Camel annotations
 
 TIP: Use the Magic
 ====
+
+
+[.topic.source]
+== How to achieve this?
+
+TIP: we need to write an extension that will:
+
+. Declare a `CamelContext` bean if no such bean is already deployed by observing the `AfterBeanDiscovery` lifecycle event
+. Detect by observing the `ProcessAnnotatedType` lifecycle events:
+.. The beans of type `RouteBuilder` to instantiate and add them to the Camel context
+.. The beans containing Camel annotations
+. Change how CDI beans containing Camel annotations get injected by observing the `ProcessInjectionTarget` lifecycle event
+. Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the `BeforeShutdown` event)
+
+[.topic.source]
+== So we will `@Observes` these 5 events to add our features
+
+[plantuml, "lifecycle-PAT-PIT-ABD-ADV-BS", "svg", height="85%", width="95%"]
+----
+@startuml
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam activity {
+  FontSize 20
+  FontName Consolas
+  FontColor #337788
+  ArrowColor #888888
+  BorderColor #337788
+  BackgroundColor #white
+
+  FontColor<< Internal >> #888888
+  BorderColor<< Internal >> #888888
+  BackgroundColor<< Internal >> #white
+
+  FontColor<< Once >> #BB3322
+  BorderColor<< Once >> #BB3322
+  BackgroundColor<< Once >> #white
+
+  FontColor<< Highlight >> white
+  BorderColor<< Highlight >> #337788
+  BackgroundColor<< Highlight >> #337788
+
+  FontColor<< HighlightOnce >> white
+  BorderColor<< HighlightOnce >> #BB3322
+  BackgroundColor<< HighlightOnce >> #BB3322
+}
+
+(*) -right-> "Deployment\nStart" << Internal >>
+-right-> "Before\nBean\nDiscovery" << Once >>
+-right-> "Scan\nArchive" << Internal >>
+-right-> "Process\nAnnotated\nType" << Highlight >>
+-right-> "After\nType\nDiscovery" << Once >>
+-down-> "Bean\nEligibility\nCheck" << Internal >>
+-left-> "Process\nInjection\nPoint"
+-left-> "Process\nInjection\nTarget" << Highlight >>
+-left-> "Process\nBean\nAttributes"
+-down-> "Process\nBean"
+-right-> "Process\nProducer"
+-right-> "Process\nObserver\nMethod"
+-right-> "After\nBean\nDiscovery" << HighlightOnce >>
+-down-> "After\nDeployment\nValidation" << HighlightOnce >>
+-left-> "Application\nRunning" << Internal >>
+-left-> "Before\nShutdown" << HighlightOnce >>
+-left-> "Undeploy\nApplication" << Internal >>
+-left-> (*)
+
+@enduml
+----
+
+include::legend.adoc[]
+
+
+[.topic.source]
+== Adding the `CamelContext` bean
+
+TIP: Automatically add a `CamelContext` bean if no such a bean already exists in the deployment archive
+
+icon:question-circle[] How the detect a bean exists in the deployment?
+
+TIP: By querying the `BeanManager` during the `AfterBeanDiscovery` lifecycle event
+
+[source, subs="verbatim,quotes"]
+----
+public class CamelExtension implements Extension {
+    void addContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager manager) {
+        Set<Bean<?>> beans = manager.[highlight]#getBeans#(CamelContext.class);
+        if (beans.isEmpty())
+            // No CamelContext bean is already deployed
+    }
+}
+----
+
+
+[.topic.source]
+== Adding the `CamelContext` bean
+
+icon:question-circle[] How to add a bean programmatically?
+
+TIP: We need to implement the `Bean` SPI
+
+[source]
+----
+public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
+    public Class<?> getBeanClass();
+    public Set<InjectionPoint> getInjectionPoints();
+    // Contextual<T>
+    public T create(CreationalContext<T> creationalContext);
+    public void destroy(T instance, CreationalContext<T> creationalContext);
+    // BeanAttributes<T>
+    public Set<Type> getTypes();
+    public Set<Annotation> getQualifiers();
+    public Class<? extends Annotation> getScope();
+    public String getName();
+    public Set<Class<? extends Annotation>> getStereotypes();
+    public boolean isAlternative();
+}
+----
+
+
+[.topic.source]
+== Adding the `CamelContext` bean
+
+[source, subs="verbatim,quotes"]
+----
+class CamelContextBean implements Bean<CamelContext> {
+    @Override
+    public Class<? extends Annotation> getScope() {
+        return ApplicationScoped.class;
+    }
+    @Override
+    public Set<Annotation> getQualifiers() {
+        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(DefaultLiteral.INSTANCE, AnyLiteral.INSTANCE)));
+    }
+    @Override
+    public CamelContext create(CreationalContext<CamelContext> creational) {
+        return new DefaultCamelContext();
+    }
+}
+----
+
+
+[.topic.source]
+== Adding the `CamelContext` bean
+
+TIP: Then add the `CamelContextBean` bean programmatically
+
+[source, subs="verbatim,quotes"]
+----
+public class CamelExtension implements Extension {
+
+    void addContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager manager) {
+        Set<Bean<?>> beans = manager.getBeans(CamelContext.class);
+        if (beans.isEmpty())
+            abd.[highlight]#addBean#(new CamelContextBean());
+    }
+}
+----
+
+
+[.topic.source]
+== Instantiate and assemble the Camel context
+
+TIP: Instantiate the `CamelContext` bean and the `RouteBuilder` beans in the `AfterDeploymentValidation` lifecycle event
+
+[source, subs="verbatim,quotes"]
+----
+public class CamelExtension implements Extension {
+
+    void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
+        CamelContext context = getReference(bm, CamelContext.class);
+        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
+            context.[highlight]#addRoutes#(getReference(bm, RouteBuilder.class);
+    }
+    <T> T getReference(BeanManager bm, Class<T> type) {
+        return getReference(bm, type, bm.resolve(bm.getBeans(type));
+    }
+    <T> T getReference(BeanManager bm, Class<T> type, Bean<?> bean) {
+        return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
+    }
+}
+----
+
+[.topic.source]
+== Managed the Camel context lifecycle
+
+TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the `BeforeShutdown`)
+
+[source, subs="verbatim,quotes"]
+----
+public class CamelExtension implements Extension {
+
+    void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
+        CamelContext context = getReference(bm, CamelContext.class);
+        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
+            context.addRoutes(getReference(bm, RouteBuilder.class);
+        [highlight]#context.start()#;
+    }
+
+    void stopCamelContext(@Observes [highlight]#BeforeShutdown# bs, BeanManager bm) {
+        CamelContext context = getReference(bm, CamelContext.class);
+        [highlight]#context.stop();#
+    }
+    ...
+}
+----
+
+
+[.topic]
+== First goal achieved
+
+[.statement]
+====
+TIP: We can get rid of the following code:
+
+[source, subs="verbatim,quotes"]
+----
+@ApplicationScoped
+class CamelContextBean extends DefaultCamelContext {
+    @Inject
+    CamelContextBean([highlight]#FileToJmsRouteBean route#, SjmsComponent sjmsComponent) {
+        addComponent("sjms", sjmsComponent);
+        [highlight]#addRoutes(route);#
+    }
+    [highlight]#@PostConstruct#
+    [highlight]#void postConstruct() {#
+        [highlight]#super.start();#
+    [highlight]#}#
+    [highlight]#@PreDestroy#
+    [highlight]#void preDestroy() {#
+        [highlight]#super.stop();#
+    [highlight]#}#
+}
+----
+
+====
+
+
+[.topic.source]
+== Second goal: Access CDI beans from the Camel DSL
+
+icon:question-circle[] How to reference CDI beans in the Camel DSL?
+
+[source, subs="verbatim,quotes"]
+----
+.to("[highlight]#sjms#:queue:outputDest"); // lookup by name sjms and type Component
+.bean([highlight]#MyBean.class#); // lookup by type
+.beanRef([highlight]#"beanName"#); // lookup by name
+----
+
+TIP: Implement the Camel registry SPI and use the `BeanManager` to lookup for CDI bean contextual references by name and type
+
+
+[.topic.source]
+== Implement the Camel registry SPI
+
+[source, subs="verbatim,quotes"]
+----
+class CdiRegistry implements Registry {
+    private final BeanManager bm;
+    public CdiRegistry(BeanManager bm) {
+        this.bm = bm;
+    }
+    public <T> T lookupByNameAndType(String name, Class<T> type) {
+        return getReference(bm, type, bm.getBean(name));
+    }
+    public <T> Set<T> findByType(Class<T> type) {
+        return getReference(bm, type, bm.resolve(getBeans(type));
+    }
+    public Object lookupByName(String name) {
+        return lookupByNameAndType(name, Object.class);
+    }
+    <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
+        return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
+    }
+}
+----
+
+
+[.topic.source]
+== Add the `CdiRegistry` to the Camel context
+
+[source, subs="verbatim,quotes"]
+----
+public class CamelExtension implements Extension {
+
+    void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
+        CamelContext context = getReference(bm, CamelContext.class);
+        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
+            context.addRoutes(getReference(bm, RouteBuilder.class);
+        [highlight]#context.setRegistry(new CdiRegistry(bm))#;
+        context.start();
+    }
+    ...
+}
+----
+
+
+[.topic]
+== Second goal achieved
+
+[.statement]
+====
+TIP: We can get rid of all the code related to the Camel context config
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@ApplicationScoped#
+[highlight]#class CamelContextBean extends DefaultCamelContext {#
+    [highlight]#@Inject#
+    [highlight]#CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) {#
+        [highlight]#addComponent("sjms", sjmsComponent)#;
+        [highlight]#addRoutes(route);#
+    }
+    [highlight]#@PostConstruct#
+    [highlight]#void postConstruct() {#
+        [highlight]#super.start();#
+    [highlight]#}#
+    [highlight]#@PreDestroy#
+    [highlight]#void preDestroy() {#
+        [highlight]#super.stop();#
+    [highlight]#}#
+[highlight]#}#
+----
+
+====
+
+
+[.topic.source]
+== Third goal: Support Camel annotations in CDI beans
+
+TIP: Camel provides a set of DI framework agnostic annotations for resource injection
+
+[source, subs="verbatim,quotes"]
+----
+[highlight]#@EndpointInject#(uri="jms:queue:foo")
+Endpoint endpoint;
+
+[highlight]#@PropertyInject#(value = "timeout", defaultValue = "5000")
+int timeout;
+
+[highlight]#@BeanInject#("foo")
+FooBean foo;
+----
+
+icon:question-circle[] How to support custom injection annotations?
+
+
 
 
 [.topic.source]
