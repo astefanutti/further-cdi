@@ -227,3 +227,82 @@ public interface ProcessObserverMethod<T, X> {
 ----
 
 ----
+
+
+
+[.topic.source]
+== The `ProcessBean<X>` Events
+
+TIP: Detect the *producer fields* and *methods* to instantiate and register the custom metrics
+
+[source]
+----
+package javax.enterprise.inject.spi;
+
+public interface ProcessProducerField<T, X> extends ProcessBean<X> {
+    public AnnotatedField<T> getAnnotatedProducerField();
+    public AnnotatedParameter<T> getAnnotatedDisposedParameter();
+    // ProcessBean<X>
+    public Annotated getAnnotated();
+    public Bean<X> getBean();
+}
+----
+
+NOTE: `ProcessManagedBean<X>` and `ProcessProducerMethod<T, X>` are fired for managed beans and producer methods respectively
+
+
+[.topic.source]
+== `ProcessBean<X>` in Lifecycle
+
+[plantuml, "lifecycle-pb", "svg", height="85%", width="95%"]
+----
+@startuml
+
+skinparam shadowing false
+skinparam backgroundColor transparent
+skinparam defaultFontName Consolas
+
+skinparam activity {
+  FontSize 20
+  FontName Consolas
+  FontColor #337788
+  ArrowColor #888888
+  BorderColor #337788
+  BackgroundColor #white
+
+  FontColor<< Internal >> #888888
+  BorderColor<< Internal >> #888888
+  BackgroundColor<< Internal >> #white
+
+  FontColor<< Once >> #BB3322
+  BorderColor<< Once >> #BB3322
+  BackgroundColor<< Once >> #white
+
+  FontColor<< Highlight >> white
+  BorderColor<< Highlight >> #337788
+  BackgroundColor<< Highlight >> #337788
+}
+
+(*) -right-> "Deployment\nStart" << Internal >>
+-right-> "Before\nBean\nDiscovery" << Once >>
+-right-> "Scan\nArchive" << Internal >>
+-right-> "Process\nAnnotated\nType"
+-right-> "After\nType\nDiscovery" << Once >>
+-down-> "Bean\nEligibility\nCheck" << Internal >>
+-left-> "Process\nInjection\nPoint"
+-left-> "Process\nInjection\nTarget"
+-left-> "Process\nBean\nAttributes"
+-down-> "Process\nBean" <<Highlight>>
+-right-> "Process\nProducer"
+-right-> "Process\nObserver\nMethod"
+-right-> "After\nBean\nDiscovery" << Once >>
+-down-> "After\nDeployment\nValidation" << Once >>
+-left-> "Application\nRunning" << Internal >>
+-left-> "Before\nShutdown" << Once >>
+-left-> "Undeploy\nApplication" << Internal >>
+-left-> (*)
+
+@enduml
+----
+
+include::legend.adoc[]
