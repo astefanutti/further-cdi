@@ -67,6 +67,7 @@ class JmsComponentFactoryBean {
 }
 
 class FileToJmsRouteBean extends RouteBuilder {
+
     @Override
     public void configure() {
         from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
@@ -109,9 +110,9 @@ TIP: We could have a lot more with advanced *CDI* features
 
 [source, subs="verbatim,quotes"]
 ----
-.to("[highlight]#sjms#:queue:outputDest"); // lookup by name sjms and type Component
-.bean([highlight]#MyBean.class#); // lookup by type
-.beanRef([highlight]#"beanName"#); // lookup by name
+.to("[highlight]#sjms#:queue:outputDest"); // Lookup by name (sjms) and type (Component)
+.bean([highlight]#MyBean.class#); // Lookup by type
+.beanRef([highlight]#"beanName"#); // Lookup by name
 ----
 
 . Support Camel annotations in CDI beans
@@ -241,7 +242,7 @@ public class CamelExtension implements Extension {
 
 
 [.topic.source]
-== Adding the `CamelContext` bean
+== Declaring a bean programmatically
 
 icon:question-circle[] How to add a bean programmatically?
 
@@ -252,11 +253,9 @@ TIP: We need to implement the `Bean` SPI
 public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
     public Class<?> getBeanClass();
     public Set<InjectionPoint> getInjectionPoints();
-    // Contextual<T>
-    public T create(CreationalContext<T> creationalContext);
+    public T create(CreationalContext<T> creationalContext); // Contextual<T>
     public void destroy(T instance, CreationalContext<T> creationalContext);
-    // BeanAttributes<T>
-    public Set<Type> getTypes();
+    public Set<Type> getTypes(); // BeanAttributes<T>
     public Set<Annotation> getQualifiers();
     public Class<? extends Annotation> getScope();
     public String getName();
@@ -267,7 +266,7 @@ public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
 
 
 [.topic.source]
-== Adding the `CamelContext` bean
+== Implementing the `Bean` SPI
 
 [source, subs="verbatim,quotes"]
 ----
@@ -289,7 +288,7 @@ class CamelContextBean implements Bean<CamelContext> {
 
 
 [.topic.source]
-== Adding the `CamelContext` bean
+== Adding a programmatic bean to the deployment
 
 TIP: Then add the `CamelContextBean` bean programmatically
 
@@ -318,7 +317,7 @@ public class CamelExtension implements Extension {
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
-            context.[highlight]#addRoutes#(getReference(bm, RouteBuilder.class);
+            context.[highlight]#addRoutes#(getReference(bm, RouteBuilder.class, bean);
     }
     <T> T getReference(BeanManager bm, Class<T> type) {
         return getReference(bm, type, bm.resolve(bm.getBeans(type));
@@ -328,6 +327,7 @@ public class CamelExtension implements Extension {
     }
 }
 ----
+
 
 [.topic.source]
 == Managed the Camel context lifecycle
@@ -341,7 +341,7 @@ public class CamelExtension implements Extension {
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
-            context.addRoutes(getReference(bm, RouteBuilder.class);
+            context.addRoutes(getReference(bm, RouteBuilder.class, bean);
         [highlight]#context.start()#;
     }
 
@@ -387,7 +387,7 @@ class CamelContextBean extends DefaultCamelContext {
 [.topic.source]
 == Second goal: Access CDI beans from the Camel DSL
 
-icon:question-circle[] How to reference CDI beans in the Camel DSL?
+icon:question-circle[] How to retrieve CDI beans from the Camel DSL?
 
 [source, subs="verbatim,quotes"]
 ----
@@ -432,13 +432,15 @@ class CdiRegistry implements Registry {
 ----
 public class CamelExtension implements Extension {
 
-    void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
+    void configureContext(@Observes AfterDeploymentValidation adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
-            context.addRoutes(getReference(bm, RouteBuilder.class);
+            context.addRoutes(getReference(bm, RouteBuilder.class, bean);
+
         [highlight]#context.setRegistry(new CdiRegistry(bm))#;
         context.start();
     }
+
     ...
 }
 ----
@@ -474,6 +476,31 @@ TIP: We can get rid of all the code related to the Camel context config
 ====
 
 
+[.topic]
+== Second goal achieved
+
+[.statement]
+====
+TIP: And declare the `sjms` component with the `@Named` qualifier
+
+[source, subs="verbatim,quotes"]
+----
+class JmsComponentFactoryBean {
+
+    @Produces
+    [highlight]#@Named("sjms")#
+    @ApplicationScoped
+    SjmsComponent sjmsComponent() {
+        SjmsComponent component = new SjmsComponent();
+        component.setConnectionFactory(/\*...*/);
+        return component;
+    }
+}
+----
+
+====
+
+
 [.topic.source]
 == Third goal: Support Camel annotations in CDI beans
 
@@ -491,51 +518,58 @@ int timeout;
 FooBean foo;
 ----
 
-icon:question-circle[] How to support custom injection annotations?
-
-
-
-
-[.topic.source]
-== The `ProcessAnnotatedType` Event
-
-[source]
-.`AnnotatedType<X>`
-----
-public interface AnnotatedType<X> extends Annotated {
-    public Class<X> getJavaClass();
-    public Set<AnnotatedConstructor<X>> getConstructors();
-    public Set<AnnotatedMethod<? super X>> getMethods();
-    public Set<AnnotatedField<? super X>> getFields();
-}
-----
-
-[source]
-.`ProcessAnnotatedType<X>`
-----
-public interface ProcessAnnotatedType<X> {
-    public AnnotatedType<X> getAnnotatedType();
-    public void setAnnotatedType(AnnotatedType<X> type);
-    public void veto();
-}
-----
+icon:question-circle[] How to support custom annotations injection?
 
 
 [.topic.source]
-== The `ProcessInjectionTarget` Event
+== How to support custom annotations injection?
 
-[source]
-.`InjectionTarget<T>`
+TIP: Create a custom `InjectionTarget` that uses the default Camel bean post processor `DefaultCamelBeanPostProcessor`
+
+[source, subs="verbatim,quotes"]
 ----
 public interface InjectionTarget<T> extends Producer<T> {
-    public void inject(T instance, CreationalContext<T> ctx);
+    [highlight]#public void inject(T instance, CreationalContext<T> ctx);#
     public void postConstruct(T instance);
     public void preDestroy(T instance);
 }
 ----
 
+TIP: Hook it into the CDI injection mechanism by observing the `ProcessInjectionTarget` lifecycle event
+
+TIP: Only for beans containing Camel annotations by observing the `ProcessAnnotatedType` lifecycle and using `@WithAnnotations`
+
+
+[.topic.source]
+== Create a custom `InjectionTarget`
+
+[source, subs="verbatim,quotes"]
+----
+class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
+
+    InjectionTarget<T> delegate;
+    DefaultCamelBeanPostProcessor processor;
+
+    CamelInjectionTarget(InjectionTarget<T> target) {
+        delegate = target;
+        processor = new DefaultCamelBeanPostProcessor();
+    }
+    @Override
+    public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
+        delegate.inject(instance, ctx);
+        [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
+    }
+}
+----
+<1> Call the Camel default bean post-processor after CDI injection
+
+
+[.topic.source]
+== Register the custom `InjectionTarget`
+
+TIP: Observe the `ProcessInjectionTarget` lifecyle event and set the `CamelInjectionTarget`
+
 [source]
-.`ProcessInjectionTarget<T>`
 ----
 public interface ProcessInjectionTarget<X> {
     public AnnotatedType<X> getAnnotatedType();
@@ -545,13 +579,23 @@ public interface ProcessInjectionTarget<X> {
 }
 ----
 
+[source, subs="verbatim,quotes"]
+----
+class CamelExtension implements Extension {
+
+  <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit) {
+      pit.[highlight]#setInjectionTarget#(new CamelInjectionTarget<T>(pit.getInjectionTarget()));
+  }
+}
+----
+
 
 [.topic.source]
-== Bean Post Processors
+== But only for beans containing Camel annotations
 
 [source, subs="verbatim,quotes"]
 ----
-class CdiCamelExtension implements Extension {
+class CamelExtension implements Extension {
   Set<AnnotatedType<?>> camelBeans = new HashSet<>());
 
   void camelAnnotations(@Observes [highlight]#@WithAnnotations({BeanInject.class, <1>
@@ -570,25 +614,30 @@ class CdiCamelExtension implements Extension {
 <2> Decorate the `InjectionTarget` corresponding to these types with a custom post-processor
 
 
-[.topic.source]
-== `InjectionTarget` Decoration
+[.topic]
+== Third goal achieved
+
+[.statement]
+====
+TIP: We can add Camel annotations in CDI beans
 
 [source, subs="verbatim,quotes"]
 ----
-class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
-    InjectionTarget<T> delegate;
+class JmsComponentFactoryBean {
 
-    DefaultCamelBeanPostProcessor processor;
+    [highlight]#@PropertyInject(value = "jms.queue.maxConnections", defaultValue = "10")#
+    Integer maxConnections;
 
-    CamelInjectionTarget(InjectionTarget<T> target) {
-        delegate = target;
-        processor = new DefaultCamelBeanPostProcessor();
-    }
-    @Override
-    public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
-        delegate.inject(instance, ctx);
-        [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
+    @Produces
+    @Named("sjms")
+    @ApplicationScoped
+    SjmsComponent sjmsComponent() {
+        SjmsComponent component = new SjmsComponent();
+        component.setConnectionFactory(/\*...*/);
+        [highlight]#component.setConnectionCount(maxConnections);#
+        return component;
     }
 }
 ----
-<1> Call the Camel default bean post-processor after CDI injection
+
+====
