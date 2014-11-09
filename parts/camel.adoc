@@ -34,14 +34,14 @@ class CamelMain {
     static CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public static void main(String[] args) {
-        SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(/\*...*/);
-        camelContext.addComponent("sjms", component);
         camelContext.addRoutes(new RouteBuilder() {
             public void configure() {
                 from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
             }
         });
+        SjmsComponent component = new SjmsComponent();
+        component.setConnectionFactory(/\*...*/);
+        camelContext.addComponent("sjms", component);
         camelContext.start();
         shutdownLatch.await(); // Shutdown hook
         camelContext.stop();
@@ -55,6 +55,17 @@ class CamelMain {
 
 [source, subs="verbatim,quotes"]
 ----
+class FileToJmsRouteBean extends RouteBuilder {
+
+    @Override
+    public void configure() {
+        from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
+    }
+}
+----
+
+[source, subs="verbatim,quotes"]
+----
 class JmsComponentFactoryBean {
 
     @Produces
@@ -63,17 +74,6 @@ class JmsComponentFactoryBean {
         SjmsComponent component = new SjmsComponent();
         component.setConnectionFactory(/\*...*/);
         return component;
-    }
-}
-----
-
-[source, subs="verbatim,quotes"]
-----
-class FileToJmsRouteBean extends RouteBuilder {
-
-    @Override
-    public void configure() {
-        from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
     }
 }
 ----
@@ -276,10 +276,10 @@ public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
 class CamelContextBean implements Bean<DefaultCamelContext> {
     private final Set<Annotation> qualifiers = new HashSet<>(Arrays.asList(new AnnotationLiteral<Any>(){},
                                                                        new AnnotationLiteral<Default>(){}));
-    private final Set<Annotation> types;
+    private final Set<Type> types;
 
     public CamelContextBean(BeanManager bm) {
-        types = bm.createAnnotatedType(DefaultCamelContext.class).getTypeClosure());
+        types = bm.createAnnotatedType(DefaultCamelContext.class).getTypeClosure();
     }
     public Class<? extends Annotation> getScope() {
         return ApplicationScoped.class;
@@ -356,11 +356,11 @@ public class CamelExtension implements Extension {
     ...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
-        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
-            context.[highlight]#addRoutes#(getReference(bm, RouteBuilder.class, bean);
+        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class))
+            context.[highlight]#addRoutes#(getReference(bm, RouteBuilder.class, bean));
     }
     <T> T getReference(BeanManager bm, Class<T> type) {
-        return getReference(bm, type, bm.resolve(bm.getBeans(type));
+        return getReference(bm, type, bm.resolve(bm.getBeans(type)));
     }
     <T> T getReference(BeanManager bm, Class<T> type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
@@ -430,7 +430,7 @@ icon:question-circle[] How to retrieve CDI beans from the Camel DSL?
 
 [source, subs="verbatim,quotes"]
 ----
-.to("[highlight]#sjms#:queue:outputDest"); // Lookup by name sjms and type Component
+.to("[highlight]#sjms#:queue:outputDest"); // Lookup by name (sjms) and type (Component)
 .bean([highlight]#MyBean.class#); // Lookup by type and Default qualifier
 .beanRef([highlight]#"beanName"#); // Lookup by name
 ----
@@ -449,10 +449,10 @@ class CdiRegistry implements Registry {
         this.bm = bm;
     }
     public <T> T lookupByNameAndType(String name, Class<T> type) {
-        return getReference(bm, type, bm.getBean(name));
+        return getReference(bm, type, bm.resolve(bm.getBeans(name)));
     }
     public <T> Set<T> findByType(Class<T> type) {
-        return getReference(bm, type, bm.resolve(getBeans(type));
+        return getReference(bm, type, bm.resolve(bm.getBeans(type)));
     }
     public Object lookupByName(String name) {
         return lookupByNameAndType(name, Object.class);
@@ -472,11 +472,11 @@ class CdiRegistry implements Registry {
 public class CamelExtension implements Extension {
     ...
     void configureContext(@Observes AfterDeploymentValidation adv, BeanManager bm) {
-        CamelContext context = getReference(bm, CamelContext.class);
+        DefaultCamelContext context = getReference(bm, DefaultCamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
             context.addRoutes(getReference(bm, RouteBuilder.class, bean);
 
-        [highlight]#context.setRegistry(new CdiRegistry(bm))#;
+        [highlight]#context.setRegistry(new CdiRegistry(bm));#
         context.start();
     }
     ...
@@ -498,7 +498,7 @@ class JmsComponentFactoryBean {
     @Produces
     [highlight]#@Named("sjms")#
     @ApplicationScoped
-    SjmsComponent sjmsComponent() {
+    Component sjmsComponent() {
         SjmsComponent component = new SjmsComponent();
         component.setConnectionFactory(/\*...*/);
         return component;
@@ -585,19 +585,19 @@ TIP: Only for beans containing Camel annotations by observing the `ProcessAnnota
 ----
 class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 
-    final DefaultCamelBeanPostProcessor processor new DefaultCamelBeanPostProcessor();
+  final DefaultCamelBeanPostProcessor processor = new DefaultCamelBeanPostProcessor();
 
-    final InjectionTarget<T> delegate;
+  final InjectionTarget<T> delegate;
 
-    CamelInjectionTarget(InjectionTarget<T> target) {
-        delegate = target;
-    }
+  CamelInjectionTarget(InjectionTarget<T> target) {
+    delegate = target;
+  }
 
-    @Override
-    public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
-        [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
-        delegate.inject(instance, ctx);
-    }
+  public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
+    [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
+    delegate.inject(instance, ctx);
+  }
+  ...
 }
 ----
 <1> Call the Camel default bean post-processor after CDI injection
@@ -635,7 +635,7 @@ class CamelExtension implements Extension {
 [source, subs="verbatim,quotes"]
 ----
 class CamelExtension implements Extension {
-  Set<AnnotatedType<?>> camelBeans = new HashSet<>());
+  final Set<AnnotatedType<?>> camelBeans = new HashSet<>();
 
   void camelAnnotations(@Observes [highlight]#@WithAnnotations({BeanInject.class, <1>
       Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})#
