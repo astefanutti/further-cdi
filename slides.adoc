@@ -106,9 +106,9 @@ include::parts/extensions.adoc[]
 
 include::parts/legacy.adoc[]
 
-include::parts/camel.adoc[]
-
 include::parts/metrics.adoc[]
+
+include::parts/camel.adoc[]
 
 [.topic.intro]
 == Conclusion

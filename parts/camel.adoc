@@ -31,7 +31,7 @@ Discover how did we create CDI integration module for Camel
 ----
 class CamelMain {
     static CamelContext camelContext = new DefaultCamelContext();
-    static CountDownLatch latch = new CountDownLatch(1);
+    static CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     public static void main(String[] args) {
         SjmsComponent component = new SjmsComponent();
@@ -43,7 +43,7 @@ class CamelMain {
             }
         });
         camelContext.start();
-        latch.await(); // Shutdown hook
+        shutdownLatch.await(); // Shutdown hook
         camelContext.stop();
     }
 }
@@ -65,7 +65,10 @@ class JmsComponentFactoryBean {
         return component;
     }
 }
+----
 
+[source, subs="verbatim,quotes"]
+----
 class FileToJmsRouteBean extends RouteBuilder {
 
     @Override
@@ -102,22 +105,22 @@ TIP: We could have a lot more with advanced *CDI* features
 
 
 [.topic.source]
-== Our Goals
+== Our goals
 
 . Avoid assembling and configuring the `CamelContext` manually
 
 . Access CDI beans from the Camel DSL
-
-[source, subs="verbatim,quotes"]
++
+[source, subs="verbatim,quotes", role="smallest"]
 ----
 .to("[highlight]#sjms#:queue:outputDest"); // Lookup by name (sjms) and type (Component)
-.bean([highlight]#MyBean.class#); // Lookup by type
+.bean([highlight]#MyBean.class#); // Lookup by type and Default qualifier
 .beanRef([highlight]#"beanName"#); // Lookup by name
 ----
 
 . Support Camel annotations in CDI beans
-
-[source, subs="verbatim,quotes"]
++
+[source, subs="verbatim,quotes", role="smallest"]
 ----
 [highlight]#@EndpointInject#(uri="jms:queue:foo")
 Endpoint endpoint;
@@ -150,14 +153,14 @@ TIP: Use the Magic
 [.topic.source]
 == How to achieve this?
 
-TIP: we need to write an extension that will:
+TIP: We need to write an extension that will:
 
 . Declare a `CamelContext` bean if no such bean is already deployed by observing the `AfterBeanDiscovery` lifecycle event
-. Detect by observing the `ProcessAnnotatedType` lifecycle events:
-.. The beans of type `RouteBuilder` to instantiate and add them to the Camel context
-.. The beans containing Camel annotations
-. Change how CDI beans containing Camel annotations get injected by observing the `ProcessInjectionTarget` lifecycle event
+. Instantiate the beans of type `RouteBuilder` and add them to the Camel context
 . Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the `BeforeShutdown` event)
+. Customize the Camel context to query the `BeanManager` to lookup CDI beans by name and type
+. Detect CDI beans containing Camel annotations by observing the `ProcessAnnotatedType` and modify how they get injected by observing the `ProcessInjectionTarget` lifecycle event
+
 
 [.topic.source]
 == So we will `@Observes` these 5 events to add our features
@@ -225,15 +228,15 @@ include::legend.adoc[]
 
 TIP: Automatically add a `CamelContext` bean if no such a bean already exists in the deployment archive
 
-icon:question-circle[] How the detect a bean exists in the deployment?
+icon:question-circle[] How to detect if a bean exists in the deployment?
 
 TIP: By querying the `BeanManager` during the `AfterBeanDiscovery` lifecycle event
 
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-    void addContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager manager) {
-        Set<Bean<?>> beans = manager.[highlight]#getBeans#(CamelContext.class);
+    void addCamelContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager bm) {
+        Set<Bean<?>> beans = bm.[highlight]#getBeans#(CamelContext.class);
         if (beans.isEmpty())
             // No CamelContext bean is already deployed
     }
@@ -268,20 +271,57 @@ public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
 [.topic.source]
 == Implementing the `Bean` SPI
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
-class CamelContextBean implements Bean<CamelContext> {
-    @Override
+class CamelContextBean implements Bean<DefaultCamelContext> {
+    private final Set<Annotation> qualifiers = new HashSet<>(Arrays.asList(new AnnotationLiteral<Any>(){},
+                                                                       new AnnotationLiteral<Default>(){}));
+    private final Set<Annotation> types;
+
+    public CamelContextBean(BeanManager bm) {
+        types = bm.createAnnotatedType(DefaultCamelContext.class).getTypeClosure());
+    }
     public Class<? extends Annotation> getScope() {
         return ApplicationScoped.class;
     }
-    @Override
     public Set<Annotation> getQualifiers() {
-        return Collections.unmodifiableSet(new HashSet<>(Arrays.asList(DefaultLiteral.INSTANCE, AnyLiteral.INSTANCE)));
+        return Collections.unmodifiableSet(qualifiers);
     }
-    @Override
-    public CamelContext create(CreationalContext<CamelContext> creational) {
+    public Set<Type> getTypes() {
+        return Collections.unmodifiableSet(types);
+    }
+    public DefaultCamelContext create(CreationalContext<DefaultCamelContext> creational) {
         return new DefaultCamelContext();
+    }
+    public void destroy(DefaultCamelContext instance, CreationalContext<DefaultCamelContext> creational) {
+    }
+    ...
+----
+
+
+[.topic.source]
+== Implementing the `Bean` SPI (continued)
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+    ...
+    public Class<?> getBeanClass() {
+        return DefaultCamelContext.class;
+    }
+    public Set<InjectionPoint> getInjectionPoints() {
+        return Collections.emptySet();
+    }
+    public String getName() { // Only called for @Named bean
+        return "";
+    }
+    public Set<Class<? extends Annotation>> getStereotypes() {
+        return Collections.emptySet();
+    }
+    public boolean isAlternative() {
+        return false;
+    }
+    public boolean isNullable() { // Deprecated since CDI 1.1
+        return false;
     }
 }
 ----
@@ -290,16 +330,16 @@ class CamelContextBean implements Bean<CamelContext> {
 [.topic.source]
 == Adding a programmatic bean to the deployment
 
-TIP: Then add the `CamelContextBean` bean programmatically
+TIP: Then add the `CamelContextBean` bean programmatically by observing the `AfterBeanDiscovery` lifecyle event
 
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
 
-    void addContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager manager) {
-        Set<Bean<?>> beans = manager.getBeans(CamelContext.class);
+    void addCamelContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager bm) {
+        Set<Bean<?>> beans = bm.getBeans(CamelContext.class);
         if (beans.isEmpty())
-            abd.[highlight]#addBean#(new CamelContextBean());
+            abd.[highlight]#addBean#(new CamelContextBean(bm));
     }
 }
 ----
@@ -313,7 +353,7 @@ TIP: Instantiate the `CamelContext` bean and the `RouteBuilder` beans in the `Af
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-
+    ...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
@@ -337,7 +377,7 @@ TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` e
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-
+    ...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
@@ -349,7 +389,6 @@ public class CamelExtension implements Extension {
         CamelContext context = getReference(bm, CamelContext.class);
         [highlight]#context.stop();#
     }
-    ...
 }
 ----
 
@@ -391,9 +430,9 @@ icon:question-circle[] How to retrieve CDI beans from the Camel DSL?
 
 [source, subs="verbatim,quotes"]
 ----
-.to("[highlight]#sjms#:queue:outputDest"); // lookup by name sjms and type Component
-.bean([highlight]#MyBean.class#); // lookup by type
-.beanRef([highlight]#"beanName"#); // lookup by name
+.to("[highlight]#sjms#:queue:outputDest"); // Lookup by name sjms and type Component
+.bean([highlight]#MyBean.class#); // Lookup by type and Default qualifier
+.beanRef([highlight]#"beanName"#); // Lookup by name
 ----
 
 TIP: Implement the Camel registry SPI and use the `BeanManager` to lookup for CDI bean contextual references by name and type
@@ -431,7 +470,7 @@ class CdiRegistry implements Registry {
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-
+    ...
     void configureContext(@Observes AfterDeploymentValidation adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
@@ -440,7 +479,6 @@ public class CamelExtension implements Extension {
         [highlight]#context.setRegistry(new CdiRegistry(bm))#;
         context.start();
     }
-
     ...
 }
 ----
@@ -451,7 +489,32 @@ public class CamelExtension implements Extension {
 
 [.statement]
 ====
-TIP: We can get rid of all the code related to the Camel context config
+TIP: We can declare the `sjms` component with the `@Named` qualifier
+
+[source, subs="verbatim,quotes"]
+----
+class JmsComponentFactoryBean {
+
+    @Produces
+    [highlight]#@Named("sjms")#
+    @ApplicationScoped
+    SjmsComponent sjmsComponent() {
+        SjmsComponent component = new SjmsComponent();
+        component.setConnectionFactory(/\*...*/);
+        return component;
+    }
+}
+----
+
+====
+
+
+[.topic]
+== Second goal achieved
+
+[.statement]
+====
+TIP: And get rid of all the code related to the Camel context config
 
 [source, subs="verbatim,quotes"]
 ----
@@ -471,31 +534,6 @@ TIP: We can get rid of all the code related to the Camel context config
         [highlight]#super.stop();#
     [highlight]#}#
 [highlight]#}#
-----
-
-====
-
-
-[.topic]
-== Second goal achieved
-
-[.statement]
-====
-TIP: And declare the `sjms` component with the `@Named` qualifier
-
-[source, subs="verbatim,quotes"]
-----
-class JmsComponentFactoryBean {
-
-    @Produces
-    [highlight]#@Named("sjms")#
-    @ApplicationScoped
-    SjmsComponent sjmsComponent() {
-        SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(/\*...*/);
-        return component;
-    }
-}
 ----
 
 ====
@@ -547,17 +585,18 @@ TIP: Only for beans containing Camel annotations by observing the `ProcessAnnota
 ----
 class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 
-    InjectionTarget<T> delegate;
-    DefaultCamelBeanPostProcessor processor;
+    final DefaultCamelBeanPostProcessor processor new DefaultCamelBeanPostProcessor();
+
+    final InjectionTarget<T> delegate;
 
     CamelInjectionTarget(InjectionTarget<T> target) {
         delegate = target;
-        processor = new DefaultCamelBeanPostProcessor();
     }
+
     @Override
     public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
-        delegate.inject(instance, ctx);
         [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
+        delegate.inject(instance, ctx);
     }
 }
 ----
@@ -606,7 +645,7 @@ class CamelExtension implements Extension {
 
   <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit) {
       if (camelBeans.contains(pit.getAnnotatedType())) <2>
-        pit.setInjectionTarget(new CamelInjectionTarget<>(pit.getInjectionTarget()));
+        pit.[highlight]#setInjectionTarget#(new CamelInjectionTarget<>(pit.getInjectionTarget()));
   }
 }
 ----
