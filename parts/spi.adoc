@@ -28,6 +28,8 @@ NOTE: SPI dedicated to extensions
 ----
 @startuml
 
+skinparam defaultFontName Consolas
+
 Annotated <|-- AnnotatedMember
 Annotated <|-- AnnotatedParameter
 Annotated <|-- AnnotatedType
@@ -106,6 +108,8 @@ for annotated types
 [plantuml, "cdi-meta", "svg", width="100%"]
 ----
 @startuml
+
+skinparam defaultFontName Consolas
 
 BeanAttributes <|-- Bean
 Bean <|-- Interceptor
@@ -290,6 +294,7 @@ public class MyService {
 ----
 @startuml
 
+skinparam defaultFontName Consolas
 
 Unmanaged *-- UnmanagedInstance
 
@@ -358,6 +363,8 @@ class CDI<T> {
 [plantuml, "spi-extensions", "svg", height="100%", width="100%"]
 ----
 @startuml
+
+skinparam defaultFontName Consolas
 
 interface BeforeBeanDiscovery {
     +addQualifier(Class<? extends Annotation>)
