@@ -248,7 +248,7 @@ TIP: An abstract superclass can use meta to provide generic resolution
 ----
 public [highlight]#abstract# class AbstractService {
   //resolver with same qualifiers than the current bean
-  private Resolver resolver
+  private Resolver resolver;
 
   [highlight]#@Inject# //@Inject can be used on an initializer method
   void initResolver([highlight]#Bean#<AbstractService> meta, [highlight]#@Any# [highlight]#Instance#<Resolver> resolvers)

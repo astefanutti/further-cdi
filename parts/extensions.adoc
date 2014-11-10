@@ -13,9 +13,9 @@ NOTE: One of the _most powerful feature_ of the CDI specification
 
 NOTE: Not really popularized, partly due to:
 
-. their _high level of abstraction_
-. the good knowledge on Basic CDI and SPI
-. lack of information (CDI is often reduced to a basic DI solution)
+. Their _high level of abstraction_
+. The good knowledge on Basic CDI and SPI
+. Lack of information (CDI is often reduced to a basic DI solution)
 ====
 
 
@@ -28,11 +28,11 @@ NOTE: Not really popularized, partly due to:
 [.statement]
 ====
 
-TIP: to integrate 3rd party lib, Framework or legacy code
+TIP: To integrate 3rd party libraries, frameworks or legacy components
 
-TIP: change exisiting configuration or behavior
+TIP: To change exisiting configuration or behavior
 
-TIP: to extend CDI and Java EE (Java EE can evolve between major release)
+TIP: To extend CDI and Java EE (Java EE can evolve between major release)
 
 ====
 
@@ -61,7 +61,7 @@ TIP: Modifying these meta-data or creating new ones
 
 NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` declared in `META-INF/services`
 
-TIP: just put the qualified name of your extension class in this file
+TIP: Just put the fully qualified name of your extension class in this file
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
