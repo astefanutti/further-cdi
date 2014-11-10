@@ -156,7 +156,7 @@ class FpmlToMxmlTransformationMain throws Exception {
         [highlight]#Executor executor = new Executor(reader, null, "", "", "",
             FpmlToMxmlTransformationMain.class.getClassLoader(), true);#
         SDDParameterProvider parameters = new SDDParameterProvider(new Properties());
-        ssdParameters.setObject(inputFpml);
+        parameters.setObject(inputFpml);
         DataDictionaryFormulaResult result = executor.executeFormula("Fpml2mxmlTransformation", parameters);
         Mxml outputMxml = (Mxml) result.getObjectValue(0, 0);
         executor.cleanUp();
@@ -208,8 +208,8 @@ icon:ban[] _Without touching the component source / binary because we don't own 
 TIP: We need to write an extension that will:
 
 . Collect the configuration metadata, i.e. the `@Formula(...)`, required to instantiate the legacy component by observing the `ProcessInjectionPoint` lifecycle event
-. Wrap the legacy component as a CDI bean programmatically by implementing the `Bean` SPI and observing the `AfterBeanDiscovery` lifecycle event
-. Declare a producer method that will produce the `Transformer` facade instances
+. Declare the legacy component as a CDI bean programmatically by implementing the `Bean` SPI and observing the `AfterBeanDiscovery` lifecycle event
+. Declare a producer method that will produce the `Transformer` facade instances and use the legacy component CDI bean
 
 
 [.topic.source]
@@ -325,7 +325,12 @@ Transformer<FixML, MxML> fixmlToMxmlTransformer;
 [.topic.source]
 == Second goal: Hide the technical code
 
-TIP: We first need to collect all the `@Formula` pathes metadata required to instantiate the legacy component
+TIP: We first need to collect all the `@Formula` pathes metadata required to instantiate the legacy component to get rid of the following code
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+MultiReader reader = new MultiReader(Collections.emptyList(), Arrays.asList("fpml2mxml.jar", "fixml2mxml.jar"));
+----
 
 TIP: By observing the `ProcessInjectionPoint` lifecycle event
 
@@ -539,12 +544,22 @@ FpML inputFpml = (FpML) JAXBContext.newInstance(FpML.class)
                  .createUnmarshaller().unmarshal(new File("fpml.xml"));
 [highlight]#MultiReader reader = new MultiReader(Collections.emptyList(), Arrays.asList("fpml2mxml.jar"));
 Executor executor = new Executor(reader, null, "", "", "", Executor.class.getClassLoader(), true);
-SDDParameterProvider parameters = ParameterUtils.buildParameters(new Properties());
+SDDParameterProvider parameters = new SDDParameterProvider(new Properties());
 parameters.setObject(inputFpml);
 DataDictionaryFormulaResult result = executor.executeFormula("Fpml2mxmlTransformation", parameters);
 Mxml outputMxml = (Mxml) result.getObjectValue(0, 0);
 executor.cleanUp();#
 }
+----
+
+TIP: And write instead:
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+@Inject
+@Formula(name = "Fpml2mxmlTransformation", path = "fpml2mxml.jar")
+Transformer<FpML, MxML> transformer;
+Mxml result = transformer.transform(inputFpml);
 ----
 
 ====
