@@ -2,14 +2,16 @@
 == Legacy Code
 
 ====
-How to modernize Legacy Components with the CDI Programming Model
+How to modernize a legacy component with the CDI Programming Model
 ====
 
 
 [.topic.source]
-== A `/* Not So Fictional */` Legacy Component
+== A legacy component
 
-[plantuml, "legacy", "svg", width="100%", height="95%"]
+TIP: Transformation engine used at Murex to transform message formats from external systems into Murex canonical format
+
+[plantuml, "legacy", "svg", width="100%", height="75%"]
 ----
 @startuml
 scale 600 width
@@ -130,110 +132,90 @@ Executor -- DataDictionaryFormulaResult : output >
 ----
 
 
-[.topic.recap]
-== Objectives
-
-icon:lightbulb-o[] Improve the _public API_ +
-  and make it _typesafe_
-
-icon:lightbulb-o[] Integrate the component into the _CDI programming model_
-
-icon:ban[] Without touching the _component source_ / _binary_
-
-
 [.topic.source]
-== The CDI Way
+== Legacy component out of the box (NO CDI)
 
-TIP: A functional interface:
-
-[source]
+[source, subs="verbatim,quotes", role="smaller"]
+.Module containing the transformation logic `fpml2mxml.jar` that we want to reuse as is
 ----
-public interface Transformer<I, O> {
-    O transform(I input);
+@Formula
+class Fpml2mxmlTransformation {
+    public MxML transformation(FpML fpml) { /* transformation logic */ }
 }
 ----
 
-TIP: And a CDI qualifier with configuration metadata:
-
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
+.The tranformation engine that uses that module
 ----
-import javax.enterprise.util.Nonbinding;
-import javax.inject.Qualifier;
-[highlight]#@Qualifier#
-public @interface Legacy {
-    [highlight]#@Nonbinding#
-    String value() default ""; // The transformation name
+class FpmlToMxmlTransformationMain throws Exception {
+    public static void main(String[] args) {
+        FpML inputFpml = (FpML) JAXBContext.newInstance(FpML.class)
+            .createUnmarshaller().unmarshal(new File("fpml.xml"));
+        MultiReader reader = new MultiReader(Collections.emptyList(),
+            Arrays.asList("fpml2mxml.jar"));
+        [highlight]#Executor executor = new Executor(reader, null, "", "", "",
+            FpmlToMxmlTransformationMain.class.getClassLoader(), true);#
+        SDDParameterProvider parameters = new SDDParameterProvider(new Properties());
+        ssdParameters.setObject(inputFpml);
+        DataDictionaryFormulaResult result = executor.executeFormula("Fpml2mxmlTransformation", parameters);
+        Mxml outputMxml = (Mxml) result.getObjectValue(0, 0);
+        executor.cleanUp();
+    }
 }
 ----
 
 
 [.topic.source]
-== Configuration at Injection Points
+== Modernize the legacy component API with CDI
 
-[source, subs="verbatim,quotes"]
-----
-@Inject [highlight]#@Legacy("transformation")#
-Transformer<InputType, OutputType> transformer;
+[.statement]
+====
 
-InputType input;
-OutputType result = transformer.transform(input);
-----
-
-TIP: Distribute configuration closest to the code:
+TIP: We want the end-user to write that code instead to achieve the same result:
 
 [source, subs="verbatim,quotes"]
 ----
 @Inject
-[highlight]#@Legacy("transformation_1")#
-Transformer<InputType1, OutputType1> transformer_1;
-...
-@Inject
-[highlight]#@Legacy("transformation_N")#
-Transformer<InputTypeN, OutputTypeN> transformer_N;
+@Formula(name = "Fpml2mxmlTransformation", path = "fpml2mxml.jar")
+Transformer<FpML, MxML> transformer;
+
+FpML input = (FpML) JAXBContext.newInstance(FpML.class)
+                               .createUnmarshaller()
+                               .unmarshal(new File("fpml.xml"));
+
+Mxml result = transformer.transform(input);
 ----
+====
 
 
 [.topic.source]
-== Parameterized Types as Metadata
+== Our goals
 
-[source, subs="verbatim,quotes"]
-----
-[highlight]#@Produces#
-[highlight]#@Legacy#
-[highlight]#<I, O> Transformer<I, O># produceTransformer(*LegacyComponent legacyComponent*, <1>
-  InjectionPoint injectionPoint) {
-  Legacy legacy = injectionPoint.getAnnotated().getAnnotation(Legacy.class);
+[.statement]
+====
 
-  return new LegacyTransformerAdapter<I, O>(legacyComponent, legacy.value(),
-    [highlight]#injectionPoint.getType()#)); <2>
-}
-----
-<1> Get the legacy component bean instance
-<2> Produce a typesafe `Transformer` facade
+icon:lightbulb-o[] Define a facade for the legacy component that's functional and typesafe
 
-TIP: *Parameterized types are not erased by CDI*, so that they can be used as metadata. For example for _type check_ / _conversion_ during container initialization
+icon:lightbulb-o[] Hide the technical code that manages the configuration and the lifecycle of the legacy component
+
+icon:ban[] _Without touching the component source / binary because we don't own it_
+====
 
 
 [.topic.source]
-== The `ProcessInjectionPoint` Event
+== How to achieve this?
 
-TIP: Collect all the `@Legacy` metadata required to instantiate the legacy component
+TIP: We need to write an extension that will:
 
-[source]
-.`ProcessInjectionPoint<T, X>`
-----
-public interface ProcessInjectionPoint<T, X> {
-    public InjectionPoint getInjectionPoint();
-    public void setInjectionPoint(InjectionPoint injectionPoint);
-    public void addDefinitionError(Throwable t);
-}
-----
+. Collect the configuration metadata, i.e. the `@Formula(...)`, required to instantiate the legacy component by observing the `ProcessInjectionPoint` lifecycle event
+. Wrap the legacy component as a CDI bean programmatically by implementing the `Bean` SPI and observing the `AfterBeanDiscovery` lifecycle event
+. Declare a producer method that will produce the `Transformer` facade instances
 
 
 [.topic.source]
-== The `ProcessInjectionPoint` Event in Lifecycle
+== So we will `@Observes` these 2 events to add our features
 
-[plantuml, "lifecycle-pit", "svg", height="85%", width="95%"]
+[plantuml, "lifecycle-PIP-ABD", "svg", height="85%", width="95%"]
 ----
 @startuml
 
@@ -260,6 +242,10 @@ skinparam activity {
   FontColor<< Highlight >> white
   BorderColor<< Highlight >> #337788
   BackgroundColor<< Highlight >> #337788
+
+  FontColor<< HighlightOnce >> white
+  BorderColor<< HighlightOnce >> #BB3322
+  BackgroundColor<< HighlightOnce >> #BB3322
 }
 
 (*) -right-> "Deployment\nStart" << Internal >>
@@ -268,13 +254,13 @@ skinparam activity {
 -right-> "Process\nAnnotated\nType"
 -right-> "After\nType\nDiscovery" << Once >>
 -down-> "Bean\nEligibility\nCheck" << Internal >>
--left-> "Process\nInjection\nPoint" <<Highlight>>
+-left-> "Process\nInjection\nPoint" << Highlight >>
 -left-> "Process\nInjection\nTarget"
 -left-> "Process\nBean\nAttributes"
 -down-> "Process\nBean"
 -right-> "Process\nProducer"
 -right-> "Process\nObserver\nMethod"
--right-> "After\nBean\nDiscovery" << Once >>
+-right-> "After\nBean\nDiscovery" << HighlightOnce >>
 -down-> "After\nDeployment\nValidation" << Once >>
 -left-> "Application\nRunning" << Internal >>
 -left-> "Before\nShutdown" << Once >>
@@ -288,40 +274,121 @@ include::legend.adoc[]
 
 
 [.topic.source]
-== Collect Injection Points Metadata
+== First goal: Define a facade for the legacy component
+
+TIP: Define a functional interface:
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+public interface Transformer<I, O> {
+    O transform(I input);
+}
+----
+
+TIP: And a CDI qualifier with configuration metadata:
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+import javax.enterprise.util.Nonbinding;
+import javax.inject.Qualifier;
+[highlight]#@Qualifier#
+public @interface Formula {
+    [highlight]#@Nonbinding#
+    String name() default ""; // The tranformation name
+    [highlight]#@Nonbinding#
+    String path() default ""; // The tranformation module
+}
+----
+
+
+[.topic.source]
+== Configuration at injection points
+
+TIP: Distribute configuration closer to the code:
+
+[source, subs="verbatim,quotes"]
+----
+@Inject
+[highlight]#@Formula(name = "Fpml2mxmlTransformation", path = "fpml2mxml.jar")#
+Transformer<FpML, MxML> fpmlToMxmlTransformer;
+
+...
+
+@Inject
+[highlight]#@Formula(name = "Fixml2mxmlTransformation", path = "fixml2mxml.jar")#
+Transformer<FixML, MxML> fixmlToMxmlTransformer;
+
+...
+----
+
+
+[.topic.source]
+== Second goal: Hide the technical code
+
+TIP: We first need to collect all the `@Formula` pathes metadata required to instantiate the legacy component
+
+TIP: By observing the `ProcessInjectionPoint` lifecycle event
+
+[source, subs="verbatim,quotes"]
+----
+public interface ProcessInjectionPoint<T, X> {
+    [highlight]#public InjectionPoint getInjectionPoint();#
+    public void setInjectionPoint(InjectionPoint injectionPoint);
+    public void addDefinitionError(Throwable t);
+}
+----
+
+
+[.topic.source]
+== Collect the legacy component configuration
+
+TIP: In a CDI extension
 
 [source, subs="verbatim,quotes"]
 ----
 class LegacyComponentExtension implements Extension {
 
-  Set<String> configuration = new HashSet<>();
+  final List<String> pathes = new ArrayList<>();
 
-  void collectConfiguration(@Observes [highlight]#ProcessInjectionPoint<?, Transformer># pit) { <1>
+  void collectPathes(@Observes [highlight]#ProcessInjectionPoint<?, Transformer># pit) { <1>
     Annotated annotated = pit.getInjectionPoint().getAnnotated();
-    if (annotated.isAnnotationPresent([highlight]#Legacy.class#))
-        configuration.add(annotated.getAnnotation(Legacy.class).value()); <2>
+    if (annotated.isAnnotationPresent([highlight]#Formula.class#))
+        pathes.add(annotated.getAnnotation(Formula.class).path()); <2>
   }
 }
 ----
 <1> Observe every injection point of type `Transformer` on any declaring bean
-<2> Collect the injection point `@Legacy` metadata, if any
+<2> Collect the injection point `@Formula` `path` attribute
 
 
 [.topic.source]
-== The `Bean` Interface
+== Declaring the legacy component as a CDI bean programmatically
 
-TIP: Integrate the legacy component as a CDI bean
+icon:question-circle[] Why do we need to add a bean programmatically?
+
+icon:info-circle[] The legacy component is not a bean archive:
+
+. It does not contain a `beans.xml` (explicit bean archive)
+. Nor it contains one or more bean classes with a bean defining annotation (implicit bean archive)
+
+icon:ban[] We cannot touch the component source / binary because we don't own it
+
+
+[.topic.source]
+== The `Bean SPI`
+
+icon:question-circle[] So how to declare a bean programmatically?
+
+TIP: We need to implement the `Bean` SPI
 
 [source]
 ----
 public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
     public Class<?> getBeanClass();
     public Set<InjectionPoint> getInjectionPoints();
-    // Contextual<T>
-    public T create(CreationalContext<T> creationalContext);
+    public T create(CreationalContext<T> creationalContext); // Contextual<T>
     public void destroy(T instance, CreationalContext<T> creationalContext);
-    // BeanAttributes<T>
-    public Set<Type> getTypes();
+    public Set<Type> getTypes(); // BeanAttributes<T>
     public Set<Annotation> getQualifiers();
     public Class<? extends Annotation> getScope();
     public String getName();
@@ -332,42 +399,77 @@ public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
 
 
 [.topic.source]
-== Define Beans Programmatically
+== Implementing the `Bean` SPI
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
-class LegacyComponentBean [highlight]#implements Bean<LegacyComponent># {
-    Set<String> configuration = new HashSet<>();
-    LegacyComponentBean(Set<String> configuration) {
-        this.configuration = configuration;
-    }
-    public LegacyComponent create(CreationalContext<LegacyComponent> context) {
-        LegacyComponent legacyComponent = [highlight]#new LegacyComponent()#;
-        legacyComponent./\*CENSORED!*/(configuration);
-        return legacyComponent;
-    }
-    public void destroy(LegacyComponent legacyComponent,
-                        CreationalContext<LegacyComponent> context) {
-        legacyComponent./\*CENSORED!*/();
+class LegacyExecutorBean implements Bean<Executor> {
+    private final Set<Annotation> qualifiers = new HashSet<>(Arrays.asList(new AnnotationLiteral<Any>(){},
+                                                                       new AnnotationLiteral<Default>(){}));
+    List<String> pathes = new ArrayList<>();
+    LegacyExecutorBean(List<String> pathes) {
+        this.pathes = pathes;
     }
     public Class<? extends Annotation> getScope() {
-        return [highlight]#ApplicationScoped.class#;
+        return ApplicationScoped.class;
+    }
+    public Set<Annotation> getQualifiers() {
+        return Collections.unmodifiableSet(qualifiers);
+    }
+    public Set<Type> getTypes() {
+        return Collections.singleton(Executor.class);
+    }
+    public Executor create(CreationalContext<Executor> creational) {
+        MultiReader reader = new MultiReader(Collections.emptyList(), pathes);
+        return new Executor(reader, null, "", "", "", Executor.class.getClassLoader(), true);
+    }
+    public void destroy(Executor instance, CreationalContext<Executor> creational) {
+        executor.cleanUp();
+    }
+    ...
+----
+
+
+[.topic.source]
+== Implementing the `Bean` SPI (continued)
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+    ...
+    public Class<?> getBeanClass() {
+        return Executor.class;
+    }
+    public Set<InjectionPoint> getInjectionPoints() {
+        return Collections.emptySet();
+    }
+    public String getName() { // Only called for @Named bean
+        return "";
+    }
+    public Set<Class<? extends Annotation>> getStereotypes() {
+        return Collections.emptySet();
+    }
+    public boolean isAlternative() {
+        return false;
+    }
+    public boolean isNullable() { // Deprecated since CDI 1.1
+        return false;
     }
 }
 ----
 
 
 [.topic.source]
-== The `AfterBeanDiscovery` Event
+== Adding a programmatic bean to the deployment
 
-TIP: Add the legacy component bean after bean discovery
+icon:question-circle[] Then, how to add a bean declared programmatically?
 
-[source]
-.`AfterBeanDiscovery`
+TIP: By observing the `AfterBeanDiscovery` lifecycle event
+
+[source, subs="verbatim,quotes"]
 ----
 public interface AfterBeanDiscovery {
     public void addDefinitionError(Throwable t);
-    public void addBean(Bean<?> bean);
+    [highlight]#public void addBean(Bean<?> bean);#
     public void addObserverMethod(ObserverMethod<?> observerMethod);
     public void addContext(Context context);
     public <T> AnnotatedType<T> getAnnotatedType(Class<T> type, String id);
@@ -375,91 +477,74 @@ public interface AfterBeanDiscovery {
 }
 ----
 
-[.topic.source]
-== `AfterBeanDiscovery` in Lifecycle
-
-[plantuml, "lifecycle-abd", "svg", height="85%", width="95%"]
-----
-@startuml
-
-skinparam shadowing false
-skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
-
-skinparam activity {
-  FontSize 20
-  FontName Consolas
-  FontColor #337788
-  ArrowColor #888888
-  BorderColor #337788
-  BackgroundColor #white
-
-  FontColor<< Internal >> #888888
-  BorderColor<< Internal >> #888888
-  BackgroundColor<< Internal >> #white
-
-  FontColor<< Once >> #BB3322
-  BorderColor<< Once >> #BB3322
-  BackgroundColor<< Once >> #white
-
-  FontColor<< Highlight >> white
-  BorderColor<< Highlight >> #BB3322
-  BackgroundColor<< Highlight >> #BB3322
-}
-
-(*) -right-> "Deployment\nStart" << Internal >>
--right-> "Before\nBean\nDiscovery" << Once >>
--right-> "Scan\nArchive" << Internal >>
--right-> "Process\nAnnotated\nType"
--right-> "After\nType\nDiscovery" << Once >>
--down-> "Bean\nEligibility\nCheck" << Internal >>
--left-> "Process\nInjection\nPoint"
--left-> "Process\nInjection\nTarget"
--left-> "Process\nBean\nAttributes"
--down-> "Process\nBean"
--right-> "Process\nProducer"
--right-> "Process\nObserver\nMethod"
--right-> "After\nBean\nDiscovery" << Highlight >>
--down-> "After\nDeployment\nValidation" << Once >>
--left-> "Application\nRunning" << Internal >>
--left-> "Before\nShutdown" << Once >>
--left-> "Undeploy\nApplication" << Internal >>
--left-> (*)
-
-@enduml
-----
-
-include::legend.adoc[]
-
 
 [.topic.source]
-== Add Beans Programmatically
+== Adding the legacy component bean
+
+TIP: In the CDI extension...
 
 [source, subs="verbatim,quotes"]
 ----
 class LegacyComponentExtension implements Extension {
 
-  Set<String> configuration = new HashSet<>();
+    final List<String> pathes = new ArrayList<>();
 
-  void collectConfiguration(@Observes ProcessInjectionPoint<?, Transformer> pit) {
-    Annotated annotated = pit.getInjectionPoint().getAnnotated();
-    if (annotated.isAnnotationPresent(Legacy.class))
-      configuration.add(annotated.getAnnotation(Legacy.class).value());
-  }
+    void collectPathes(@Observes ProcessInjectionPoint<?, Transformer> pit) {
+        Annotated annotated = pit.getInjectionPoint().getAnnotated();
+        if (annotated.isAnnotationPresent(Formula.class))
+            pathes.add(annotated.getAnnotation(Formula.class).path());
+    }
 
-  void addLegacyComponentBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
-    abd.[highlight]#addBean(new LegacyComponentBean(configuration))#;
-  }
+    void addLegacyComponentBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
+        abd.[highlight]#addBean(new LegacyExecutorBean(pathes))#;
+    }
 }
 ----
 
 
-[.topic.recap]
-== [line-through]#Objectives#
+[.topic.source]
+== Declare the `Transformer` facade
 
-icon:thumbs-o-up[] Improve the _public API_ +
-  and make it _typesafe_
+TIP: Finally we declare a producer method for the `Transformer` facade that uses the `InjectionPoint` API
 
-icon:thumbs-o-up[] Integrate the component into the _CDI programming model_
+[source, subs="verbatim,quotes", role="smaller"]
+----
+[highlight]#@Produces# [highlight]#@Formula#
+[highlight]#<I, O> Transformer<I, O># produceTransformer([highlight]#Executor executor#, [highlight]#InjectionPoint ip#) {
+    final String formula = ip.getAnnotated().getAnnotation(Formula.class).name();
+    return new Transformer<I, O>() {
+        public O transform(I input) {
+            SDDParameterProvider parameters = new SDDParameterProvider(new Properties());
+            parameters.setObject(input);
+            DataDictionaryFormulaResult result = executor.executeFormula(formula, parameters);
+            return (O) result.getObjectValue(0, 0);
+        }
+    };
+}
+----
 
-icon:thumbs-o-up[] Without touching the _component source_ / _binary_
+TIP: *Parameterized types are not erased by CDI* and accessible from `InjectionPoint.getType()`, so that they can be used as metadata as well. For example for _type check_ / _conversion_.
+
+
+[.topic]
+== Second goal achieved
+
+[.statement]
+====
+TIP: We can get rid of the following technical code
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+FpML inputFpml = (FpML) JAXBContext.newInstance(FpML.class)
+                 .createUnmarshaller().unmarshal(new File("fpml.xml"));
+[highlight]#MultiReader reader = new MultiReader(Collections.emptyList(), Arrays.asList("fpml2mxml.jar"));
+Executor executor = new Executor(reader, null, "", "", "", Executor.class.getClassLoader(), true);
+SDDParameterProvider parameters = ParameterUtils.buildParameters(new Properties());
+parameters.setObject(inputFpml);
+DataDictionaryFormulaResult result = executor.executeFormula("Fpml2mxmlTransformation", parameters);
+Mxml outputMxml = (Mxml) result.getObjectValue(0, 0);
+executor.cleanUp();#
+}
+----
+
+====
