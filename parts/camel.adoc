@@ -21,13 +21,13 @@ image::eip.gif[height="150"]
 == !
 
 [.statement]
-Discover how did we create CDI integration module for Camel
+Discover how we created CDI integration module for Camel
 
 
 [.topic.source]
 == Camel out of the box (NO CDI)
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 class CamelMain {
     static CamelContext camelContext = new DefaultCamelContext();
@@ -49,14 +49,14 @@ class CamelMain {
 }
 ----
 
+TIP: this route watch a directory and send new files to a jms queue
 
 [.topic.source]
-== Basic CDI integration...
+== Basic CDI integration 1/2
 
 [source, subs="verbatim,quotes"]
 ----
 class FileToJmsRouteBean extends RouteBuilder {
-
     @Override
     public void configure() {
         from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
@@ -67,7 +67,6 @@ class FileToJmsRouteBean extends RouteBuilder {
 [source, subs="verbatim,quotes"]
 ----
 class JmsComponentFactoryBean {
-
     @Produces
     @ApplicationScoped
     SjmsComponent sjmsComponent() {
@@ -80,7 +79,7 @@ class JmsComponentFactoryBean {
 
 
 [.topic.source]
-== Basic CDI integration...
+== Basic CDI integration 2/2
 
 [source, subs="verbatim,quotes"]
 ----
@@ -232,7 +231,7 @@ icon:question-circle[] How to detect if a bean exists in the deployment?
 
 TIP: By querying the `BeanManager` during the `AfterBeanDiscovery` lifecycle event
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes",role="smaller"]
 ----
 public class CamelExtension implements Extension {
     void addCamelContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager bm) {
@@ -400,7 +399,7 @@ public class CamelExtension implements Extension {
 ====
 TIP: We can get rid of the following code:
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes",role="smaller"]
 ----
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
@@ -485,7 +484,7 @@ public class CamelExtension implements Extension {
 
 
 [.topic]
-== Second goal achieved
+== Second goal achieved 1/2
 
 [.statement]
 ====
@@ -505,18 +504,19 @@ class JmsComponentFactoryBean {
     }
 }
 ----
-
+...
 ====
 
 
 [.topic]
-== Second goal achieved
+== Second goal achieved 2/2
 
 [.statement]
 ====
+
 TIP: And get rid of all the code related to the Camel context config
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes",role="smaller"]
 ----
 [highlight]#@ApplicationScoped#
 [highlight]#class CamelContextBean extends DefaultCamelContext {#
@@ -660,7 +660,7 @@ class CamelExtension implements Extension {
 ====
 TIP: We can add Camel annotations in CDI beans
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes",role="smaller"]
 ----
 class JmsComponentFactoryBean {
 

@@ -31,7 +31,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 ====
 * icon:user[] Senior Software Engineer
-* icon:user[] CDI co-spec lead
+* icon:user[] CDI co-spec lead, Java EE 8 EG
 * icon:institution[] Red Hat, Inc.
 * icon:twitter[] @antoine_sd
 * icon:rss[] www.next-presso.com
@@ -96,8 +96,8 @@ TIP: If you know the most of these you can stay
 * icon:info-circle[] Meet CDI SPI
 * icon:info-circle[] Introducing CDI Extensions
 * icon:info-circle[] Legacy Code
-* icon:info-circle[] Camel CDI
 * icon:info-circle[] Metrics CDI
+* icon:info-circle[] Camel CDI
 ====
 
 include::parts/spi.adoc[]
