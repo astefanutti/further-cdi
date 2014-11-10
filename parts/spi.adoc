@@ -22,6 +22,20 @@ NOTE: SPI dedicated to extensions
 ====
 
 [.topic.source]
+== Why Having a Type Meta-Model?
+
+[.statement]
+====
+TIP: Because `@Annotations` are configuration
+
+TIP: but they are also read-only
+
+TIP: So to configure we need a mutable meta-model...
+
+TIP: ...for annotated types
+====
+
+[.topic.source]
 == SPI for Type meta-model
 
 [plantuml, "type-meta", "svg", height="90%"]
@@ -91,16 +105,6 @@ interface AnnotatedMethod<X> {
 @enduml
 ----
 
-[.topic.source]
-== Why Having a Type Meta-Model?
-
-Because `@Annotations` are configuration
-
-but they are also read-only
-
-So to configure we need a mutable meta-model
-
-for annotated types
 
 [.topic.source]
 == SPI Dedicated to CDI Meta-Model
@@ -225,7 +229,6 @@ public class MyMapProducer() {
   public <K, V> Map<K, V> produceMap([highlight]#InjectionPoint ip#) {
        if (valueIsNumber(((ParameterizedType)ip.getType())))
            return new TreeMap<K, V>()
-
        return new HashMap<K, V>()
   }
 
@@ -251,13 +254,10 @@ public [highlight]#abstract# class AbstractService {
   void initResolver([highlight]#Bean#<AbstractService> meta, [highlight]#@Any# [highlight]#Instance#<Resolver> resolvers)
  {
     Annotation[] beanQualifiers = (Annotation[]) meta.getQualifiers().toArray()
-
     resolver = resolvers.select(beanQualifiers).get()
-
   }
 
-
-  public Resolver getResolver() {
+public Resolver getResolver() {
     return resolver
   }
 }
@@ -276,14 +276,10 @@ public class MyService {
   private void strictListen([highlight]#@Observes# @Qualified Payload evt, [highlight]#EventMetadata# meta) {
     if(meta.getQualifiers().contains(new QualifiedLiteral())
        && meta.getType().equals(Payload.class))
-
          System.out.println("Do something")
        else
-
          System.out.println("ignore")
-
   }
-
 }
 ----
 
