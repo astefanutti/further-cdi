@@ -32,24 +32,25 @@ Discover how we created CDI integration module for Camel
 class CamelMain {
     static CamelContext camelContext = new DefaultCamelContext();
     static CountDownLatch shutdownLatch = new CountDownLatch(1);
-
     public static void main(String[] args) {
         camelContext.addRoutes(new RouteBuilder() {
             public void configure() {
-                from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
+                from("file:inputDir?delay=1000").to("sjms:queue:outputDest"); <1>
             }
         });
         SjmsComponent component = new SjmsComponent();
         component.setConnectionFactory(/\*...*/);
-        camelContext.addComponent("sjms", component);
+        Integer maxConnections = Integer.valueOf(camelContext
+            .resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
+        component.setConnectionCount(maxConnections);
+        camelContext.addComponent("sjms", component); // Registers the "sjms" component
         camelContext.start();
         shutdownLatch.await(); // Shutdown hook
         camelContext.stop();
     }
 }
 ----
-
-TIP: this route watch a directory and send new files to a jms queue
+<1> This route watch a directory every second and send new files content to a JMS queue
 
 [.topic.source]
 == Basic CDI integration 1/2
@@ -81,12 +82,15 @@ class JmsComponentFactoryBean {
 [.topic.source]
 == Basic CDI integration 2/2
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
     @Inject
     CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) {
+        Integer maxConnections = Integer.valueOf(
+            resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
+        sjmsComponent.setConnectionCount(maxConnections);
         addComponent("sjms", sjmsComponent);
         addRoutes(route);
     }
@@ -108,27 +112,19 @@ TIP: We could have a lot more with advanced *CDI* features
 
 . Avoid assembling and configuring the `CamelContext` manually
 
-. Access CDI beans from the Camel DSL
+. Access CDI beans from the Camel DSL automatically
 +
 [source, subs="verbatim,quotes", role="smallest"]
 ----
 .to("[highlight]#sjms#:queue:outputDest"); // Lookup by name (sjms) and type (Component)
-.bean([highlight]#MyBean.class#); // Lookup by type and Default qualifier
-.beanRef([highlight]#"beanName"#); // Lookup by name
 ----
 
 . Support Camel annotations in CDI beans
 +
 [source, subs="verbatim,quotes", role="smallest"]
 ----
-[highlight]#@EndpointInject#(uri="jms:queue:foo")
-Endpoint endpoint;
-
-[highlight]#@PropertyInject#(value = "timeout", defaultValue = "5000")
-int timeout;
-
-[highlight]#@BeanInject#("foo")
-FooBean foo;
+[highlight]#@PropertyInject#(value = "jms.queue.maxConnections", defaultValue = "10")
+Integer maxConnections;
 ----
 
 
@@ -376,18 +372,19 @@ TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` e
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-    ...
+
+    private CamelContext context;
+
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
-        CamelContext context = getReference(bm, CamelContext.class);
+        context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
             context.addRoutes(getReference(bm, RouteBuilder.class, bean);
         [highlight]#context.start()#;
     }
-
     void stopCamelContext(@Observes [highlight]#BeforeShutdown# bs, BeanManager bm) {
-        CamelContext context = getReference(bm, CamelContext.class);
         [highlight]#context.stop();#
     }
+    ...
 }
 ----
 
@@ -404,7 +401,10 @@ TIP: We can get rid of the following code:
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
     @Inject
-    CamelContextBean([highlight]#FileToJmsRouteBean route#, SjmsComponent sjmsComponent) {
+    CamelContextBean([highlight]#FileToJmsRouteBean route,# SjmsComponent sjmsComponent) {
+        Integer maxConnections = Integer.valueOf(
+            resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
+        sjmsComponent.setConnectionCount(maxConnections);
         addComponent("sjms", sjmsComponent);
         [highlight]#addRoutes(route);#
     }
@@ -430,6 +430,8 @@ icon:question-circle[] How to retrieve CDI beans from the Camel DSL?
 [source, subs="verbatim,quotes"]
 ----
 .to("[highlight]#sjms#:queue:outputDest"); // Lookup by name (sjms) and type (Component)
+
+// And also...
 .bean([highlight]#MyBean.class#); // Lookup by type and Default qualifier
 .beanRef([highlight]#"beanName"#); // Lookup by name
 ----
@@ -471,7 +473,7 @@ class CdiRegistry implements Registry {
 public class CamelExtension implements Extension {
     ...
     void configureContext(@Observes AfterDeploymentValidation adv, BeanManager bm) {
-        DefaultCamelContext context = getReference(bm, DefaultCamelContext.class);
+        context = getReference(bm, DefaultCamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
             context.addRoutes(getReference(bm, RouteBuilder.class, bean);
 
@@ -514,14 +516,17 @@ class JmsComponentFactoryBean {
 [.statement]
 ====
 
-TIP: And get rid of all the code related to the Camel context config
+TIP: And get rid of the code related to the `sjms` component registration
 
 [source, subs="verbatim,quotes",role="smaller"]
 ----
-[highlight]#@ApplicationScoped#
-[highlight]#class CamelContextBean extends DefaultCamelContext {#
-    [highlight]#@Inject#
-    [highlight]#CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) {#
+@ApplicationScoped
+class CamelContextBean extends DefaultCamelContext {
+    @Inject
+    CamelContextBean([highlight]#FileToJmsRouteBean route,# SjmsComponent sjmsComponent) {
+        Integer maxConnections = Integer.valueOf(
+            resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
+        sjmsComponent.setConnectionCount(maxConnections);
         [highlight]#addComponent("sjms", sjmsComponent)#;
         [highlight]#addRoutes(route);#
     }
@@ -532,8 +537,8 @@ TIP: And get rid of all the code related to the Camel context config
     [highlight]#@PreDestroy#
     [highlight]#void preDestroy() {#
         [highlight]#super.stop();#
-    [highlight]#}#
-[highlight]#}#
+    }
+}
 ----
 
 ====
@@ -546,11 +551,12 @@ TIP: Camel provides a set of DI framework agnostic annotations for resource inje
 
 [source, subs="verbatim,quotes"]
 ----
+[highlight]#@PropertyInject#(value = "jms.queue.maxConnections", defaultValue = "10")
+Integer maxConnections;
+
+// But also...
 [highlight]#@EndpointInject#(uri="jms:queue:foo")
 Endpoint endpoint;
-
-[highlight]#@PropertyInject#(value = "timeout", defaultValue = "5000")
-int timeout;
 
 [highlight]#@BeanInject#("foo")
 FooBean foo;
@@ -654,7 +660,7 @@ class CamelExtension implements Extension {
 
 
 [.topic]
-== Third goal achieved
+== Third goal achieved 1/2
 
 [.statement]
 ====
@@ -677,6 +683,40 @@ class JmsComponentFactoryBean {
         return component;
     }
 }
+----
+
+====
+
+
+[.topic]
+== Third goal achieved 2/2
+
+[.statement]
+====
+
+TIP: And get rid of all the code related to the Camel context config
+
+[source, subs="verbatim,quotes",role="smaller"]
+----
+[highlight]#@ApplicationScoped#
+[highlight]#class CamelContextBean extends DefaultCamelContext {#
+    [highlight]#@Inject#
+    [highlight]#CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) {#
+        [highlight]#Integer maxConnections = Integer.valueOf(#
+            [highlight]#resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));#
+        [highlight]#sjmsComponent.setConnectionCount(maxConnections);#
+        [highlight]#addComponent("sjms", sjmsComponent)#;
+        [highlight]#addRoutes(route);#
+    [highlight]#}#
+    [highlight]#@PostConstruct#
+    [highlight]#void postConstruct() {#
+        [highlight]#super.start();#
+    [highlight]#}#
+    [highlight]#@PreDestroy#
+    [highlight]#void preDestroy() {#
+        [highlight]#super.stop();#
+    [highlight]#}#
+[highlight]#}#
 ----
 
 ====
