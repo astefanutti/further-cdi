@@ -130,7 +130,7 @@ class TimedMethodBean {
         [highlight]#Timer timer = registry.timer("timer");#
         [highlight]#Timer.Context time = timer.time();#
         [highlight]#try {# //business code [highlight]#}#
-        [highlight]#finally { [highlight]#time.stop();}#
+        [highlight]#finally { time.stop(); }#
     }
 }
 ----
@@ -151,7 +151,7 @@ class TimedInterceptor {
         String name = context.getMethod().getAnnotation(Timed.class).name();
         Timer timer = registry.timer(name);
         Timer.Context time = timer.time();
-        try { return [highlight]#context.proceed()#;} <2>
+        try { return [highlight]#context.proceed()#; } <2>
         finally { time.stop(); }
     }
 }
@@ -174,7 +174,7 @@ class TimedInterceptor {
         String name = context.getMethod().getAnnotation(Timed.class).name();
         Timer timer = registry.timer(name);
         Timer.Context time = timer.time();
-        try { return context.proceed();}
+        try { return context.proceed(); }
         finally { time.stop(); }
     }
 }
@@ -197,7 +197,7 @@ class TimedInterceptor {
         String name = context.getMethod().getAnnotation(Timed.class).name();
         Timer timer = registry.timer(name);
         Timer.Context time = timer.time();
-        try { return context.proceed();}
+        try { return context.proceed(); }
         finally { time.stop(); }
     }
 }
