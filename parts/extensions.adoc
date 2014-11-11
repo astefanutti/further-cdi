@@ -32,7 +32,9 @@ TIP: To integrate 3rd party libraries, frameworks or legacy components
 
 TIP: To change exisiting configuration or behavior
 
-TIP: To extend CDI and Java EE (Java EE can evolve between major release)
+TIP: To extend CDI and Java EE
+
+TIP: thanks to them, Java EE can evolve between major release
 
 ====
 
