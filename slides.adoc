@@ -98,6 +98,8 @@ TIP: If you know the most of these you can stay
 * icon:info-circle[] Legacy Code
 * icon:info-circle[] Metrics CDI
 * icon:info-circle[] Camel CDI
+
+TIP: Slides available at http://astefanutti.github.io/further-cdi
 ====
 
 include::parts/spi.adoc[]
