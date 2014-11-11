@@ -87,6 +87,57 @@ TIP: If you know the most of these you can stay
 * `@Qualifier`
 * `InjectionPoint`
 
+[.topic.source]
+== More concretely
+
+CAUTION: What's included:
+
+. Real use cases from real life with real users
+. new approach to introduce portable extension concepts
+. Code in IDE with tests
+
+CAUTION: What's not included:
+
+. Introduction to CDI
+. Old content on extension
+. Work with Context (need 2 more hours)
+
+[.topic.source]
+== Tools used in the code 1/2
+
+[.statement]
+====
+Apache Deltaspike
+
+image::deltaspike.png[role="pull-right", width="300"]
+
+. Apache DeltaSpike is a great CDI toolbox
+. Provide helpers to develop extension
+. And a collection of modules like:
+.. Security
+.. Data
+.. Scheduler
+. More info on http://deltaspike.apache.org
+====
+
+
+[.topic.source]
+== Tools used in the code 2/2
+
+[.statement]
+====
+Arquillian
+
+image::arquillian.png[role="pull-right", width="250"]
+
+. Arquillian is an integration test paltform
+. It integrates with Junit
+. Create your deployment in a dedicated method
+. And launch your tests against the container of your choice
+. We'll use the `weld-ee-embedded` container
+. The right solution to test Java EE code
+. More info on http://arquillian.org
+====
 
 [.topic.source]
 == Agenda
