@@ -42,6 +42,7 @@ TIP: ...for annotated types
 ----
 @startuml
 
+skinparam shadowing false
 skinparam defaultFontName Consolas
 
 Annotated <|-- AnnotatedMember
@@ -113,6 +114,7 @@ interface AnnotatedMethod<X> {
 ----
 @startuml
 
+skinparam shadowing false
 skinparam defaultFontName Consolas
 
 BeanAttributes <|-- Bean
@@ -290,6 +292,7 @@ public class MyService {
 ----
 @startuml
 
+skinparam shadowing false
 skinparam defaultFontName Consolas
 
 Unmanaged *-- UnmanagedInstance
@@ -360,6 +363,7 @@ class CDI<T> {
 ----
 @startuml
 
+skinparam shadowing false
 skinparam defaultFontName Consolas
 
 interface BeforeBeanDiscovery {
