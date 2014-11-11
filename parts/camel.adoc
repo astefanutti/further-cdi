@@ -35,7 +35,7 @@ class CamelMain {
     public static void main(String[] args) {
         camelContext.addRoutes(new RouteBuilder() {
             public void configure() {
-                from("file:inputDir?delay=1000").to("sjms:queue:outputDest"); <1>
+              from("file:inputDir?delay=1000").convertBodyTo(String.class).to("sjms:queue:outputDest"); <1>
             }
         });
         SjmsComponent component = new SjmsComponent();
@@ -60,7 +60,9 @@ class CamelMain {
 class FileToJmsRouteBean extends RouteBuilder {
     @Override
     public void configure() {
-        from("file:inputDir?delay=1000").to("sjms:queue:outputDest");
+        from("file:inputDir?delay=1000")
+          .convertBodyTo(String.class)
+          .to("sjms:queue:outputDest");
     }
 }
 ----
@@ -596,12 +598,12 @@ class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
   final InjectionTarget<T> delegate;
 
   CamelInjectionTarget(InjectionTarget<T> target) {
-    delegate = target;
+      delegate = target;
   }
 
   public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
-    [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
-    delegate.inject(instance, ctx);
+      [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
+      delegate.inject(instance, ctx);
   }
   ...
 }
