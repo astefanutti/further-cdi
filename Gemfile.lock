@@ -17,7 +17,7 @@ GEM
     ffi (1.9.6-x64-mingw32)
     ffi (1.9.6-x86-mingw32)
     formatador (0.2.5)
-    guard (2.7.1)
+    guard (2.7.2)
       formatador (>= 0.2.4)
       listen (~> 2.7)
       lumberjack (~> 1.0)
