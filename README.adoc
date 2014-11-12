@@ -5,6 +5,7 @@
 |===
 
 | https://www.oracle.com/javaone/[JavaOne] 2014 | https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Further with CDI 1.2 [CON5585\]] | @ https://github.com/astefanutti/further-cdi/tree/6fd80dd792e325729b6b8724f50b93475d5dc3be[6fd80dd] / `javaone`
+| http://www.devoxx.be/[Devoxx BE] 2014 | http://cfp.devoxx.be/2014/talk/CSX-3476/Going_farther_with_CDI_1.2[Going Further with CDI 1.2] | @ https://github.com/astefanutti/further-cdi/tree/6aa51e7230cd5177ab30135c21b0d17b428565e9[6aa51e7]
 
 |===
 
