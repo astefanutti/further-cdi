@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.sonatype.oss</groupId>
+        <artifactId>oss-parent</artifactId>
+        <version>9</version>
+    </parent>
+
+    <groupId>io.astefanutti.further.cdi</groupId>
+    <artifactId>further-cdi-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Going Further with CDI</name>
+    <inceptionYear>2014</inceptionYear>
+    <description>Going Further with CDI</description>
+    <url>https://github.com/astefanutti/further-cdi</url>
+
+    <developers>
+        <developer>
+            <name>Antonin Stefanutti</name>
+            <email>antonin.stefanutti@gmail.com</email>
+            <timezone>+1</timezone>
+        </developer>
+        <developer>
+            <name>Antoine Sabot-Durand</name>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+        </license>
+    </licenses>
+
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/astefanutti/further-cdi/issues</url>
+    </issueManagement>
+
+    <scm>
+        <connection>scm:git:git@github.com:astefanutti/further-cdi.git</connection>
+        <developerConnection>scm:git:git@github.com:astefanutti/further-cdi.git</developerConnection>
+        <url>scm:git:git@github.com:astefanutti/further-cdi.git</url>
+    </scm>
+
+    <repositories>
+        <repository>
+            <id>maven-central</id>
+            <url>http://repo1.maven.org/maven2/</url>
+        </repository>
+    </repositories>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <camel.version>2.15.0</camel.version>
+        <cdi.version>1.2</cdi.version>
+        <weld.version>2.2.10.Final</weld.version>
+        <arquillian.version>1.1.7.Final</arquillian.version>
+        <shrinkwrap.descriptors.version>2.0.0-alpha-7</shrinkwrap.descriptors.version>
+    </properties>
+
+    <modules>
+        <module>camel</module>
+        <!--module>metrics</module-->
+    </modules>
+
+    <build>
+        <defaultGoal>clean package</defaultGoal>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.2</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.18</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <inherited>true</inherited>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- compile dependencies -->
+
+            <dependency>
+                <groupId>org.apache.camel</groupId>
+                <artifactId>camel-core</artifactId>
+                <version>${camel.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.xml.bind</groupId>
+                        <artifactId>jaxb-impl</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!-- provided dependencies -->
+
+            <dependency>
+                <groupId>javax.enterprise</groupId>
+                <artifactId>cdi-api</artifactId>
+                <version>${cdi.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.annotation</groupId>
+                <artifactId>javax.annotation-api</artifactId>
+                <version>1.2</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- test dependencies -->
+
+            <dependency>
+                <groupId>log4j</groupId>
+                <artifactId>log4j</artifactId>
+                <version>1.2.17</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jul-to-slf4j</artifactId>
+                <version>1.7.10</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>1.7.10</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.12</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>1.3</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- ShrinkWrap -->
+
+            <dependency>
+                <groupId>org.jboss.shrinkwrap.descriptors</groupId>
+                <artifactId>shrinkwrap-descriptors-bom</artifactId>
+                <version>${shrinkwrap.descriptors.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+            <!-- Arquillian -->
+
+            <dependency>
+                <groupId>org.jboss.arquillian</groupId>
+                <artifactId>arquillian-bom</artifactId>
+                <version>${arquillian.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+            <!-- Weld -->
+
+            <dependency>
+                <groupId>org.jboss.weld</groupId>
+                <artifactId>weld-core-bom</artifactId>
+                <version>${weld.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-weld-se-embedded-1.1</artifactId>
+                <version>1.0.0.CR8</version>
+                <scope>test</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+</project>
