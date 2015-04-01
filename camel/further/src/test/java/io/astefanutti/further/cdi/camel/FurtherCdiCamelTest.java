@@ -20,6 +20,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.Extension;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied;
@@ -30,48 +32,34 @@ public class FurtherCdiCamelTest {
     @Deployment
     public static Archive<?> deployment() {
         return ShrinkWrap.create(JavaArchive.class)
+            .addClasses(FileToJmsRouteBean.class, JmsComponentFactoryBean.class)
             // Camel extension
             .addAsServiceProvider(Extension.class, CamelExtension.class)
             // Bean archive deployment descriptor
             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
-    @Produces
-    @ApplicationScoped
-    private CamelContext camelContext = new DefaultCamelContext();
-
     @Test
-    @InSequence(1)
-    public void addRoutes(CamelContext context) throws Exception {
-        context.addRoutes(new RouteBuilder() {
-            @Override
-            public void configure() {
-                from("direct:inbound").routeId("inbound")
-                    .setBody(constant("body")).id("setBody")
-                    .to("direct:outbound").id("toOutbound");
-
-                from("direct:outbound").routeId("outbound")
-                    .to("mock:outbound");
-            }
-        });
-        context.start();
-    }
-
-    @Test
-    @InSequence(2)
     public void sendMessage(CamelContext context) throws Exception {
-        MockEndpoint outbound = context.getEndpoint("mock:outbound", MockEndpoint.class);
-        outbound.expectedMessageCount(1);
-        outbound.expectedHeaderReceived("advice", Boolean.TRUE);
+        MockEndpoint output = context.getEndpoint("mock:output", MockEndpoint.class);
+        output.expectedMessageCount(1);
+        output.expectedHeaderReceived("advice", Boolean.TRUE);
+        output.expectedBodiesReceived("HI DEVOXX");
 
-        ProducerTemplate inbound = context.createProducerTemplate();
-        inbound.setDefaultEndpointUri("direct:inbound");
-        inbound.sendBody("test");
+        Files.write(Paths.get("target/input/msg"), "HI DEVOXX".getBytes());
 
-        assertIsSatisfied(1L, TimeUnit.SECONDS, outbound);
+        assertIsSatisfied(5L, TimeUnit.SECONDS, output);
     }
 
-    private static void advice(@Observes @Node("setBody") Exchange exchange) {
+    private static void pointcut(@Observes @Node("join point") Exchange exchange) {
         exchange.getIn().setHeader("advice", Boolean.TRUE);
+    }
+
+    private static class JmsToMockRoute extends RouteBuilder {
+
+        @Override
+        public void configure() {
+            from("sjms:queue:output").log("Message [${body}] received").to("mock:output");
+        }
     }
 }

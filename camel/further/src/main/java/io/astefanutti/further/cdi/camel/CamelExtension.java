@@ -26,9 +26,11 @@ import org.apache.camel.processor.DelegateAsyncProcessor;
 import org.apache.camel.spi.InterceptStrategy;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
 import java.lang.annotation.Annotation;
@@ -39,10 +41,14 @@ public class CamelExtension implements Extension {
 
     private final Set<Node> nodePointcuts = new HashSet<>();
 
-    private void camelNodePointcuts(@Observes ProcessObserverMethod<? extends Exchange, ?> pom) {
+    private void camelNodePointcuts(@Observes ProcessObserverMethod<Exchange, ?> pom) {
         for (Annotation annotation : pom.getObserverMethod().getObservedQualifiers())
             if (annotation instanceof Node)
                 nodePointcuts.add(Node.class.cast(annotation));
+    }
+
+    private void addCamelContext(@Observes AfterBeanDiscovery abd, BeanManager manager) {
+        abd.addBean(new CamelContextBean(manager));
     }
 
     private void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) throws Exception {
@@ -71,5 +77,13 @@ public class CamelExtension implements Extension {
 
         for (Bean<?> bean : manager.getBeans(RoutesBuilder.class))
             context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(null)));
+        
+        context.start();
+    }
+
+    private void stopCamelContext(@Observes BeforeShutdown bs, BeanManager manager) throws Exception {
+        CamelContext context = (CamelContext) manager.getReference(manager.resolve(manager.getBeans(CamelContext.class)), CamelContext.class, manager.createCreationalContext(null));
+
+        context.stop();
     }
 }

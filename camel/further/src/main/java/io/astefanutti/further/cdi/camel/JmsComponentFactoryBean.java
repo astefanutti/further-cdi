@@ -5,10 +5,12 @@ import org.apache.camel.component.sjms.SjmsComponent;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Named;
 
 public class JmsComponentFactoryBean {
 
     @Produces
+    @Named("sjms")
     @ApplicationScoped
     SjmsComponent sjmsComponent() {
         SjmsComponent component = new SjmsComponent();
