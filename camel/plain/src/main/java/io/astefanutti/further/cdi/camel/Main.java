@@ -7,8 +7,6 @@ import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.sjms.SjmsComponent;
 import org.apache.camel.impl.DefaultCamelContext;
 
-import java.util.concurrent.CountDownLatch;
-
 public class Main {
 
     public static void main(String[] args) throws Exception {
@@ -20,10 +18,10 @@ public class Main {
                 from("file:target/input?delay=1000").convertBodyTo(String.class).to("sjms:queue:output");
             }
         });
+
         SjmsComponent component = new SjmsComponent();
         component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false"));
         context.addComponent("sjms", component);
-        context.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -35,5 +33,7 @@ public class Main {
                 }
             }
         });
+
+        context.start();
     }
 }

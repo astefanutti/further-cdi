@@ -21,6 +21,16 @@
             <artifactId>camel-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-sjms</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-core</artifactId>
+        </dependency>
+
         <!-- provided dependencies -->
 
         <dependency>
