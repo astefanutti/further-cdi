@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied;
 
 @RunWith(Arquillian.class)
-public class CamelRouteInstrumentationTest {
+public class FurtherCdiCamelTest {
 
     @Deployment
     public static Archive<?> deployment() {
