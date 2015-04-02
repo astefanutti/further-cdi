@@ -19,15 +19,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.camel.component.mock.MockEndpoint.assertIsSatisfied;
-
 @RunWith(Arquillian.class)
 public class FurtherCdiCamelTest {
 
     @Deployment
     public static Archive<?> deployment() {
         return ShrinkWrap.create(JavaArchive.class)
-            .addClasses(FileToJmsRouteBean.class, JmsComponentFactoryBean.class)
+            .addClasses(FileToJmsRouteBean.class, JmsComponentFactoryBean.class, PropertiesComponentFactoryBean.class)
             .addAsServiceProvider(Extension.class, CamelExtension.class)
             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
@@ -41,7 +39,7 @@ public class FurtherCdiCamelTest {
 
         Files.write(Paths.get("target/input/msg"), "HI DEVOXX".getBytes());
 
-        assertIsSatisfied(5L, TimeUnit.SECONDS, output);
+        MockEndpoint.assertIsSatisfied(5L, TimeUnit.SECONDS, output);
     }
 
     private static void pointcut(@Observes @Node("join point") Exchange exchange) {
@@ -52,7 +50,7 @@ public class FurtherCdiCamelTest {
 
         @Override
         public void configure() {
-            from("sjms:queue:output").log("Message [${body}] received").to("mock:output");
+            from("sjms:queue:output").log("Message [${body}] sent to JMS").to("mock:output");
         }
     }
 }

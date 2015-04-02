@@ -1,5 +1,6 @@
 package io.astefanutti.further.cdi.camel;
 
+import org.apache.camel.component.properties.PropertiesComponent;
 import org.apache.camel.component.sjms.SjmsComponent;
 import org.apache.camel.impl.DefaultCamelContext;
 
@@ -12,7 +13,8 @@ import javax.inject.Inject;
 public class CamelContextBean extends DefaultCamelContext {
 
     @Inject
-    CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) throws Exception {
+    CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent, PropertiesComponent propertiesComponent) throws Exception {
+        addComponent("properties", propertiesComponent);
         addComponent("sjms", sjmsComponent);
         addRoutes(route);
     }

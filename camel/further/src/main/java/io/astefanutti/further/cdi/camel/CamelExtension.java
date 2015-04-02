@@ -20,6 +20,7 @@ import org.apache.camel.AsyncCallback;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
+import org.apache.camel.PropertyInject;
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.processor.DelegateAsyncProcessor;
@@ -28,18 +29,33 @@ import org.apache.camel.spi.InterceptStrategy;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
+import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
+import javax.enterprise.inject.spi.ProcessAnnotatedType;
+import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
+import javax.enterprise.inject.spi.WithAnnotations;
 import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.Set;
 
 public class CamelExtension implements Extension {
 
+    private final Set<AnnotatedType<?>> camelBeans = new HashSet<>();
+
     private final Set<Node> nodePointcuts = new HashSet<>();
+
+    private void camelAnnotatedTypes(@Observes @WithAnnotations(PropertyInject.class) ProcessAnnotatedType<?> pat) {
+        camelBeans.add(pat.getAnnotatedType());
+    }
+
+    private <T> void camelBeanPostProcessor(@Observes ProcessInjectionTarget<T> pit, BeanManager manager) {
+        if (camelBeans.contains(pit.getAnnotatedType()))
+            pit.setInjectionTarget(new CamelInjectionTarget<>(pit.getInjectionTarget(), manager));
+    }
 
     private void camelNodePointcuts(@Observes ProcessObserverMethod<Exchange, ?> pom) {
         for (Annotation annotation : pom.getObserverMethod().getObservedQualifiers())
@@ -77,7 +93,7 @@ public class CamelExtension implements Extension {
 
         for (Bean<?> bean : manager.getBeans(RoutesBuilder.class))
             context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(null)));
-        
+
         context.start();
     }
 

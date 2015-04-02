@@ -4,6 +4,7 @@ package io.astefanutti.further.cdi.camel;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.component.properties.PropertiesComponent;
 import org.apache.camel.component.sjms.SjmsComponent;
 import org.apache.camel.impl.DefaultCamelContext;
 
@@ -15,12 +16,20 @@ public class Main {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() throws Exception {
-                from("file:target/input?delay=1000").convertBodyTo(String.class).to("sjms:queue:output");
+                from("file:target/input?delay=1000")
+                    .convertBodyTo(String.class)
+                    .log("Sending message [${body}] to JMS ...")
+                    .to("sjms:queue:output");
             }
         });
 
+        PropertiesComponent properties = new PropertiesComponent();
+        properties.setLocation("classpath:camel.properties");
+        context.addComponent("properties", properties);
+
         SjmsComponent component = new SjmsComponent();
         component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false"));
+        component.setConnectionCount(Integer.valueOf(context.resolvePropertyPlaceholders("{{jms.maxConnections}}")));
         context.addComponent("sjms", component);
 
         Runtime.getRuntime().addShutdownHook(new Thread() {

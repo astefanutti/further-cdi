@@ -24,7 +24,7 @@ public class BasicCdiCamelTest {
     @Deployment
     public static Archive<?> deployment() {
         return ShrinkWrap.create(JavaArchive.class)
-            .addClasses(CamelContextBean.class, FileToJmsRouteBean.class, JmsComponentFactoryBean.class)
+            .addClasses(CamelContextBean.class, FileToJmsRouteBean.class, JmsComponentFactoryBean.class, PropertiesComponentFactoryBean.class)
             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
@@ -37,7 +37,7 @@ public class BasicCdiCamelTest {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() {
-                from("sjms:queue:output").log("Message [${body}] received").to("mock:output");
+                from("sjms:queue:output").log("Message [${body}] sent to JMS").to("mock:output");
             }
         });
     }
