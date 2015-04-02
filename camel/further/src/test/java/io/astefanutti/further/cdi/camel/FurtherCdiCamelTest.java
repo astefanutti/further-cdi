@@ -2,6 +2,7 @@ package io.astefanutti.further.cdi.camel;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
+import org.apache.camel.MessageHistory;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.mock.MockEndpoint;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -12,11 +13,13 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(Arquillian.class)
@@ -43,6 +46,8 @@ public class FurtherCdiCamelTest {
     }
 
     private static void pointcut(@Observes @Node("join point") Exchange exchange) {
+        List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY, List.class);
+        LoggerFactory.getLogger("CAMEL DSL AOP").info("Sending message [{}] to [{}]...", exchange.getIn().getBody(), history.get(history.size() - 1).getNode().getLabel());
         exchange.getIn().setHeader("advice", Boolean.TRUE);
     }
 
