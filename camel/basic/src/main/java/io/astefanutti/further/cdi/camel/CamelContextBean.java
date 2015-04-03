@@ -20,7 +20,7 @@ public class CamelContextBean extends DefaultCamelContext {
     }
 
     @PostConstruct
-    void postConstruct() {
+    void startContext() {
         try {
             super.start();
         } catch (Exception e) {
@@ -29,7 +29,7 @@ public class CamelContextBean extends DefaultCamelContext {
     }
 
     @PreDestroy
-    void preDestroy() {
+    void stopContext() {
         try {
             super.stop();
         } catch (Exception e) {

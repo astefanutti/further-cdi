@@ -15,7 +15,7 @@ public class Main {
 
         context.addRoutes(new RouteBuilder() {
             @Override
-            public void configure() throws Exception {
+            public void configure() {
                 from("file:target/input?delay=1000")
                     .convertBodyTo(String.class)
                     .log("Sending message [${body}] to JMS ...")

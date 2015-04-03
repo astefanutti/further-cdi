@@ -29,52 +29,77 @@ Discover how we created CDI integration module for Camel
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-class CamelMain {
-    static CamelContext camelContext = new DefaultCamelContext();
-    static CountDownLatch shutdownLatch = new CountDownLatch(1);
-    public static void main(String[] args) {
-        camelContext.addRoutes(new RouteBuilder() {
-            public void configure() {
-              from("file:inputDir?delay=1000").convertBodyTo(String.class).to("sjms:queue:outputDest"); <1>
-            }
-        });
-        SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(/\*...*/);
-        Integer maxConnections = Integer.valueOf(camelContext
-            .resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
-        component.setConnectionCount(maxConnections);
-        camelContext.addComponent("sjms", component); // Registers the "sjms" component
-        camelContext.start();
-        shutdownLatch.await(); // Shutdown hook
-        camelContext.stop();
-    }
+ public static void main(String[] args) {
+    CamelContext context = new DefaultCamelContext();
+    context.addRoutes(new RouteBuilder() {
+      public void configure() {
+        from("file:target/input?delay=1000")
+          .convertBodyTo(String.class)
+          .log("Sending message [${body}] to JMS ...")
+          .to("sjms:queue:output"); <1>
+      }
+    });
+    PropertiesComponent properties = new PropertiesComponent();
+    properties.setLocation("classpath:camel.properties");
+    context.addComponent("properties", properties); // Registers the "properties" component
+
+    SjmsComponent component = new SjmsComponent();
+    component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false"));
+    jms.setConnectionCount(Integer.valueOf(context.resolvePropertyPlaceholders("{{jms.maxConnections}}")));
+    context.addComponent("sjms", jms); // Registers the "sjms" component
+
+    context.start();
 }
 ----
-<1> This route watch a directory every second and send new files content to a JMS queue
+<1> This route watches a directory every second and sends new files content to a JMS queue
 
 [.topic.source]
-== Basic CDI integration 1/2
+== Basic CDI integration 1/3
+
+. Camel components and route builder as CDI beans
+
+. Bind the Camel context lifecycle to that of the CDI container
 
 [source, subs="verbatim,quotes"]
 ----
 class FileToJmsRouteBean extends RouteBuilder {
     @Override
     public void configure() {
-        from("file:inputDir?delay=1000")
-          .convertBodyTo(String.class)
-          .to("sjms:queue:outputDest");
+        from("file:target/input?delay=1000")
+            .convertBodyTo(String.class)
+            .log("Sending message [${body}] to JMS...")
+            .to("sjms:queue:output");
     }
 }
 ----
 
-[source, subs="verbatim,quotes"]
+[.topic.source]
+== Basic CDI integration 2/3
+
+[source, subs="verbatim,quotes", role="smaller"]
 ----
-class JmsComponentFactoryBean {
+class PropertiesComponentFactoryBean {
+
     @Produces
     @ApplicationScoped
-    SjmsComponent sjmsComponent() {
-        SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(/\*...*/);
+    PropertiesComponent propertiesComponent() {
+        PropertiesComponent properties = new PropertiesComponent();
+        properties.setLocation("classpath:camel.properties");
+        return properties;
+    }
+}
+----
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+class JmsComponentFactoryBean {
+
+    @Produces
+    @ApplicationScoped
+    SjmsComponent sjmsComponent(PropertiesComponent properties) throws Exception {
+        SjmsComponent jms = new SjmsComponent();
+        jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false"));
+        jms.setConnectionCount(Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")));
         return component;
     }
 }
@@ -82,22 +107,21 @@ class JmsComponentFactoryBean {
 
 
 [.topic.source]
-== Basic CDI integration 2/2
+== Basic CDI integration 3/3
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
+
     @Inject
-    CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) {
-        Integer maxConnections = Integer.valueOf(
-            resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
-        sjmsComponent.setConnectionCount(maxConnections);
-        addComponent("sjms", sjmsComponent);
+    CamelContextBean(FileToJmsRouteBean route, SjmsComponent jms, PropertiesComponent properties) {
+        addComponent("properties", properties);
+        addComponent("sjms", jms);
         addRoutes(route);
     }
     @PostConstruct
-    void postConstruct() {
+    void startContext() {
         super.start();
     }
     @PreDestroy
@@ -118,15 +142,18 @@ TIP: We could have a lot more with advanced *CDI* features
 +
 [source, subs="verbatim,quotes", role="smallest"]
 ----
-.to("[highlight]#sjms#:queue:outputDest"); // Lookup by name (sjms) and type (Component)
+.to("[highlight]#sjms#:queue:output"); // Lookup by name (sjms) and type (Component)
+
+context.resolvePropertyPlaceholders("{{jms.maxConnections}}");
+// Lookup by name (properties) and type (Component)
 ----
 
 . Support Camel annotations in CDI beans
 +
 [source, subs="verbatim,quotes", role="smallest"]
 ----
-[highlight]#@PropertyInject#(value = "jms.queue.maxConnections", defaultValue = "10")
-Integer maxConnections;
+[highlight]#@PropertyInject#(value = "jms.maxConnections", defaultValue = "10")
+int maxConnections;
 ----
 
 
@@ -137,7 +164,7 @@ Integer maxConnections;
 ====
 TIP: Manage the creation and the configuration of the `CamelContext` bean
 
-TIP: Bind the `CamelContext` lifecycle to the CDI container events
+TIP: Bind the `CamelContext` lifecycle that of the CDI container
 
 TIP: Implement the Camel SPI to look up CDI bean references
 
@@ -152,7 +179,7 @@ TIP: Use the Magic
 
 TIP: We need to write an extension that will:
 
-. Declare a `CamelContext` bean if no such bean is already deployed by observing the `AfterBeanDiscovery` lifecycle event
+. Declare a `CamelContext` bean by observing the `AfterBeanDiscovery` lifecycle event
 . Instantiate the beans of type `RouteBuilder` and add them to the Camel context
 . Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the `BeforeShutdown` event)
 . Customize the Camel context to query the `BeanManager` to lookup CDI beans by name and type
@@ -225,32 +252,18 @@ include::legend.adoc[]
 
 TIP: Automatically add a `CamelContext` bean if no such a bean already exists in the deployment archive
 
-icon:question-circle[] How to detect if a bean exists in the deployment?
-
-TIP: By querying the `BeanManager` during the `AfterBeanDiscovery` lifecycle event
-
-[source, subs="verbatim,quotes",role="smaller"]
-----
-public class CamelExtension implements Extension {
-    void addCamelContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager bm) {
-        Set<Bean<?>> beans = bm.[highlight]#getBeans#(CamelContext.class);
-        if (beans.isEmpty())
-            // No CamelContext bean is already deployed
-    }
-}
-----
+icon:question-circle[] How to add a bean programmatically?
 
 
 [.topic.source]
 == Declaring a bean programmatically
-
-icon:question-circle[] How to add a bean programmatically?
 
 TIP: We need to implement the `Bean` SPI
 
 [source]
 ----
 public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
+
     public Class<?> getBeanClass();
     public Set<InjectionPoint> getInjectionPoints();
     public T create(CreationalContext<T> creationalContext); // Contextual<T>
@@ -270,56 +283,28 @@ public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-class CamelContextBean implements Bean<DefaultCamelContext> {
-    private final Set<Annotation> qualifiers = new HashSet<>(Arrays.asList(new AnnotationLiteral<Any>(){},
-                                                                       new AnnotationLiteral<Default>(){}));
-    private final Set<Type> types;
+class CamelContextBean implements [highlight]#Bean<CamelContext># {
 
-    public CamelContextBean(BeanManager bm) {
-        types = bm.createAnnotatedType(DefaultCamelContext.class).getTypeClosure();
-    }
-    public Class<? extends Annotation> getScope() {
-        return ApplicationScoped.class;
-    }
+    public Class<? extends Annotation> getScope() { return [highlight]#ApplicationScoped.class#; }
+
     public Set<Annotation> getQualifiers() {
-        return Collections.unmodifiableSet(qualifiers);
+        return Collections.singleton((Annotation) [highlight]#new AnnotationLiteral<Default>(){}#);
     }
-    public Set<Type> getTypes() {
-        return Collections.unmodifiableSet(types);
-    }
-    public DefaultCamelContext create(CreationalContext<DefaultCamelContext> creational) {
-        return new DefaultCamelContext();
-    }
-    public void destroy(DefaultCamelContext instance, CreationalContext<DefaultCamelContext> creational) {
-    }
-    ...
-----
+    public Set<Type> getTypes() { return Collections.singleton((Type) [highlight]#CamelContext.class#); }
 
+    public CamelContext create(CreationalContext<CamelContext> creational) {
+        return [highlight]#new DefaultCamelContext()#;
+    }
+    public void destroy(CamelContext instance, CreationalContext<CamelContext> creational) {}
 
-[.topic.source]
-== Implementing the `Bean` SPI (continued)
+    public Class<?> getBeanClass() { return DefaultCamelContext.class; }
 
-[source, subs="verbatim,quotes", role="smaller"]
-----
-    ...
-    public Class<?> getBeanClass() {
-        return DefaultCamelContext.class;
-    }
-    public Set<InjectionPoint> getInjectionPoints() {
-        return Collections.emptySet();
-    }
-    public String getName() { // Only called for @Named bean
-        return "";
-    }
-    public Set<Class<? extends Annotation>> getStereotypes() {
-        return Collections.emptySet();
-    }
-    public boolean isAlternative() {
-        return false;
-    }
-    public boolean isNullable() { // Deprecated since CDI 1.1
-        return false;
-    }
+    public Set<InjectionPoint> getInjectionPoints() { return Collections.emptySet(); }
+
+    public Set<Class<? extends Annotation>> getStereotypes() { return Collections.emptySet(); }
+    public String getName() { return "camel-cdi"; }
+    public boolean isAlternative() { return false; }
+    public boolean isNullable() { return false; }
 }
 ----
 
@@ -333,10 +318,8 @@ TIP: Then add the `CamelContextBean` bean programmatically by observing the `Aft
 ----
 public class CamelExtension implements Extension {
 
-    void addCamelContextBean(@Observes [highlight]#AfterBeanDiscovery# abd, BeanManager bm) {
-        Set<Bean<?>> beans = bm.getBeans(CamelContext.class);
-        if (beans.isEmpty())
-            abd.[highlight]#addBean#(new CamelContextBean(bm));
+    void addCamelContextBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
+        abd.[highlight]#addBean#(new CamelContextBean());
     }
 }
 ----
@@ -374,19 +357,17 @@ TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` e
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-
-    private CamelContext context;
-
+    ...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
-        context = getReference(bm, CamelContext.class);
+        CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
             context.addRoutes(getReference(bm, RouteBuilder.class, bean);
         [highlight]#context.start()#;
     }
     void stopCamelContext(@Observes [highlight]#BeforeShutdown# bs, BeanManager bm) {
+        CamelContext context = getReference(bm, CamelContext.class);
         [highlight]#context.stop();#
     }
-    ...
 }
 ----
 
@@ -398,24 +379,22 @@ public class CamelExtension implements Extension {
 ====
 TIP: We can get rid of the following code:
 
-[source, subs="verbatim,quotes",role="smaller"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
     @Inject
-    CamelContextBean([highlight]#FileToJmsRouteBean route,# SjmsComponent sjmsComponent) {
-        Integer maxConnections = Integer.valueOf(
-            resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
-        sjmsComponent.setConnectionCount(maxConnections);
+    CamelContextBean([highlight]#FileToJmsRouteBean route,# SjmsComponent jms, PropertiesComponent properties) {
+        addComponent("properties", propertiesComponent);
         addComponent("sjms", sjmsComponent);
         [highlight]#addRoutes(route);#
     }
     [highlight]#@PostConstruct#
-    [highlight]#void postConstruct() {#
+    [highlight]#void startContext() {#
         [highlight]#super.start();#
     [highlight]#}#
     [highlight]#@PreDestroy#
-    [highlight]#void preDestroy() {#
+    [highlight]#void stopContext() {#
         [highlight]#super.stop();#
     [highlight]#}#
 }
@@ -431,7 +410,9 @@ icon:question-circle[] How to retrieve CDI beans from the Camel DSL?
 
 [source, subs="verbatim,quotes"]
 ----
-.to("[highlight]#sjms#:queue:outputDest"); // Lookup by name (sjms) and type (Component)
+.to("[highlight]#sjms#:queue:output"); // Lookup by name (sjms) and type (Component)
+context.resolvePropertyPlaceholders("{{jms.maxConnections}}");
+// Lookup by name (properties) and type (Component)
 
 // And also...
 .bean([highlight]#MyBean.class#); // Lookup by type and Default qualifier
@@ -446,11 +427,11 @@ TIP: Implement the Camel registry SPI and use the `BeanManager` to lookup for CD
 
 [source, subs="verbatim,quotes"]
 ----
-class CdiRegistry implements Registry {
+class CamelCdiRegistry implements Registry {
     private final BeanManager bm;
-    public CdiRegistry(BeanManager bm) {
-        this.bm = bm;
-    }
+
+    CamelCdiRegistry(BeanManager bm) { this.bm = bm; }
+
     public <T> T lookupByNameAndType(String name, Class<T> type) {
         return getReference(bm, type, bm.resolve(bm.getBeans(name)));
     }
@@ -468,42 +449,50 @@ class CdiRegistry implements Registry {
 
 
 [.topic.source]
-== Add the `CdiRegistry` to the Camel context
+== Add the `CamelCdiRegistry` to the Camel context
+
+[source, subs="verbatim,quotes"]
+----
+class CamelContextBean implements Bean<CamelContext> {
+    [highlight]#private final BeanManager bm;#
+
+    [highlight]#CamelContextBean(BeanManager bm) { this.bm = bm; }#
+    ...
+    public CamelContext create(CreationalContext<CamelContext> creational) {
+        return new DefaultCamelContext([highlight]#new CamelCdiRegistry(bm)#);
+    }
+}
+----
 
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
     ...
-    void configureContext(@Observes AfterDeploymentValidation adv, BeanManager bm) {
-        context = getReference(bm, DefaultCamelContext.class);
-        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
-            context.addRoutes(getReference(bm, RouteBuilder.class, bean);
-
-        [highlight]#context.setRegistry(new CdiRegistry(bm));#
-        context.start();
+    void addCamelContextBean(@Observes AfterBeanDiscovery abd [highlight]#, BeanManager bm#) {
+        abd.addBean(new CamelContextBean([highlight]#bm#));
     }
-    ...
 }
 ----
 
 
 [.topic]
-== Second goal achieved 1/2
+== Second goal achieved 1/3
 
 [.statement]
 ====
 TIP: We can declare the `sjms` component with the `@Named` qualifier
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 class JmsComponentFactoryBean {
 
     @Produces
     [highlight]#@Named("sjms")#
     @ApplicationScoped
-    Component sjmsComponent() {
-        SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(/\*...*/);
+    SjmsComponent sjmsComponent(PropertiesComponent properties) {
+        SjmsComponent jms = new SjmsComponent();
+        jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
+        jms.setConnectionCount(Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")));
         return component;
     }
 }
@@ -513,33 +502,56 @@ class JmsComponentFactoryBean {
 
 
 [.topic]
-== Second goal achieved 2/2
+== Second goal achieved 2/3
+
+[.statement]
+====
+TIP: Declare the `properties` component with the `@Named` qualifier
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+class PropertiesComponentFactoryBean {
+
+    @Produces
+    [highlight]#@Named("properties")#
+    @ApplicationScoped
+    PropertiesComponent propertiesComponent() {
+        PropertiesComponent properties = new PropertiesComponent();
+        properties.setLocation("classpath:camel.properties");
+        return properties;
+    }
+}
+----
+...
+====
+
+
+[.topic]
+== Second goal achieved 3/3
 
 [.statement]
 ====
 
-TIP: And get rid of the code related to the `sjms` component registration
+TIP: And get rid of the code related to the `properties` and `sjms` components registration
 
 [source, subs="verbatim,quotes",role="smaller"]
 ----
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
     @Inject
-    CamelContextBean([highlight]#FileToJmsRouteBean route,# SjmsComponent sjmsComponent) {
-        Integer maxConnections = Integer.valueOf(
-            resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));
-        sjmsComponent.setConnectionCount(maxConnections);
-        [highlight]#addComponent("sjms", sjmsComponent)#;
+    CamelContextBean([highlight]#FileToJmsRouteBean route,# [highlight]#SjmsComponent jms, PropertiesComponent properties#) {
+        [highlight]#addComponent("properties", propertiesComponent);#
+        [highlight]#addComponent("sjms", sjmsComponent);#
         [highlight]#addRoutes(route);#
     }
     [highlight]#@PostConstruct#
-    [highlight]#void postConstruct() {#
+    [highlight]#void startContext() {#
         [highlight]#super.start();#
     [highlight]#}#
     [highlight]#@PreDestroy#
-    [highlight]#void preDestroy() {#
+    [highlight]#void stopContext() {#
         [highlight]#super.stop();#
-    }
+    [highlight]#}#
 }
 ----
 
@@ -553,8 +565,8 @@ TIP: Camel provides a set of DI framework agnostic annotations for resource inje
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@PropertyInject#(value = "jms.queue.maxConnections", defaultValue = "10")
-Integer maxConnections;
+[highlight]#@PropertyInject#(value = "jms.maxConnections", defaultValue = "10")
+int maxConnections;
 
 // But also...
 [highlight]#@EndpointInject#(uri="jms:queue:foo")
@@ -589,26 +601,30 @@ TIP: Only for beans containing Camel annotations by observing the `ProcessAnnota
 [.topic.source]
 == Create a custom `InjectionTarget`
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 
-  final DefaultCamelBeanPostProcessor processor = new DefaultCamelBeanPostProcessor();
+    final InjectionTarget<T> delegate;
 
-  final InjectionTarget<T> delegate;
+    final DefaultCamelBeanPostProcessor processor;
 
-  CamelInjectionTarget(InjectionTarget<T> target) {
-      delegate = target;
-  }
-
-  public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
-      [highlight]#processor.postProcessBeforeInitialization(instance)#; <1>
-      delegate.inject(instance, ctx);
-  }
-  ...
+    CamelInjectionTarget(InjectionTarget<T> target, final BeanManager bm) {
+        delegate = target;
+        processor = new DefaultCamelBeanPostProcessor() {
+            public CamelContext getOrLookupCamelContext() {
+                return getReference(bm, CamelContext.class);
+            }
+        };
+    }
+    public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
+        [highlight]#processor.postProcessBeforeInitialization(instance, null)#; <1>
+        delegate.inject(instance, ctx);
+    }
+    ...
 }
 ----
-<1> Call the Camel default bean post-processor after CDI injection
+<1> Call the Camel default bean post-processor before CDI injection
 
 
 [.topic.source]
@@ -616,7 +632,7 @@ class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 
 TIP: Observe the `ProcessInjectionTarget` lifecyle event and set the `CamelInjectionTarget`
 
-[source]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public interface ProcessInjectionTarget<X> {
     public AnnotatedType<X> getAnnotatedType();
@@ -626,13 +642,15 @@ public interface ProcessInjectionTarget<X> {
 }
 ----
 
-[source, subs="verbatim,quotes"]
+TIP: To decorate the `InjectionTarget`
+
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 class CamelExtension implements Extension {
 
-  <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit) {
-      pit.[highlight]#setInjectionTarget#(new CamelInjectionTarget<T>(pit.getInjectionTarget()));
-  }
+    <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit, BeanManager bm) {
+        pit.[highlight]#setInjectionTarget#(new CamelInjectionTarget<>(pit.getInjectionTarget(), bm));
+    }
 }
 ----
 
@@ -643,22 +661,23 @@ class CamelExtension implements Extension {
 [source, subs="verbatim,quotes"]
 ----
 class CamelExtension implements Extension {
-  final Set<AnnotatedType<?>> camelBeans = new HashSet<>();
+    final Set<AnnotatedType<?>> camelBeans = new HashSet<>();
 
-  void camelAnnotations(@Observes [highlight]#@WithAnnotations({BeanInject.class, <1>
-      Consume.class, EndpointInject.class, Produce.class, PropertyInject.class})#
-      ProcessAnnotatedType<?> pat) {
-        camelBeans.add(pat.getAnnotatedType());
-  }
+    void camelAnnotatedTypes(@Observes [highlight]#@WithAnnotations(PropertyInject.class)#
+        ProcessAnnotatedType<?> pat) { <1>
+            camelBeans.add(pat.getAnnotatedType());
+    }
 
-  <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit) {
-      if (camelBeans.contains(pit.getAnnotatedType())) <2>
-        pit.[highlight]#setInjectionTarget#(new CamelInjectionTarget<>(pit.getInjectionTarget()));
-  }
+    <T> void camelBeansPostProcessor(@Observes ProcessInjectionTarget<T> pit,
+        BeanManager bm) {
+        if ([highlight]#camelBeans.contains(pit.getAnnotatedType())#) <2>
+            pit.setInjectionTarget(
+                new CamelInjectionTarget<>(pit.getInjectionTarget(), bm));
+    }
 }
 ----
 <1> Detect all the types containing Camel annotations with `@WithAnnotations`
-<2> Decorate the `InjectionTarget` corresponding to these types with a custom post-processor
+<2> Decorate the `InjectionTarget` corresponding to these types
 
 
 [.topic]
@@ -666,22 +685,19 @@ class CamelExtension implements Extension {
 
 [.statement]
 ====
-TIP: We can add Camel annotations in CDI beans
+TIP: Instead of injecting the `PropertiesComponent` bean to resolve a configuration property
 
-[source, subs="verbatim,quotes",role="smaller"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 class JmsComponentFactoryBean {
-
-    [highlight]#@PropertyInject(value = "jms.queue.maxConnections", defaultValue = "10")#
-    Integer maxConnections;
 
     @Produces
     @Named("sjms")
     @ApplicationScoped
-    SjmsComponent sjmsComponent() {
-        SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(/\*...*/);
-        [highlight]#component.setConnectionCount(maxConnections);#
+    SjmsComponent sjmsComponent([highlight]#PropertiesComponent properties#) {
+        SjmsComponent jms = new SjmsComponent();
+        jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
+        jms.setConnectionCount([highlight]#Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")#));
         return component;
     }
 }
@@ -695,30 +711,25 @@ class JmsComponentFactoryBean {
 
 [.statement]
 ====
-
-TIP: And get rid of all the code related to the Camel context config
+TIP: We can directly rely on the `@PropertyInject` Camel annotation in CDI beans
 
 [source, subs="verbatim,quotes",role="smaller"]
 ----
-[highlight]#@ApplicationScoped#
-[highlight]#class CamelContextBean extends DefaultCamelContext {#
-    [highlight]#@Inject#
-    [highlight]#CamelContextBean(FileToJmsRouteBean route, SjmsComponent sjmsComponent) {#
-        [highlight]#Integer maxConnections = Integer.valueOf(#
-            [highlight]#resolvePropertyPlaceholders("{{jms.queue.maxConnections}}"));#
-        [highlight]#sjmsComponent.setConnectionCount(maxConnections);#
-        [highlight]#addComponent("sjms", sjmsComponent)#;
-        [highlight]#addRoutes(route);#
-    [highlight]#}#
-    [highlight]#@PostConstruct#
-    [highlight]#void postConstruct() {#
-        [highlight]#super.start();#
-    [highlight]#}#
-    [highlight]#@PreDestroy#
-    [highlight]#void preDestroy() {#
-        [highlight]#super.stop();#
-    [highlight]#}#
-[highlight]#}#
+class JmsComponentFactoryBean {
+
+    [highlight]#@PropertyInject(value = "jms.maxConnections", defaultValue = "10")#
+    [highlight]#int# maxConnections;
+
+    @Produces
+    @Named("sjms")
+    @ApplicationScoped
+    SjmsComponent sjmsComponent() {
+        SjmsComponent component = new SjmsComponent();
+        jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
+        component.setConnectionCount([highlight]#maxConnections#);
+        return component;
+    }
+}
 ----
 
 ====
