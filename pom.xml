@@ -8,7 +8,7 @@
         <version>9</version>
     </parent>
 
-    <groupId>io.astefanutti.further.cdi</groupId>
+    <groupId>io.astefanutti.cdi.further</groupId>
     <artifactId>further-cdi-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>

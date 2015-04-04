@@ -1,4 +1,4 @@
-package io.astefanutti.further.cdi.camel;
+package io.astefanutti.cdi.further.camel;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;

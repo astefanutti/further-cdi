@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.astefanutti.further.cdi.camel;
+package io.astefanutti.cdi.further.camel;
 
 import javax.inject.Qualifier;
 import java.lang.annotation.ElementType;

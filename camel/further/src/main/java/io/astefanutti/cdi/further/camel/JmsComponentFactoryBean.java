@@ -1,21 +1,25 @@
-package io.astefanutti.further.cdi.camel;
+package io.astefanutti.cdi.further.camel;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.camel.CamelContext;
-import org.apache.camel.component.properties.PropertiesComponent;
+import org.apache.camel.PropertyInject;
 import org.apache.camel.component.sjms.SjmsComponent;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
+import javax.inject.Named;
 
 public class JmsComponentFactoryBean {
 
+    @PropertyInject(value = "jms.maxConnections", defaultValue = "10")
+    private int maxConnections;
+
     @Produces
+    @Named("sjms")
     @ApplicationScoped
-    SjmsComponent sjmsComponent(PropertiesComponent properties) throws Exception {
+    SjmsComponent sjmsComponent() {
         SjmsComponent component = new SjmsComponent();
         component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false"));
-        component.setConnectionCount(Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")));
+        component.setConnectionCount(maxConnections);
         return component;
     }
 }
