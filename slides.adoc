@@ -130,11 +130,11 @@ Arquillian
 
 image::arquillian.png[role="pull-right", width="250"]
 
-. Arquillian is an integration test paltform
-. It integrates with Junit
+. Arquillian is an integration test platform
+. It integrates with JUnit
 . Create your deployment in a dedicated method
 . And launch your tests against the container of your choice
-. We'll use the `weld-ee-embedded` container
+. We'll use the `weld-se-embedded` and `weld-ee-embedded` container
 . The right solution to test Java EE code
 . More info on http://arquillian.org
 ====
