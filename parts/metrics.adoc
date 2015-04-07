@@ -96,7 +96,7 @@ void timedMethod() {
 @Produces [highlight]#@Metric#(name="myTimer") <1>
 Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
 ...
-[highlight]#@Timer#("myTimer") <1>
+[highlight]#@Timed#("myTimer") <1>
 void timedMethod() { ... }
 ----
 <1> Annotations provided by Metrics

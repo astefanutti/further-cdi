@@ -155,7 +155,7 @@ image::arquillian.png[role="pull-right", width="250"]
 ====
 * icon:info-circle[] Meet CDI SPI
 * icon:info-circle[] Introducing CDI Extensions
-* icon:info-circle[] Legacy Code
+// * icon:info-circle[] Legacy Code
 * icon:info-circle[] Metrics CDI
 * icon:info-circle[] Camel CDI
 
@@ -166,7 +166,7 @@ include::parts/spi.adoc[]
 
 include::parts/extensions.adoc[]
 
-include::parts/legacy.adoc[]
+// include::parts/legacy.adoc[]
 
 include::parts/metrics.adoc[]
 
