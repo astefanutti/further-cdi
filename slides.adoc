@@ -26,18 +26,6 @@ Antoine Sabot-Durand; Antonin Stefanutti
 :dzslides-fonts: family=Neuton:400,700,800,400italic|Cedarville+Cursive
 :hide-uri-scheme:
 
-[.topic.source]
-== Antoine Sabot-Durand
-
-====
-* icon:user[] Senior Software Engineer
-* icon:user[] CDI co-spec lead, Java EE 8 EG
-* icon:institution[] Red Hat, Inc.
-* icon:twitter[] @antoine_sd
-* icon:rss[] www.next-presso.com
-* icon:github[] github.com/antoinesd
-====
-
 
 [.topic.source]
 == Antonin Stefanutti
@@ -65,6 +53,19 @@ NOTE: CDI as the *productivity ecosystem* to build *connectivity interfaces*
 == CDI @ Murex
 
 image::before-after.png[height="95%"]
+
+
+[.topic.source]
+== Antoine Sabot-Durand
+
+====
+* icon:user[] Senior Software Engineer
+* icon:user[] CDI co-spec lead, Java EE 8 EG
+* icon:institution[] Red Hat, Inc.
+* icon:twitter[] @antoine_sd
+* icon:rss[] www.next-presso.com
+* icon:github[] github.com/antoinesd
+====
 
 
 [.topic.source]
@@ -96,13 +97,14 @@ TIP: If you know the most of these you can stay
 * `@Qualifier`
 * `InjectionPoint`
 
+
 [.topic.source]
 == More concretely
 
 CAUTION: What's included:
 
 . Real use cases from real life with real users
-. new approach to introduce portable extension concepts
+. New approach to introduce portable extension concepts
 . Code in IDE with tests
 
 CAUTION: What's not included:
@@ -110,6 +112,7 @@ CAUTION: What's not included:
 . Introduction to CDI
 . Old content on extension
 . Work with Context (need 2 more hours)
+
 
 [.topic.source]
 == Tools used in the code 1/2
@@ -148,6 +151,7 @@ image::arquillian.png[role="pull-right", width="250"]
 . More info on http://arquillian.org
 ====
 
+
 [.topic.source]
 == Agenda
 
@@ -161,6 +165,7 @@ image::arquillian.png[role="pull-right", width="250"]
 
 TIP: Slides available at http://astefanutti.github.io/further-cdi
 ====
+
 
 include::parts/spi.adoc[]
 
