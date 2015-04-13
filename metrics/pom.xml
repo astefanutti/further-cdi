@@ -9,15 +9,15 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>further-cdi-camel-parent</artifactId>
-    <name>Going Further with CDI and Apache Camel</name>
+    <artifactId>further-cdi-metrics-parent</artifactId>
+    <name>Going Further with CDI and Dropwizard Metrics</name>
     <packaging>pom</packaging>
 
     <modules>
-        <module>plain</module>
-        <module>basic</module>
+        <!--<module>plain</module>-->
+        <!--<module>basic</module>-->
         <module>further</module>
-        <module>live</module>
+        <!--<module>live</module>-->
     </modules>
 
     <dependencies>
@@ -25,33 +25,21 @@
         <!-- compile dependencies -->
 
         <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-core</artifactId>
-            <version>${camel.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.sun.xml.bind</groupId>
-                    <artifactId>jaxb-impl</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-annotation</artifactId>
+            <version>${metrics.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-sjms</artifactId>
-            <version>${camel.version}</version>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+            <version>${metrics.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-broker</artifactId>
-            <version>5.11.1</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.10</version>
+            <groupId>org.apache.deltaspike.core</groupId>
+            <artifactId>deltaspike-core-api</artifactId>
+            <version>${deltaspike.version}</version>
         </dependency>
 
         <!-- provided dependencies -->
@@ -61,16 +49,17 @@
             <artifactId>cdi-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.jboss.spec</groupId>
+            <artifactId>jboss-javaee-web-7.0</artifactId>
+            <type>pom</type>
+        </dependency>
+
         <!-- runtime dependencies -->
 
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
         </dependency>
 
         <!-- test dependencies -->
@@ -99,6 +88,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.jboss.shrinkwrap.resolver</groupId>
+            <artifactId>shrinkwrap-resolver-depchain</artifactId>
+            <type>pom</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.weld</groupId>
             <artifactId>weld-core-impl</artifactId>
             <scope>test</scope>
@@ -106,7 +102,7 @@
 
         <dependency>
             <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-weld-se-embedded-1.1</artifactId>
+            <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
             <scope>test</scope>
         </dependency>
 
