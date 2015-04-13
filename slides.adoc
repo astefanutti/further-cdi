@@ -25,6 +25,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 :dzslides-transition: fade
 :dzslides-fonts: family=Neuton:400,700,800,400italic|Cedarville+Cursive
 :hide-uri-scheme:
+:includegifs:
 
 
 [.topic.source]
@@ -179,6 +180,7 @@ include::parts/metrics.adoc[]
 include::parts/quizz.adoc[]
 
 include::parts/camel.adoc[]
+
 
 [.topic.intro]
 == Conclusion

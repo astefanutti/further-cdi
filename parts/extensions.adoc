@@ -7,7 +7,9 @@
 [.statement]
 ====
 
+ifdef::includegifs[]
 image::powerful.gif[role="pull-right", width="270"]
+endif::includegifs[]
 
 NOTE: One of the _most powerful feature_ of the CDI specification
 
@@ -19,11 +21,8 @@ NOTE: Not really popularized, partly due to:
 ====
 
 
-
-
 [.topic.source]
 == Extensions What for?
-
 
 [.statement]
 ====
@@ -42,11 +41,12 @@ TIP: thanks to them, Java EE can evolve between major release
 [.topic.source]
 == Extensions How?
 
-
 [.statement]
 ====
 
+ifdef::includegifs[]
 image::rubik.gif[role="pull-right", width="250"]
+endif::includegifs[]
 
 TIP: Observing SPI Events at boot time according to BeanManger Lifecycle
 
@@ -55,7 +55,6 @@ TIP: Checking what meta-data are being created
 TIP: Modifying these meta-data or creating new ones
 
 ====
-
 
 
 [.topic.source]
