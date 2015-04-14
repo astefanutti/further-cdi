@@ -65,6 +65,7 @@
         <arquillian.version>1.1.7.Final</arquillian.version>
         <shrinkwrap.descriptors.version>2.0.0-alpha-7</shrinkwrap.descriptors.version>
         <shrinkwrap-resolver.version>2.1.0</shrinkwrap-resolver.version>
+        <slf4j.version>1.7.10</slf4j.version>
     </properties>
 
     <modules>
@@ -106,6 +107,14 @@
 
     <dependencyManagement>
         <dependencies>
+            
+            <!-- compile dependencies -->
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
 
             <!-- provided dependencies -->
 
@@ -143,7 +152,14 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>1.7.10</version>
+                <version>${slf4j.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jul-to-slf4j</artifactId>
+                <version>${slf4j.version}</version>
                 <scope>runtime</scope>
             </dependency>
 
@@ -160,13 +176,6 @@
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-library</artifactId>
-                <version>1.3</version>
                 <scope>test</scope>
             </dependency>
 

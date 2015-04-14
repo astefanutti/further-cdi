@@ -5,6 +5,7 @@ import com.codahale.metrics.SlidingTimeWindowReservoir;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.inject.Produces;
 import java.util.concurrent.TimeUnit;
@@ -16,8 +17,7 @@ public class TimedMethodBean {
     Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
 
     @Timed(name="myTimer")
-    public void timedMethod() throws InterruptedException {
-        System.out.println("doing a pause");
-        Thread.sleep(1000);
+    public void timedMethod() {
+        LoggerFactory.getLogger(TimedMethodBean.class).info("Timed method called, timer [{}] will be incremented", "myTimer");
     }
 }
