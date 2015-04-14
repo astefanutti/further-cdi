@@ -1,5 +1,8 @@
 package io.astefanutti.cdi.further.camel;
 
+import io.astefanutti.cdi.further.camel.bean.FileToJmsRouteBean;
+import io.astefanutti.cdi.further.camel.bean.JmsComponentFactoryBean;
+import io.astefanutti.cdi.further.camel.bean.PropertiesComponentFactoryBean;
 import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.MessageHistory;
