@@ -20,23 +20,22 @@ import java.lang.annotation.Annotation;
 
 public class MetricsExtension implements Extension {
 
-    private static final AnnotationLiteral<Nonbinding> NON_BINDING_LITERAL = new AnnotationLiteral<Nonbinding>() {};
-
-    void addMetricQualifier(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
-        bbd.addQualifier(bm.createAnnotatedType(Metric.class));
+    void addMetricQualifier(@Observes BeforeBeanDiscovery bbd) {
+        bbd.addQualifier(Metric.class);
     }
 
     void addTimedInterceptorBinding(@Observes BeforeBeanDiscovery bbd) throws NoSuchMethodException {
+        AnnotationLiteral<Nonbinding> NON_BINDING = new AnnotationLiteral<Nonbinding>() {};
         bbd.addInterceptorBinding(new AnnotatedTypeBuilder<Timed>()
             .readFromType(Timed.class)
-            .addToMethod(Timed.class.getMethod("name"), NON_BINDING_LITERAL)
-            .addToMethod(Timed.class.getMethod("absolute"), NON_BINDING_LITERAL)
+            .addToMethod(Timed.class.getMethod("name"), NON_BINDING)
+            .addToMethod(Timed.class.getMethod("absolute"), NON_BINDING)
             .create());
     }
 
     <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp, BeanManager bm) {
         if (pp.getAnnotatedMember().getAnnotation(Metric.class) != null)
-            pp.setProducer(new MetricProducer<>(pp.getProducer(), pp.getAnnotatedMember().getAnnotation(Metric.class).name(), bm));
+            pp.setProducer(new MetricProducer<>(pp.getProducer(), bm, pp.getAnnotatedMember().getAnnotation(Metric.class).name()));
     }
 
     void registerProduceMetrics(@Observes AfterDeploymentValidation adv, BeanManager bm) {

@@ -10,31 +10,31 @@ import javax.enterprise.inject.spi.InjectionPoint;
 import javax.enterprise.inject.spi.Producer;
 import java.util.Set;
 
-class MetricProducer<T extends Metric> implements Producer<T> {
+class MetricProducer<X extends Metric> implements Producer<X> {
 
-    private final Producer<T> delegate;
+    private final Producer<X> delegate;
 
     private final BeanManager bm;
 
     private final String name;
 
-    MetricProducer(Producer<T> delegate, String name, BeanManager bm) {
+    MetricProducer(Producer<X> delegate, BeanManager bm, String name) {
         this.delegate = delegate;
         this.bm = bm;
         this.name = name;
     }
 
     @Override
-    public T produce(CreationalContext<T> ctx) {
+    public X produce(CreationalContext<X> ctx) {
         MetricRegistry registry = BeanProvider.getContextualReference(bm, MetricRegistry.class, false);
         if (!registry.getMetrics().containsKey(name))
             registry.register(name, delegate.produce(ctx));
 
-        return (T) registry.getMetrics().get(name);
+        return (X) registry.getMetrics().get(name);
     }
 
     @Override
-    public void dispose(Metric instance) {
+    public void dispose(X instance) {
     }
 
     @Override

@@ -3,6 +3,7 @@ package io.astefanutti.cdi.further.metrics;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.codahale.metrics.annotation.Metric;
+import io.astefanutti.cdi.further.metrics.bean.MetricRegistryFactoryBean;
 import io.astefanutti.cdi.further.metrics.bean.TimedMethodBean;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -25,13 +26,15 @@ public class FurtherCdiMetricsTest {
     @Deployment
     public static Archive<?> deployment() {
         return ShrinkWrap.create(WebArchive.class, "test.war")
-            .addPackages(true, MetricsExtension.class.getPackage())
+            .addClasses(TimedMethodBean.class, MetricRegistryFactoryBean.class)
             .addAsLibraries(Maven.resolver()
                 .loadPomFromFile("pom.xml")
                 .resolve("org.apache.deltaspike.core:deltaspike-core-api",
                     "io.dropwizard.metrics:metrics-core",
                     "io.dropwizard.metrics:metrics-annotation")
-                .withTransitivity().as(JavaArchive.class))
+                .withTransitivity()
+                .as(JavaArchive.class))
+            .addPackage(MetricsExtension.class.getPackage())
             .addAsServiceProvider(Extension.class, MetricsExtension.class)
             .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml");
     }
@@ -53,7 +56,7 @@ public class FurtherCdiMetricsTest {
     }
 
     @Test
-    public void shouldTimedInterceptorBeCalled() throws InterruptedException {
+    public void shouldTimedInterceptorBeCalled() {
         bean.timedMethod();
         Assert.assertEquals(1, timer.getCount());
     }

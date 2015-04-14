@@ -12,10 +12,4 @@
     <artifactId>further-cdi-metrics-further</artifactId>
     <name>Going Further with CDI and Dropwizard Metrics (Further CDI)</name>
 
-
-    <properties>
-        <!-- JUL configuration for DeltaSpike -->
-        <argLine>-Djava.util.logging.config.file=src/test/resources/logging.properties</argLine>
-    </properties>
-
 </project>
