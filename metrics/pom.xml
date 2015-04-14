@@ -15,10 +15,15 @@
 
     <modules>
         <!--<module>plain</module>-->
-        <!--<module>basic</module>-->
+        <module>basic</module>
         <module>further</module>
         <!--<module>live</module>-->
     </modules>
+
+    <properties>
+        <!-- JUL configuration for DeltaSpike -->
+        <argLine>-Djava.util.logging.config.file=src/test/resources/logging.properties</argLine>
+    </properties>
 
     <dependencies>
 
