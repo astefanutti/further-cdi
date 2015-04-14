@@ -25,7 +25,7 @@ Discover how we created CDI integration module for Camel
 
 
 [.topic.source]
-== Camel out of the box (NO CDI)
+== Camel out of the box (without CDI)
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
@@ -54,7 +54,7 @@ Discover how we created CDI integration module for Camel
 <1> This route watches a directory every second and sends new files content to a JMS queue
 
 [.topic.source]
-== Basic CDI integration 1/3
+== Basic CDI integration (1/3)
 
 . Camel components and route builder as CDI beans
 
@@ -75,7 +75,7 @@ class FileToJmsRouteBean extends RouteBuilder {
 ----
 
 [.topic.source]
-== Basic CDI integration 2/3
+== Basic CDI integration (2/3)
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
@@ -108,7 +108,7 @@ class JmsComponentFactoryBean {
 
 
 [.topic.source]
-== Basic CDI integration 3/3
+== Basic CDI integration (3/3)
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
@@ -171,7 +171,7 @@ TIP: Implement the Camel SPI to look up CDI bean references
 
 TIP: Use a custom `InjectionTarget` for CDI beans containing Camel annotations
 
-TIP: Use the Magic
+TIP: Use the magic
 ====
 
 
@@ -265,16 +265,16 @@ TIP: We need to implement the `Bean` SPI
 ----
 public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
 
-    public Class<?> getBeanClass();
-    public Set<InjectionPoint> getInjectionPoints();
-    public T create(CreationalContext<T> creationalContext); // Contextual<T>
-    public void destroy(T instance, CreationalContext<T> creationalContext);
-    public Set<Type> getTypes(); // BeanAttributes<T>
-    public Set<Annotation> getQualifiers();
-    public Class<? extends Annotation> getScope();
-    public String getName();
-    public Set<Class<? extends Annotation>> getStereotypes();
-    public boolean isAlternative();
+    Class<?> getBeanClass();
+    Set<InjectionPoint> getInjectionPoints();
+    T create(CreationalContext<T> creationalContext); // Contextual<T>
+    void destroy(T instance, CreationalContext<T> creationalContext);
+    Set<Type> getTypes(); // BeanAttributes<T>
+    Set<Annotation> getQualifiers();
+    Class<? extends Annotation> getScope();
+    String getName();
+    Set<Class<? extends Annotation>> getStereotypes();
+    boolean isAlternative();
 }
 ----
 
@@ -334,7 +334,7 @@ TIP: Instantiate the `CamelContext` bean and the `RouteBuilder` beans in the `Af
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-    ...
+    //...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class))
@@ -358,7 +358,7 @@ TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` e
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-    ...
+    //...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
@@ -458,7 +458,7 @@ class CamelContextBean implements Bean<CamelContext> {
     [highlight]#private final BeanManager bm;#
 
     [highlight]#CamelContextBean(BeanManager bm) { this.bm = bm; }#
-    ...
+    //...
     public CamelContext create(CreationalContext<CamelContext> creational) {
         return new DefaultCamelContext([highlight]#new CamelCdiRegistry(bm)#);
     }
@@ -468,7 +468,7 @@ class CamelContextBean implements Bean<CamelContext> {
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-    ...
+    //...
     void addCamelContextBean(@Observes AfterBeanDiscovery abd [highlight]#, BeanManager bm#) {
         abd.addBean(new CamelContextBean([highlight]#bm#));
     }
@@ -588,9 +588,9 @@ TIP: Create a custom `InjectionTarget` that uses the default Camel bean post pro
 [source, subs="verbatim,quotes"]
 ----
 public interface InjectionTarget<T> extends Producer<T> {
-    [highlight]#public void inject(T instance, CreationalContext<T> ctx);#
-    public void postConstruct(T instance);
-    public void preDestroy(T instance);
+    [highlight]#void inject(T instance, CreationalContext<T> ctx);#
+    void postConstruct(T instance);
+    void preDestroy(T instance);
 }
 ----
 
@@ -622,7 +622,7 @@ class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
         [highlight]#processor.postProcessBeforeInitialization(instance, null)#; <1>
         delegate.inject(instance, ctx);
     }
-    ...
+    //...
 }
 ----
 <1> Call the Camel default bean post-processor before CDI injection
@@ -636,10 +636,10 @@ TIP: Observe the `ProcessInjectionTarget` lifecyle event and set the `InjectionT
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 public interface ProcessInjectionTarget<X> {
-    public AnnotatedType<X> getAnnotatedType();
-    public InjectionTarget<X> getInjectionTarget();
-    public void setInjectionTarget(InjectionTarget<X> injectionTarget);
-    public void addDefinitionError(Throwable t);
+    AnnotatedType<X> getAnnotatedType();
+    InjectionTarget<X> getInjectionTarget();
+    void setInjectionTarget(InjectionTarget<X> injectionTarget);
+    void addDefinitionError(Throwable t);
 }
 ----
 
@@ -791,9 +791,9 @@ TIP: Observe the `ProcessObserverMethod` lifecyle event
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 public interface ProcessObserverMethod<T, X> {
-    public AnnotatedMethod<X> getAnnotatedMethod();
-    public ObserverMethod<T> getObserverMethod();
-    public void addDefinitionError(Throwable t);
+    AnnotatedMethod<X> getAnnotatedMethod();
+    ObserverMethod<T> getObserverMethod();
+    void addDefinitionError(Throwable t);
 }
 ----
 

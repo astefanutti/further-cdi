@@ -2,7 +2,7 @@
 == Introducing CDI Portable Extensions
 
 [.topic.source]
-== Portable Extensions
+== Portable extensions
 
 [.statement]
 ====
@@ -22,24 +22,24 @@ NOTE: Not really popularized, partly due to:
 
 
 [.topic.source]
-== Extensions What for?
+== Extensions, what for?
 
 [.statement]
 ====
 
 TIP: To integrate 3rd party libraries, frameworks or legacy components
 
-TIP: To change exisiting configuration or behavior
+TIP: To change existing configuration or behavior
 
 TIP: To extend CDI and Java EE
 
-TIP: thanks to them, Java EE can evolve between major release
+TIP: Thanks to them, Java EE can evolve between major releases
 
 ====
 
 
 [.topic.source]
-== Extensions How?
+== Extensions, how?
 
 [.statement]
 ====
@@ -48,7 +48,7 @@ ifdef::includegifs[]
 image::rubik.gif[role="pull-right", width="250"]
 endif::includegifs[]
 
-TIP: Observing SPI Events at boot time according to BeanManger Lifecycle
+TIP: Observing SPI events at boot time related to the bean manager lifecycle
 
 TIP: Checking what meta-data are being created
 
@@ -69,11 +69,11 @@ TIP: Just put the fully qualified name of your extension class in this file
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
 
-class CdiExtension [highlight]#implements Extension# {
+public class CdiExtension [highlight]#implements Extension# {
 
     void beforeBeanDiscovery([highlight]#@Observes BeforeBeanDiscovery# bbd) {
     }
-    ...
+    //...
 
     void afterDeploymentValidation([highlight]#@Observes AfterDeploymentValidation# adv) {
     }
@@ -82,7 +82,7 @@ class CdiExtension [highlight]#implements Extension# {
 
 
 [.topic.source]
-== Bean Manager Lifecycle
+== Bean manager lifecycle
 
 [plantuml, "lifecycle-simple", "svg", height="85%", width="95%"]
 ----
@@ -156,7 +156,7 @@ skinparam activity {
 
 
 [.topic.source]
-== Example: Ignoring JPA Entities
+== Example: Ignoring JPA entities
 
 TIP: The following extension prevents CDI to manage entities
 

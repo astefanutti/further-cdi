@@ -133,7 +133,7 @@ Executor -- DataDictionaryFormulaResult : output >
 
 
 [.topic.source]
-== Legacy component out of the box (NO CDI)
+== Legacy component out of the box (without CDI)
 
 [source, subs="verbatim,quotes", role="smaller"]
 .Module containing the transformation logic `fpml2mxml.jar` that we want to reuse as is
@@ -389,16 +389,16 @@ TIP: We need to implement the `Bean` SPI
 [source]
 ----
 public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
-    public Class<?> getBeanClass();
-    public Set<InjectionPoint> getInjectionPoints();
-    public T create(CreationalContext<T> creationalContext); // Contextual<T>
-    public void destroy(T instance, CreationalContext<T> creationalContext);
-    public Set<Type> getTypes(); // BeanAttributes<T>
-    public Set<Annotation> getQualifiers();
-    public Class<? extends Annotation> getScope();
-    public String getName();
-    public Set<Class<? extends Annotation>> getStereotypes();
-    public boolean isAlternative();
+    Class<?> getBeanClass();
+    Set<InjectionPoint> getInjectionPoints();
+    T create(CreationalContext<T> creationalContext); // Contextual<T>
+    void destroy(T instance, CreationalContext<T> creationalContext);
+    Set<Type> getTypes(); // BeanAttributes<T>
+    Set<Annotation> getQualifiers();
+    Class<? extends Annotation> getScope();
+    String getName();
+    Set<Class<? extends Annotation>> getStereotypes();
+    boolean isAlternative();
 }
 ----
 
@@ -431,7 +431,7 @@ class LegacyExecutorBean implements Bean<Executor> {
     public void destroy(Executor instance, CreationalContext<Executor> creational) {
         executor.cleanUp();
     }
-    ...
+    //...
 ----
 
 
@@ -440,7 +440,7 @@ class LegacyExecutorBean implements Bean<Executor> {
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-    ...
+    //...
     public Class<?> getBeanClass() {
         return Executor.class;
     }
@@ -473,12 +473,12 @@ TIP: By observing the `AfterBeanDiscovery` lifecycle event
 [source, subs="verbatim,quotes"]
 ----
 public interface AfterBeanDiscovery {
-    public void addDefinitionError(Throwable t);
-    [highlight]#public void addBean(Bean<?> bean);#
-    public void addObserverMethod(ObserverMethod<?> observerMethod);
-    public void addContext(Context context);
-    public <T> AnnotatedType<T> getAnnotatedType(Class<T> type, String id);
-    public <T> Iterable<AnnotatedType<T>> getAnnotatedTypes(Class<T> type);
+    void addDefinitionError(Throwable t);
+    [highlight]#void addBean(Bean<?> bean);#
+    void addObserverMethod(ObserverMethod<?> observerMethod);
+    void addContext(Context context);
+    <T> AnnotatedType<T> getAnnotatedType(Class<T> type, String id);
+    <T> Iterable<AnnotatedType<T>> getAnnotatedTypes(Class<T> type);
 }
 ----
 

@@ -3,6 +3,7 @@
 image:3d-chess.png[width="110%"]
 ==!
 
+
 [.topic]
 == SPI can be split in 4 parts
 
@@ -21,8 +22,9 @@ NOTE: CDI entry points
 NOTE: SPI dedicated to extensions
 ====
 
+
 [.topic.source]
-== Why Having a Type Meta-Model?
+== Why having a type meta-model?
 
 [.statement]
 ====
@@ -35,10 +37,11 @@ TIP: So to configure we need a mutable meta-model...
 TIP: ...for annotated types
 ====
 
-[.topic.source]
-== SPI for Type meta-model
 
-[plantuml, "type-meta", "svg", height="90%"]
+[.topic.source]
+== SPI for type meta-model
+
+[plantuml, "type-meta", "svg", height="95%", width="100%"]
 ----
 @startuml
 
@@ -102,13 +105,12 @@ interface AnnotatedMethod<X> {
     +Method getJavaMember()
 }
 
-
 @enduml
 ----
 
 
 [.topic.source]
-== SPI Dedicated to CDI Meta-Model
+== SPI dedicated to CDI meta-model
 
 [plantuml, "cdi-meta", "svg", width="100%"]
 ----
@@ -195,54 +197,64 @@ interface EventMetadata {
 @enduml
 ----
 
+
 [.topic.source]
-== This SPI can be used in your code 1
+== This SPI can be used in your code (1/2)
 
 TIP: `InjectionPoint` can be used to get info about what's being injected
 
 [source, subs="verbatim,quotes"]
 ----
 [highlight]#@Qualifier#
-@Retention(RUNTIME)
-@Target({TYPE, METHOD, FIELD, PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
 public @interface [HighLight]#HttpParam# {
-  [highlight]#@Nonbinding# public String value()
+    [highlight]#@Nonbinding# public String value();
 }
-...
+----
+
+[source, subs="verbatim,quotes"]
+----
 @Produces [highlight]#@HttpParam("")#
-[highlight]#String# getParamValue([highlight]#InjectionPoint# ip,[highlight]#HttpServletRequest# req) {
-  return req.getParameter(ip.getAnnotated().getAnnotation(HttpParam.class).value())
+[highlight]#String# getParamValue([highlight]#InjectionPoint# ip, [highlight]#HttpServletRequest# req) {
+  return req.getParameter(ip.getAnnotated().getAnnotation(HttpParam.class).value());
 }
-...
-[highlight]#@HttpParam("productId")# @Inject [highlight]#String# productId
+----
+
+[source, subs="verbatim,quotes"]
+----
+@Inject
+[highlight]#@HttpParam("productId")#
+[highlight]#String# productId;
 ----
 
 
-
 [.topic.source]
-== This SPI can be used in your code 2
+== This SPI can be used in your code (2/2)
 
 TIP: `InjectionPoint` contains info about requested type at `@Inject`
 
 [source, subs="verbatim,quotes"]
 ----
-public class MyMapProducer() {
-  [highlight]#@Produces#
-  public <K, V> Map<K, V> produceMap([highlight]#InjectionPoint ip#) {
-       if (valueIsNumber(((ParameterizedType)ip.getType())))
-           return new TreeMap<K, V>()
-       return new HashMap<K, V>()
-  }
+class MyMapProducer() {
 
-  private boolean valueIsNumber(ParameterizedType t) {
-        Class<?> valueClass = (Class<?>) t.getActualTypeArguments()[1]
+    [highlight]#@Produces#
+    <K, V> Map<K, V> produceMap([highlight]#InjectionPoint ip#) {
+        if (valueIsNumber(((ParameterizedType) ip.getType())))
+            return new TreeMap<K, V>();
+        return new HashMap<K, V>();
+    }
+
+    boolean valueIsNumber(ParameterizedType type) {
+        Class<?> valueClass = (Class<?>) type.getActualTypeArguments()[1];
         return Number.class.isAssignableFrom(valueClass)
-  }
+    }
 }
 ----
+
+
 ////
 [.topic.source]
-== This SPI can be used in your code 3
+== This SPI can be used in your code (3/4)
 
 TIP: An abstract superclass can use meta to provide generic resolution
 
@@ -266,7 +278,7 @@ public Resolver getResolver() {
 ----
 
 [.topic.source]
-== This SPI can be used in your code 4
+== This SPI can be used in your code (4/4)
 
 TIP: `EventMetadata` contains type and qualifier info about the event
 
@@ -285,8 +297,10 @@ public class MyService {
 }
 ----
 ////
+
+
 [.topic.source]
-== SPI providing CDI Entry points
+== SPI providing CDI entry points
 
 [plantuml, "entry-points", "svg", height="95%", width="100%"]
 ----
@@ -341,7 +355,6 @@ interface BeanManager {
 }
 
 
-
 class CDI<T> {
 
     # {static} Set<CDIProvider> discoveredProviders
@@ -351,13 +364,12 @@ class CDI<T> {
     + {abstract} BeanManager getBeanManager()
 }
 
-
 @enduml
 ----
 
 
 [.topic.source]
-== SPI Dedicated to Extensions
+== SPI dedicated to extensions
 
 [plantuml, "spi-extensions", "svg", height="100%", width="100%"]
 ----
@@ -440,15 +452,16 @@ interface ProcessProducer<T, X> {
 @enduml
 ----
 
-[.topic.source]
-== All these SPI interaces are events containing meta-model SPI
 
-NOTE: These events fired at boot time can only be observed in a CDI extension
+[.topic.source]
+== All these SPI interfaces are events containing meta-model SPI
+
+NOTE: These events fired at boot time can only be observed in CDI extensions
 
 NOTE: For instance:
 
 image:processAnnotatedTypeCart.png[width="280",role="pull-left"]
 
-TIP: A `ProcessAnnotatedType<T>` event is triggered for each type discovered at boot time
+TIP: A `ProcessAnnotatedType<T>` event is fired for each type being discovered at boot time
 
-TIP: Observing `ProcessAnnotatedType<Foo>` allow you to prevent `Foo` to become a bean by calling `ProcessAnnotatedType#veto()`
+TIP: Observing `ProcessAnnotatedType<Foo>` allows you to prevent `Foo` to be deployed as a bean by calling `ProcessAnnotatedType#veto()`

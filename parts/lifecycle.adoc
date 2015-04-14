@@ -3,7 +3,7 @@
 
 
 [.topic.source]
-== Complete Lifecycle Events
+== Complete lifecycle events
 
 [plantuml, "lifecycle-complete", "svg", height="95%"]
 ----
