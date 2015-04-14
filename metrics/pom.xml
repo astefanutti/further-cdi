@@ -14,10 +14,10 @@
     <packaging>pom</packaging>
 
     <modules>
-        <!--<module>plain</module>-->
+        <module>plain</module>
         <module>basic</module>
         <module>further</module>
-        <!--<module>live</module>-->
+        <module>live</module>
     </modules>
 
     <properties>

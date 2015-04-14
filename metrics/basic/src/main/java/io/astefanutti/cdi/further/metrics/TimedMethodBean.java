@@ -26,7 +26,7 @@ public class TimedMethodBean {
         Timer timer = registry.timer("myTimer");
         Timer.Context time = timer.time();
         try {
-            LoggerFactory.getLogger(TimedMethodBean.class).info("Timed method called, timer [{}] will be incremented", "myTimer");
+            LoggerFactory.getLogger("BASIC METRICS").info("Timed method called, timer [{}] will be incremented", "myTimer");
         } finally {
             time.stop();
         }

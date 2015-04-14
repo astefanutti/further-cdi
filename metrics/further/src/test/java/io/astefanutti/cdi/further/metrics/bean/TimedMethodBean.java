@@ -18,6 +18,6 @@ public class TimedMethodBean {
 
     @Timed(name = "myTimer")
     public void timedMethod() {
-        LoggerFactory.getLogger(TimedMethodBean.class).info("Timed method called, timer [{}] will be incremented", "myTimer");
+        LoggerFactory.getLogger("FURTHER METRICS").info("Timed method called, timer [{}] will be incremented", "myTimer");
     }
 }
