@@ -1,0 +1,29 @@
+sudo: false
+
+language: java
+
+cache:
+  directories:
+  - $HOME/.m2
+
+branches:
+  only:
+    - master
+
+install:
+  - mvn clean install -Dmaven.test.skip.exec
+
+script:
+  - mvn test
+  - mvn test -Pwildfly -pl camel/further
+  - mvn test -Pwildfly -pl metrics/further
+
+jdk:
+  - oraclejdk7
+  - openjdk7
+  - oraclejdk8
+
+notifications:
+  email:
+    recipients:
+      - antonin.stefanutti@gmail.com

@@ -14,12 +14,15 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
+import javax.inject.Inject;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -30,14 +33,28 @@ public class FurtherCdiCamelTest {
 
     @Deployment
     public static Archive<?> deployment() {
-        return ShrinkWrap.create(JavaArchive.class)
-            .addClasses(FileToJmsRouteBean.class, JmsComponentFactoryBean.class, PropertiesComponentFactoryBean.class)
+        return ShrinkWrap.create(WebArchive.class, "test.war")
+            // Camel CDI
+            .addPackage(CamelExtension.class.getPackage())
             .addAsServiceProvider(Extension.class, CamelExtension.class)
-            .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+            // Test classes
+            .addClasses(FileToJmsRouteBean.class, JmsComponentFactoryBean.class, PropertiesComponentFactoryBean.class)
+            .addAsWebInfResource(EmptyAsset.INSTANCE, "beans.xml")
+            .addAsLibraries(Maven.resolver()
+                .loadPomFromFile("pom.xml")
+                .resolve("org.apache.camel:camel-core",
+                    "org.apache.camel:camel-sjms",
+                    "org.apache.activemq:activemq-broker",
+                    "org.apache.activemq:activemq-client")
+                .withTransitivity()
+                .as(JavaArchive.class));
     }
 
+    @Inject
+    private CamelContext context;
+
     @Test
-    public void sendMessage(CamelContext context) throws Exception {
+    public void sendMessage() throws Exception {
         MockEndpoint output = context.getEndpoint("mock:output", MockEndpoint.class);
         output.expectedMessageCount(1);
         output.expectedHeaderReceived("advice", Boolean.TRUE);

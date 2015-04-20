@@ -58,14 +58,15 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cdi.version>1.2</cdi.version>
-        <camel.version>2.15.0</camel.version>
+        <camel.version>2.15.1</camel.version>
         <metrics.version>3.1.1</metrics.version>
         <deltaspike.version>1.3.0</deltaspike.version>
-        <weld.version>2.2.10.Final</weld.version>
-        <arquillian.version>1.1.7.Final</arquillian.version>
+        <weld.version>2.2.10.SP1</weld.version>
+        <wildfly.version>8.2.0.Final</wildfly.version>
+        <arquillian.version>1.1.8.Final</arquillian.version>
         <shrinkwrap.descriptors.version>2.0.0-alpha-7</shrinkwrap.descriptors.version>
-        <shrinkwrap-resolver.version>2.1.0</shrinkwrap-resolver.version>
-        <slf4j.version>1.7.10</slf4j.version>
+        <shrinkwrap-resolver.version>2.1.1</shrinkwrap-resolver.version>
+        <slf4j.version>1.7.12</slf4j.version>
     </properties>
 
     <modules>
@@ -81,13 +82,13 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.2</version>
+                    <version>3.3</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.18</version>
+                    <version>2.18.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -229,6 +230,21 @@
                 <artifactId>arquillian-weld-ee-embedded-1.1</artifactId>
                 <version>1.0.0.CR8</version>
                 <scope>test</scope>
+            </dependency>
+
+            <!-- WildFly -->
+
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-arquillian-container-managed</artifactId>
+                <version>${wildfly.version}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.logmanager</groupId>
+                        <artifactId>log4j-jboss-logmanager</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
         </dependencies>
