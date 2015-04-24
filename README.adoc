@@ -1,11 +1,22 @@
 = Going further with CDI
 
-== Presentations
+== About
+
+Presentation material about advanced features and use cases of http://www.cdi-spec.org/[CDI], the Context and Dependency Injection standard for the Java platform.
+
+It first introduces the CDI type and metadata SPI. It then focuses on the concept of http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#spi[portable extensions] and covers the complete bean manager lifecycle, depicted in the diagram below. Lastly, it illustrates the use of these concepts through practical examples like the https://github.com/astefanutti/camel-cdi[Camel CDI] and https://github.com/astefanutti/metrics-cdi[Metrics CDI] extensions.
+
+image::https://raw.github.com/astefanutti/further-cdi/gh-pages/lifecycle.png[]
+
+== Presentation history
 
 |===
 
-| https://www.oracle.com/javaone/[JavaOne] 2014 | https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Further with CDI 1.2 [CON5585\]] | @ https://github.com/astefanutti/further-cdi/tree/6fd80dd792e325729b6b8724f50b93475d5dc3be[6fd80dd] / `javaone`
-| http://www.devoxx.be/[Devoxx BE] 2014 | http://cfp.devoxx.be/2014/talk/CSX-3476/Going_farther_with_CDI_1.2[Going Further with CDI 1.2] | @ https://github.com/astefanutti/further-cdi/tree/6aa51e7230cd5177ab30135c21b0d17b428565e9[6aa51e7]
+| Conference | Session | Commit [/ Branch]  | Slides
+
+| https://www.oracle.com/javaone/[JavaOne] 2014 | https://oracleus.activeevents.com/2014/connect/sessionDetail.ww?SESSION_ID=5585[Going Further with CDI 1.2 [CON5585\]] | link:tree/6fd80dd792e325729b6b8724f50b93475d5dc3be[`6fd80dd`] / link:tree/javaone[`javaone`] | http://astefanutti.github.io/further-cdi/JavaOne-2014.html[JavaOne-2014.html]
+| http://www.devoxx.be/[Devoxx BE] 2014 | http://cfp.devoxx.be/2014/talk/CSX-3476/Going_farther_with_CDI_1.2[Going Further with CDI 1.2 [CSX-3476\]] | link:tree/6aa51e7230cd5177ab30135c21b0d17b428565e9[`6aa51e7`] | http://astefanutti.github.io/further-cdi/DevoxxBE-2014.html[DevoxxBE-2014.html]
+| http://www.devoxx.fr/[Devoxx FR] 2015 | http://cfp.devoxx.fr/2015/talk/OGT-5265/Allons_plus_loin_avec_CDI_1.2[Allons plus loin avec CDI 1.2 [OGT-5265\]] | link:tree/b490b41747b70b0e5a28f05ba3e5ef20ec5dcd3c[`b490b41`] | http://astefanutti.github.io/further-cdi/DevoxxFR-2015.html[DevoxxFR-2015.html]
 
 |===
 
