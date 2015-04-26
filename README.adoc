@@ -1,14 +1,14 @@
 = Going further with CDI
 
-image::https://travis-ci.org/astefanutti/further-cdi.svg[link="https://travis-ci.org/astefanutti/further-cdi"]
-
-== About
+image::https://travis-ci.org/astefanutti/further-cdi.svg[Travis CI build, link="https://travis-ci.org/astefanutti/further-cdi"]
 
 Presentation material about advanced features and use cases of http://www.cdi-spec.org/[CDI], the Contexts and Dependency Injection standard for the Java platform.
 
-It first introduces the CDI type and metadata SPI. It then focuses on the concept of http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#spi[portable extensions] and covers the complete bean manager lifecycle, depicted in the diagram below. Lastly, it illustrates the use of these concepts through practical examples like the https://github.com/astefanutti/camel-cdi[Camel CDI] and https://github.com/astefanutti/metrics-cdi[Metrics CDI] extensions.
+== About
 
-image::https://raw.github.com/astefanutti/further-cdi/gh-pages/lifecycle.png[]
+This presentation introduces the CDI type and metadata SPI. It then focuses on the concept of http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#spi[portable extensions] and covers the complete bean manager lifecycle, depicted in the diagram below. Lastly, it illustrates the use of these concepts through practical examples like the https://github.com/astefanutti/camel-cdi[Camel CDI] and https://github.com/astefanutti/metrics-cdi[Metrics CDI] extensions.
+
+image::http://astefanutti.github.io/further-cdi/lifecycle.svg[]
 
 == Presentation history
 
