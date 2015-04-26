@@ -1,5 +1,7 @@
 = Going further with CDI
 
+image::https://travis-ci.org/astefanutti/further-cdi.svg[link="https://travis-ci.org/astefanutti/further-cdi"]
+
 == About
 
 Presentation material about advanced features and use cases of http://www.cdi-spec.org/[CDI], the Contexts and Dependency Injection standard for the Java platform.
