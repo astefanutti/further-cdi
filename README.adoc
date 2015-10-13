@@ -45,11 +45,7 @@ asciidoctor -r asciidoctor-diagram -T asciidoctor-backends/slim -a data-uri -a l
 
 Note that the Git submodules must first be initialized by running:
 ----
-git submodule init
-----
-Followed with:
-----
-git submodule update
+git submodule update --init
 ----
 
 == Use Guard and LiveReload
