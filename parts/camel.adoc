@@ -53,6 +53,13 @@ Discover how we created CDI integration module for Camel
 ----
 <1> This route watches a directory every second and sends new files content to a JMS queue
 
+
+[.topic.source]
+== Why CDI?
+
+image::before-after.png[height="100%"]
+
+
 [.topic.source]
 == Basic CDI integration (1/3)
 
@@ -165,7 +172,7 @@ int maxConnections;
 ====
 TIP: Manage the creation and the configuration of the `CamelContext` bean
 
-TIP: Bind the `CamelContext` lifecycle that of the CDI container
+TIP: Bind the `CamelContext` lifecycle to that of the CDI container
 
 TIP: Implement the Camel SPI to look up CDI bean references
 
@@ -730,142 +737,6 @@ class JmsComponentFactoryBean {
         component.setConnectionCount([highlight]#maxConnections#);
         return component;
     }
-}
-----
-
-====
-
-
-[.topic.source]
-== Bonus goal: Camel DSL AOP
-
-TIP: AOP instrumentation of the Camel DSL
-
-[source, subs="verbatim,quotes"]
-----
-from("file:target/input?delay=1000")
-    .convertBodyTo(String.class)
-    [highlight]#.log("Sending message [${body}] to JMS...")#
-    .to("sjms:queue:output");
-----
-
-TIP: with CDI observers
-
-[source, subs="verbatim,quotes"]
-----
-from("file:target/input?delay=1000")
-    .convertBodyTo(String.class)
-    .to("sjms:queue:output")[highlight]#.id("join point")#;
-}
-void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
-    logger.info("Sending message [{}] to JMS...", exchange.getIn().getBody());
-}
-----
-
-
-[.topic.source]
-== How to achieve this?
-
-TIP: We can create a CDI qualifier to hold the Camel node id metadata:
-
-[source, subs="verbatim,quotes", role="smaller"]
-----
-[highlight]#@Qualifier#
-@Retention(RetentionPolicy.RUNTIME)
-public @interface NodeId {
-    String value();
-}
-----
-
-TIP: and create an extension that will:
-
-. Detect the CDI beans containing observer methods with the `@NodeId` qualifier by observing the `ProcessObserverMethod` event and collect the Camel processor nodes to be instrumented
-. Customize the Camel context by providing an implementation of the Camel `InterceptStrategy` interface that will fire a CDI event each time an `Exchange` is processed by the instrumented nodes
-
-
-[.topic.source]
-== Detect the Camel DSL AOP observer methods
-
-TIP: Observe the `ProcessObserverMethod` lifecyle event
-
-[source, subs="verbatim,quotes", role="smaller"]
-----
-public interface ProcessObserverMethod<T, X> {
-    AnnotatedMethod<X> getAnnotatedMethod();
-    ObserverMethod<T> getObserverMethod();
-    void addDefinitionError(Throwable t);
-}
-----
-
-TIP: And collect the observer method metadata
-
-[source, subs="verbatim,quotes", role="smaller"]
-----
-class CamelExtension implements Extension {
-    final Set<NodeId> joinPoints = new HashSet<>();
-
-    void pointcuts(@Observes [highlight]#ProcessObserverMethod<Exchange, ?># pom) {
-        for (Annotation qualifier : pom.getObserverMethod().getObservedQualifiers())
-            if (qualifier instanceof NodeId)
-                joinPoints.add(NodeId.class.cast(qualifier));
-    }
-}
-----
-
-
-[.topic.source]
-== Instrument the Camel context
-
-TIP: Intercept matching nodes and fire a CDI event
-
-[source, subs="verbatim,quotes", role="smaller"]
-----
-void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) {
-    context.addInterceptStrategy(new InterceptStrategy() {
-      public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition,
-          Processor target, Processor nextTarget) throws Exception {
-            if (definition.hasCustomIdAssigned()) {
-                for (final Node node : joinPoints) {
-                    if (node.value().equals(definition.getId())) {
-                        return new DelegateAsyncProcessor(target) {
-                            public boolean process(Exchange exchange, AsyncCallback callback) {
-                                [highlight]#manager.fireEvent(exchange, node);#
-                                return super.process(exchange, callback);
-                            }
-                        };
-                    }
-                }
-            }
-            return target;
-        }
-    });
-}
-----
-
-
-[.topic]
-== Bonus goal achieved
-
-[.statement]
-====
-TIP: We can define join points in the Camel DSL
-
-[source, subs="verbatim,quotes",role="smaller"]
-----
-from("file:target/input?delay=1000")
-    .convertBodyTo(String.class)
-    .to("sjms:queue:output")[highlight]#.id("join point")#;
-}
-----
-
-TIP: And advise them with CDI observers
-
-[source, subs="verbatim,quotes",role="smaller"]
-----
-void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
-    List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY, List.class);
-    logger.info("Sending message [{}] to [{}]...", exchange.getIn().getBody(),
-        history.get(history.size() - 1).getNode().getLabel());
 }
 ----
 

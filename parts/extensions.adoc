@@ -16,7 +16,7 @@ NOTE: One of the _most powerful feature_ of the CDI specification
 NOTE: Not really popularized, partly due to:
 
 . Their _high level of abstraction_
-. The good knowledge on Basic CDI and SPI
+. The prerequisite knowledge on basic CDI and SPI
 . Lack of information (CDI is often reduced to a basic DI solution)
 ====
 
@@ -31,7 +31,7 @@ TIP: To integrate 3rd party libraries, frameworks or legacy components
 
 TIP: To change existing configuration or behavior
 
-TIP: To extend CDI and Java EE
+TIP: To extend CDI both in Java SE and Java EE
 
 TIP: Thanks to them, Java EE can evolve between major releases
 
@@ -158,7 +158,7 @@ skinparam activity {
 [.topic.source]
 == Example: Ignoring JPA entities
 
-TIP: The following extension prevents CDI to manage entities
+TIP: The following extension prevents CDI to manage JPA entities
 
 NOTE: This is a commonly admitted good practice
 

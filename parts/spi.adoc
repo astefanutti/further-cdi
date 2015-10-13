@@ -28,11 +28,11 @@ NOTE: SPI dedicated to extensions
 
 [.statement]
 ====
-TIP: Because `@Annotations` are configuration
+TIP: Because types and annotations are configuration
 
 TIP: but they are also read-only
 
-TIP: So to configure we need a mutable meta-model...
+TIP: So to configure CDI we need a mutable meta-model...
 
 TIP: ...for annotated types
 ====
@@ -199,7 +199,7 @@ interface EventMetadata {
 
 
 [.topic.source]
-== This SPI can be used in your code (1/2)
+== This SPI can be used in your code
 
 TIP: `InjectionPoint` can be used to get info about what's being injected
 
@@ -226,77 +226,6 @@ public @interface [HighLight]#HttpParam# {
 [highlight]#@HttpParam("productId")#
 [highlight]#String# productId;
 ----
-
-
-[.topic.source]
-== This SPI can be used in your code (2/2)
-
-TIP: `InjectionPoint` contains info about requested type at `@Inject`
-
-[source, subs="verbatim,quotes"]
-----
-class MyMapProducer() {
-
-    [highlight]#@Produces#
-    <K, V> Map<K, V> produceMap([highlight]#InjectionPoint ip#) {
-        if (valueIsNumber(((ParameterizedType) ip.getType())))
-            return new TreeMap<K, V>();
-        return new HashMap<K, V>();
-    }
-
-    boolean valueIsNumber(ParameterizedType type) {
-        Class<?> valueClass = (Class<?>) type.getActualTypeArguments()[1];
-        return Number.class.isAssignableFrom(valueClass)
-    }
-}
-----
-
-
-////
-[.topic.source]
-== This SPI can be used in your code (3/4)
-
-TIP: An abstract superclass can use meta to provide generic resolution
-
-[source, subs="verbatim,quotes"]
-----
-public [highlight]#abstract# class AbstractService {
-  //resolver with same qualifiers than the current bean
-  private Resolver resolver;
-
-  [highlight]#@Inject# //@Inject can be used on an initializer method
-  void initResolver([highlight]#Bean#<AbstractService> meta, [highlight]#@Any# [highlight]#Instance#<Resolver> resolvers)
- {
-    Annotation[] beanQualifiers = (Annotation[]) meta.getQualifiers().toArray()
-    resolver = resolvers.select(beanQualifiers).get()
-  }
-
-public Resolver getResolver() {
-    return resolver
-  }
-}
-----
-
-[.topic.source]
-== This SPI can be used in your code (4/4)
-
-TIP: `EventMetadata` contains type and qualifier info about the event
-
-[source, subs="verbatim,quotes"]
-----
-@ApplicationScoped
-public class MyService {
-
-  private void strictListen([highlight]#@Observes# @Qualified Payload evt, [highlight]#EventMetadata# meta) {
-    if(meta.getQualifiers().contains(new QualifiedLiteral())
-       && meta.getType().equals(Payload.class))
-         System.out.println("Do something")
-       else
-         System.out.println("ignore")
-  }
-}
-----
-////
 
 
 [.topic.source]

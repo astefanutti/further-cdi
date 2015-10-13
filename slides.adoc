@@ -1,7 +1,7 @@
-= Going _further_ with _CDI_ 1.2
+= Going _further_ with _CDI_ (and Apache Camel)
 Antoine Sabot-Durand; Antonin Stefanutti
-:description: Going farther with CDI 1.2
-:website: http://astefanutti.github.io/javaone2014
+:description: Advanced CDI in Live Coding
+:website: http://astefanutti.github.io/further-cdi
 :copyright: CC BY-SA 4.0
 :backend: dzslides
 :sectids!:
@@ -29,47 +29,6 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 
 [.topic.source]
-== Antonin Stefanutti
-
-====
-* icon:user[] Software Engineer
-* icon:institution[] Murex
-* icon:globe[] www.murex.com
-* icon:twitter[] @astefanut
-* icon:github[] github.com/astefanutti
-
-TIP: Slides available at https://github.com/astefanutti/further-cdi
-====
-
-
-[.topic.source]
-== CDI @ Murex
-
-image::murex.png[height="86%"]
-
-NOTE: CDI as the *productivity ecosystem* to build *connectivity interfaces*
-
-
-[.topic.source]
-== CDI @ Murex
-
-image::before-after.png[height="95%"]
-
-
-[.topic.source]
-== Antoine Sabot-Durand
-
-====
-* icon:user[] Senior Software Engineer
-* icon:user[] CDI co-spec lead, Java EE 8 EG
-* icon:institution[] Red Hat, Inc.
-* icon:twitter[] @antoine_sd
-* icon:rss[] www.next-presso.com
-* icon:github[] github.com/antoinesd
-====
-
-
-[.topic.source]
 == Should I stay or should I go?
 
 ====
@@ -86,9 +45,9 @@ image::before-after.png[height="95%"]
 
 
 [.topic.source]
-== Should I stay or should I go ?
+== Should I stay or should I go?
 
-TIP: If you know the most of these you can stay
+TIP: If you know most of these you can stay
 
 [.split]
 * `@Inject`
@@ -116,26 +75,7 @@ CAUTION: What's not included:
 
 
 [.topic.source]
-== Tools used in the code 1/2
-
-[.statement]
-====
-Apache Deltaspike
-
-image::deltaspike.png[role="pull-right", width="300"]
-
-. Apache DeltaSpike is a great CDI toolbox
-. Provide helpers to develop extension
-. And a collection of modules like:
-.. Security
-.. Data
-.. Scheduler
-. More info on http://deltaspike.apache.org
-====
-
-
-[.topic.source]
-== Tools used in the code 2/2
+== Tools used in the code
 
 [.statement]
 ====
@@ -147,8 +87,8 @@ image::arquillian.png[role="pull-right", width="250"]
 . It integrates with JUnit
 . Create your deployment in a dedicated method
 . And launch your tests against the container of your choice
-. We'll use the `weld-se-embedded` and `weld-ee-embedded` container
-. The right solution to test Java EE code
+. We'll use the `weld-se-embedded` container
+. The right solution to test CDI code
 . More info on http://arquillian.org
 ====
 
@@ -160,24 +100,13 @@ image::arquillian.png[role="pull-right", width="250"]
 ====
 * icon:info-circle[] Meet CDI SPI
 * icon:info-circle[] Introducing CDI Extensions
-// * icon:info-circle[] Legacy Code
-* icon:info-circle[] Metrics CDI
-* icon:info-circle[] CDI Quizz
 * icon:info-circle[] Camel CDI
-
-TIP: Slides available at http://astefanutti.github.io/further-cdi
 ====
 
 
 include::parts/spi.adoc[]
 
 include::parts/extensions.adoc[]
-
-// include::parts/legacy.adoc[]
-
-include::parts/metrics.adoc[]
-
-include::parts/quizz.adoc[]
 
 include::parts/camel.adoc[]
 
@@ -190,8 +119,6 @@ include::parts/camel.adoc[]
 == References
 
 NOTE: CDI Specification - http://cdi-spec.org
-
-NOTE: Metrics CDI sources - https://github.com/astefanutti/metrics-cdi
 
 NOTE: Camel CDI sources - https://github.com/astefanutti/camel-cdi
 
