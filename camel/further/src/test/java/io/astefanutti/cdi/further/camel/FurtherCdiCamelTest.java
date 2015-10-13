@@ -58,9 +58,9 @@ public class FurtherCdiCamelTest {
         MockEndpoint output = context.getEndpoint("mock:output", MockEndpoint.class);
         output.expectedMessageCount(1);
         output.expectedHeaderReceived("advice", Boolean.TRUE);
-        output.expectedBodiesReceived("HI DEVOXX");
+        output.expectedBodiesReceived("HELLO WORLD!");
 
-        Files.write(Paths.get("target/input/msg"), "HI DEVOXX".getBytes());
+        Files.write(Paths.get("target/input/msg"), "HELLO WORLD!".getBytes());
 
         MockEndpoint.assertIsSatisfied(5L, TimeUnit.SECONDS, output);
     }
