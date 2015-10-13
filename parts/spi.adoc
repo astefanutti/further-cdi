@@ -338,7 +338,7 @@ interface BeanManager {
     +Bean<? extends X> resolve(Set<Bean<? extends X>>)
     +void validate(InjectionPoint)
     +void fireEvent(Object, Annotation[])
-    .. some methods skiped ..
+    .. some methods skipped ..
     +boolean isQualifier(Class<? extends Annotation>)
     +boolean isStereotype(Class<? extends Annotation>)
     +boolean areQualifiersEquivalent(Annotation, Annotation)
