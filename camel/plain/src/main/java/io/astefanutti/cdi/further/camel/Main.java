@@ -28,7 +28,7 @@ public class Main {
         context.addComponent("properties", properties);
 
         SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false"));
+        component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false&broker.useJmx=false"));
         component.setConnectionCount(Integer.valueOf(context.resolvePropertyPlaceholders("{{jms.maxConnections}}")));
         context.addComponent("sjms", component);
 

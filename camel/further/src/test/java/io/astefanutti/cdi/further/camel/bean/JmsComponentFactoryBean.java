@@ -20,7 +20,7 @@ public class JmsComponentFactoryBean {
     // Cannot return SjmsComponent as UriEndpointComponent is not proxyable
     DefaultComponent sjmsComponent() {
         SjmsComponent component = new SjmsComponent();
-        component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false"));
+        component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false&broker.useJmx=false"));
         component.setConnectionCount(maxConnections);
         return component;
     }
