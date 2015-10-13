@@ -20,7 +20,8 @@ script:
 
 jdk:
   - oraclejdk7
-  - openjdk7
+# Buffer overflow detected with WildFly 9.0.1.Final
+#  - openjdk7
   - oraclejdk8
 
 notifications:
