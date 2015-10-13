@@ -4,11 +4,12 @@ require 'asciidoctor/cli'
 require 'asciidoctor-diagram'
 require 'tilt/asciidoc'
 
+invoker = Asciidoctor::Cli::Invoker.new(%W(-T asciidoctor-backends/slim slides.adoc))
 
+invoker.invoke!
 
   guard :shell do
-#    watch (/^.+\.adoc$/) { |m| Asciidoctor::Cli::Invoker.new(%W(-T asciidoctor-backends/slim -a data-uri -a linkcss! #{m[0]})).invoke! }
-     watch (/^.+\.adoc$/) { |m| Asciidoctor::Cli::Invoker.new(%W(-T asciidoctor-backends/slim -a data-uri -a linkcss! slides.adoc)).invoke! }
+    watch (/^.+\.adoc$/) { |m| invoker.invoke! }
   end
 
   guard 'livereload' do
