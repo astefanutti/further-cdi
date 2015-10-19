@@ -63,8 +63,8 @@ TIP: If you know most of these you can stay
 
 CAUTION: What's included:
 
-. Real use cases from real life with real users
 . New approach to introduce portable extension concepts
+. Real use cases from real life with real users
 . Code in IDE with tests
 
 CAUTION: What's not included:
