@@ -86,9 +86,9 @@ image::before-after.png[height="95%"]
 
 
 [.topic.source]
-== Should I stay or should I go ?
+== Should I stay or should I go?
 
-TIP: If you know the most of these you can stay
+TIP: If you know most of these you can stay
 
 [.split]
 * `@Inject`

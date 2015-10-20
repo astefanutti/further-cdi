@@ -28,11 +28,11 @@ class CamelContextBean implements Bean<CamelContext> {
     }
 
     public Set<Annotation> getQualifiers() {
-        return Collections.singleton((Annotation) new AnnotationLiteral<Default>() {});
+        return Collections.<Annotation>singleton(new AnnotationLiteral<Default>() {});
     }
 
     public Set<Type> getTypes() {
-        return Collections.singleton((Type) CamelContext.class);
+        return Collections.<Type>singleton(CamelContext.class);
     }
 
     public DefaultCamelContext create(CreationalContext<CamelContext> creational) {
@@ -51,7 +51,7 @@ class CamelContextBean implements Bean<CamelContext> {
     }
 
     public String getName() { // Only called for @Named bean
-        return "";
+        return null;
     }
 
     public Set<Class<? extends Annotation>> getStereotypes() {

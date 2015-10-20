@@ -165,9 +165,9 @@ int maxConnections;
 ====
 TIP: Manage the creation and the configuration of the `CamelContext` bean
 
-TIP: Bind the `CamelContext` lifecycle that of the CDI container
+TIP: Bind the `CamelContext` lifecycle to that of the CDI container
 
-TIP: Implement the Camel SPI to look up CDI bean references
+TIP: Implement the Camel registry SPI to look up CDI bean references
 
 TIP: Use a custom `InjectionTarget` for CDI beans containing Camel annotations
 
@@ -289,9 +289,9 @@ class CamelContextBean implements [highlight]#Bean<CamelContext># {
     public Class<? extends Annotation> getScope() { return [highlight]#ApplicationScoped.class#; }
 
     public Set<Annotation> getQualifiers() {
-        return Collections.singleton((Annotation) [highlight]#new AnnotationLiteral<Default>(){}#);
+        return Collections.<Annotation>singleton([highlight]#new AnnotationLiteral<Default>(){}#);
     }
-    public Set<Type> getTypes() { return Collections.singleton((Type) [highlight]#CamelContext.class#); }
+    public Set<Type> getTypes() { return Collections.<Type>singleton([highlight]#CamelContext.class#); }
 
     public CamelContext create(CreationalContext<CamelContext> creational) {
         return [highlight]#new DefaultCamelContext()#;
@@ -303,7 +303,7 @@ class CamelContextBean implements [highlight]#Bean<CamelContext># {
     public Set<InjectionPoint> getInjectionPoints() { return Collections.emptySet(); }
 
     public Set<Class<? extends Annotation>> getStereotypes() { return Collections.emptySet(); }
-    public String getName() { return "camel-cdi"; }
+    public String getName() { return null; } // Only called for @Named bean
     public boolean isAlternative() { return false; }
     public boolean isNullable() { return false; }
 }
