@@ -53,6 +53,13 @@ Discover how we created CDI integration module for Camel
 ----
 <1> This route watches a directory every second and sends new files content to a JMS queue
 
+
+[.topic.source]
+== Why CDI?
+
+image::before-after.png[height="100%"]
+
+
 [.topic.source]
 == Basic CDI integration (1/3)
 
@@ -570,7 +577,7 @@ TIP: Camel provides a set of DI framework agnostic annotations for resource inje
 int maxConnections;
 
 // But also...
-[highlight]#@EndpointInject#(uri="jms:queue:foo")
+[highlight]#@EndpointInject#(uri = "jms:queue:foo")
 Endpoint endpoint;
 
 [highlight]#@BeanInject#("foo")
@@ -631,7 +638,7 @@ class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 [.topic.source]
 == Register the custom `InjectionTarget`
 
-TIP: Observe the `ProcessInjectionTarget` lifecyle event and set the `InjectionTarget`
+TIP: Observe the `ProcessInjectionTarget` lifecycle event and set the `InjectionTarget`
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
@@ -718,7 +725,7 @@ TIP: We can directly rely on the `@PropertyInject` Camel annotation in CDI beans
 ----
 class JmsComponentFactoryBean {
 
-    [highlight]#@PropertyInject(value = "jms.maxConnections", defaultValue = "10")#
+    [highlight]#@PropertyInject("jms.maxConnections")#
     [highlight]#int# maxConnections;
 
     @Produces
