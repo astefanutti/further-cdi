@@ -11,14 +11,13 @@ import javax.inject.Named;
 
 public class JmsComponentFactoryBean {
 
-    @PropertyInject(value = "jms.maxConnections", defaultValue = "10")
+    @PropertyInject("jms.maxConnections")
     private int maxConnections;
 
     @Produces
     @Named("sjms")
     @ApplicationScoped
-    // Cannot return SjmsComponent as UriEndpointComponent is not proxyable
-    DefaultComponent sjmsComponent() {
+    SjmsComponent sjmsComponent() {
         SjmsComponent component = new SjmsComponent();
         component.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false&broker.useShutdownHook=false&broker.useJmx=false"));
         component.setConnectionCount(maxConnections);
