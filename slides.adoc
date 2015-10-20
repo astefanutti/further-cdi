@@ -32,28 +32,12 @@ Antoine Sabot-Durand; Antonin Stefanutti
 == Antonin Stefanutti
 
 ====
-* icon:user[] Software Engineer
-* icon:institution[] Murex
-* icon:globe[] www.murex.com
+* icon:bug[] Senior Software Engineer
+* icon:linux[] Red Hat, Inc.
+* icon:group[] JBoss Fuse team
 * icon:twitter[] @astefanut
 * icon:github[] github.com/astefanutti
-
-TIP: Slides available at https://github.com/astefanutti/further-cdi
 ====
-
-
-[.topic.source]
-== CDI @ Murex
-
-image::murex.png[height="86%"]
-
-NOTE: CDI as the *productivity ecosystem* to build *connectivity interfaces*
-
-
-[.topic.source]
-== CDI @ Murex
-
-image::before-after.png[height="95%"]
 
 
 [.topic.source]
@@ -158,14 +142,14 @@ image::arquillian.png[role="pull-right", width="250"]
 
 [.recap]
 ====
+TIP: Slides available at http://astefanutti.github.io/further-cdi
+
 * icon:info-circle[] Meet CDI SPI
 * icon:info-circle[] Introducing CDI Extensions
 // * icon:info-circle[] Legacy Code
 * icon:info-circle[] Metrics CDI
 * icon:info-circle[] CDI Quizz
 * icon:info-circle[] Camel CDI
-
-TIP: Slides available at http://astefanutti.github.io/further-cdi
 ====
 
 
@@ -191,11 +175,11 @@ include::parts/camel.adoc[]
 
 NOTE: CDI Specification - http://cdi-spec.org
 
+NOTE: Slides sources - https://github.com/astefanutti/further-cdi
+
 NOTE: Metrics CDI sources - https://github.com/astefanutti/metrics-cdi
 
 NOTE: Camel CDI sources - https://github.com/astefanutti/camel-cdi
-
-NOTE: Slides sources - https://github.com/astefanutti/further-cdi
 
 NOTE: Slides generated with _Asciidoctor_, _PlantUML_ and _DZSlides_ backend
 
