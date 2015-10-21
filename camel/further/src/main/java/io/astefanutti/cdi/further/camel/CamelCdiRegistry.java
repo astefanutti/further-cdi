@@ -28,26 +28,31 @@ class CamelCdiRegistry implements Registry {
     }
 
     @Override
+    // Not used
     public <T> Map<String, T> findByTypeWithName(Class<T> type) {
         return Collections.emptyMap();
     }
 
     @Override
+    // Deprecated
     public <T> Set<T> findByType(Class<T> type) {
         return null;
     }
 
     @Override
+    // Deprecated
     public Object lookup(String name) {
         return null;
     }
 
     @Override
+    // Deprecated
     public <T> T lookup(String name, Class<T> type) {
         return null;
     }
 
     @Override
+    // Deprecated
     public <T> Map<String, T> lookupByType(Class<T> type) {
         return null;
     }
