@@ -69,7 +69,7 @@ public class FurtherCdiCamelTest {
 
     private static void pointcut(@Observes @Node("join point") Exchange exchange) {
         List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY, List.class);
-        LoggerFactory.getLogger("CAMEL DSL AOP").info("Sending message [{}] to [{}]...", exchange.getIn().getBody(), history.get(history.size() - 1).getNode().getLabel());
+        LoggerFactory.getLogger("CAMEL DSL AOP").info("Sending message [{}] to [{}]...", exchange.getIn().getBody(String.class), history.get(history.size() - 1).getNode().getLabel());
         exchange.getIn().setHeader("advice", Boolean.TRUE);
     }
 

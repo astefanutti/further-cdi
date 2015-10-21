@@ -17,7 +17,6 @@ public class Main {
             @Override
             public void configure() {
                 from("file:target/input?delay=1000")
-                    .convertBodyTo(String.class)
                     .log("Sending message [${body}] to JMS ...")
                     .to("sjms:queue:output");
             }

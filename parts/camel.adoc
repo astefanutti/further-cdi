@@ -34,7 +34,6 @@ Discover how we created CDI integration module for Camel
     context.addRoutes(new RouteBuilder() {
       public void configure() {
         from("file:target/input?delay=1000")
-          .convertBodyTo(String.class)
           .log("Sending message [${body}] to JMS ...")
           .to("sjms:queue:output"); <1>
       }
@@ -74,7 +73,6 @@ class FileToJmsRouteBean extends RouteBuilder {
     @Override
     public void configure() {
         from("file:target/input?delay=1000")
-            .convertBodyTo(String.class)
             .log("Sending message [${body}] to JMS...")
             .to("sjms:queue:output");
     }
@@ -751,7 +749,6 @@ TIP: AOP instrumentation of the Camel DSL
 [source, subs="verbatim,quotes"]
 ----
 from("file:target/input?delay=1000")
-    .convertBodyTo(String.class)
     [highlight]#.log("Sending message [${body}] to JMS...")#
     .to("sjms:queue:output");
 ----
@@ -761,7 +758,6 @@ TIP: with CDI observers
 [source, subs="verbatim,quotes"]
 ----
 from("file:target/input?delay=1000")
-    .convertBodyTo(String.class)
     .to("sjms:queue:output")[highlight]#.id("join point")#;
 }
 void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
@@ -860,7 +856,6 @@ TIP: We can define join points in the Camel DSL
 [source, subs="verbatim,quotes",role="smaller"]
 ----
 from("file:target/input?delay=1000")
-    .convertBodyTo(String.class)
     .to("sjms:queue:output")[highlight]#.id("join point")#;
 }
 ----
@@ -871,7 +866,7 @@ TIP: And advise them with CDI observers
 ----
 void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
     List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY, List.class);
-    logger.info("Sending message [{}] to [{}]...", exchange.getIn().getBody(),
+    logger.info("Sending message [{}] to [{}]...", exchange.getIn().getBody(String.class),
         history.get(history.size() - 1).getNode().getLabel());
 }
 ----
