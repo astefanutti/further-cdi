@@ -1,0 +1,60 @@
+.smaller {
+    font-size: .8em;
+}
+
+.smallest {
+    font-size: .7em;
+}
+
+.fartoosmall {
+    font-size: .5em;
+}
+
+section.intro h1,
+section.intro h2 {
+    text-transform: none;
+}
+
+section.intro  p {
+    color: #555555;
+}
+
+section.recap > h1,
+section.recap > h2 {
+    text-transform: none;
+}
+
+section.recap .line-through:after {
+    content:" ";
+    height:0.2em;
+    width:90%;
+    background-color:#FFFF00;
+    opacity: 0.8;
+    position:absolute;
+    right: 5%;
+    top: 50%;
+    -webkit-transform: rotate(10deg);
+    -moz-transform: rotate(10deg);
+    -o-transform: rotate(10deg);
+    transform: rotate(10deg);
+}
+
+section.recap hgroup h2 {
+    text-transform: none;
+}
+
+section.recap hgroup h3 {
+    text-transform: none;
+}
+
+section.ending > h2 {
+    text-transform: none;
+}
+
+ol.loweralpha {
+    font-size: 0.9em;
+}
+
+ol.lowerroman {
+    font-size: 0.9em;
+}

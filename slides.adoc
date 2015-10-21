@@ -26,6 +26,8 @@ Antoine Sabot-Durand; Antonin Stefanutti
 :dzslides-fonts: family=Neuton:400,700,800,400italic|Cedarville+Cursive
 :hide-uri-scheme:
 :includegifs:
+:stylesdir: stylesheets
+:stylesheet: custom.css
 
 
 [.topic.source]
@@ -45,7 +47,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 
 ====
 * icon:user[] Senior Software Engineer
-* icon:user[] CDI co-spec lead, Java EE 8 EG
+* icon:user[] CDI spec lead, Java EE 8 EG
 * icon:institution[] Red Hat, Inc.
 * icon:twitter[] @antoine_sd
 * icon:rss[] www.next-presso.com
