@@ -55,7 +55,7 @@ public class CamelExtension implements Extension {
         CamelContext context = (CamelContext) manager.getReference(manager.resolve(manager.getBeans(CamelContext.class)), CamelContext.class, manager.createCreationalContext(null));
 
         for (Bean<?> bean : manager.getBeans(RoutesBuilder.class))
-            context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(null)));
+            context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(bean)));
 
         context.start();
     }

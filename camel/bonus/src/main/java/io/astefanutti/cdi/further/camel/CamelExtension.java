@@ -92,7 +92,7 @@ public class CamelExtension implements Extension {
         }
 
         for (Bean<?> bean : manager.getBeans(RoutesBuilder.class))
-            context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(null)));
+            context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(bean)));
 
         context.start();
     }
