@@ -10,6 +10,6 @@
     </parent>
 
     <artifactId>further-cdi-metrics-basic</artifactId>
-    <name>Going Further with CDI and Dropwizard Metrics (Basic CDI)</name>
+    <name>Going Further with CDI and Dropwizard Metrics (Basic)</name>
 
 </project>

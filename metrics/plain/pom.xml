@@ -10,6 +10,6 @@
     </parent>
 
     <artifactId>further-cdi-metrics-plain</artifactId>
-    <name>Going Further with CDI and Dropwizard Metrics (Plain Java)</name>
+    <name>Going Further with CDI and Dropwizard Metrics (Plain)</name>
 
 </project>
