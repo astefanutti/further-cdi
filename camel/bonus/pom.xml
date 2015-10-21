@@ -9,7 +9,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>further-cdi-camel-basic</artifactId>
-    <name>Going Further with CDI and Apache Camel (Basic)</name>
+    <artifactId>further-cdi-camel-bonus</artifactId>
+    <name>Going Further with CDI and Apache Camel (Bonus)</name>
 
 </project>

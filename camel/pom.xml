@@ -17,6 +17,7 @@
         <module>plain</module>
         <module>basic</module>
         <module>further</module>
+        <module>bonus</module>
         <module>live</module>
     </modules>
 

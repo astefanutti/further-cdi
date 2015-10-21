@@ -16,6 +16,7 @@ install:
 script:
   - mvn test
   - mvn test -Pwildfly -pl camel/further
+  - mvn test -Pwildfly -pl camel/bonus
   - mvn test -Pwildfly -pl metrics/further
 
 jdk:

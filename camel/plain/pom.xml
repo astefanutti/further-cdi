@@ -10,6 +10,6 @@
     </parent>
 
     <artifactId>further-cdi-camel-plain</artifactId>
-    <name>Going Further with CDI and Apache Camel (Plain Java)</name>
+    <name>Going Further with CDI and Apache Camel (Plain)</name>
 
 </project>

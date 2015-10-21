@@ -10,6 +10,6 @@
     </parent>
 
     <artifactId>further-cdi-camel-further</artifactId>
-    <name>Going Further with CDI and Apache Camel (Further CDI)</name>
+    <name>Going Further with CDI and Apache Camel (Further)</name>
 
 </project>
