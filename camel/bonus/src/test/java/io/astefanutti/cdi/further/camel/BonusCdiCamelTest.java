@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(Arquillian.class)
-public class FurtherCdiCamelTest {
+public class BonusCdiCamelTest {
 
     @Deployment
     public static Archive<?> deployment() {
