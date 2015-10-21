@@ -318,7 +318,7 @@ class CamelContextBean implements [highlight]#Bean<CamelContext># {
 [.topic.source]
 == Adding a programmatic bean to the deployment
 
-TIP: Then add the `CamelContextBean` bean programmatically by observing the `AfterBeanDiscovery` lifecyle event
+TIP: Then add the `CamelContextBean` bean programmatically by observing the `AfterBeanDiscovery` lifecycle event
 
 [source, subs="verbatim,quotes"]
 ----
@@ -753,7 +753,7 @@ from("file:target/input?delay=1000")
     .to("sjms:queue:output");
 ----
 
-TIP: with CDI observers
+TIP: With CDI observers
 
 [source, subs="verbatim,quotes"]
 ----
@@ -780,7 +780,7 @@ public @interface NodeId {
 }
 ----
 
-TIP: and create an extension that will:
+TIP: And create an extension that will:
 
 . Detect the CDI beans containing observer methods with the `@NodeId` qualifier by observing the `ProcessObserverMethod` event and collect the Camel processor nodes to be instrumented
 . Customize the Camel context by providing an implementation of the Camel `InterceptStrategy` interface that will fire a CDI event each time an `Exchange` is processed by the instrumented nodes
@@ -789,7 +789,7 @@ TIP: and create an extension that will:
 [.topic.source]
 == Detect the Camel DSL AOP observer methods
 
-TIP: Observe the `ProcessObserverMethod` lifecyle event
+TIP: Observe the `ProcessObserverMethod` lifecycle event
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
