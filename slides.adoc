@@ -34,8 +34,8 @@ Antoine Sabot-Durand; Antonin Stefanutti
 == Antonin Stefanutti
 
 ====
-* icon:bug[] Senior Software Engineer
-* icon:linux[] Red Hat, Inc.
+* icon:bug[] Software Engineer
+* icon:linux[] Red Hat
 * icon:group[] JBoss Fuse team
 * icon:twitter[] @astefanut
 * icon:github[] github.com/astefanutti
