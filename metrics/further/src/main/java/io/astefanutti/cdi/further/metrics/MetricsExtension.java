@@ -2,20 +2,17 @@ package io.astefanutti.cdi.further.metrics;
 
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
-import org.apache.deltaspike.core.api.literal.AnyLiteral;
 import org.apache.deltaspike.core.api.provider.BeanProvider;
 import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessProducer;
 import javax.enterprise.util.AnnotationLiteral;
 import javax.enterprise.util.Nonbinding;
-import java.lang.annotation.Annotation;
 
 
 public class MetricsExtension implements Extension {
@@ -34,14 +31,13 @@ public class MetricsExtension implements Extension {
     }
 
     <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp, BeanManager bm) {
-        if (pp.getAnnotatedMember().getAnnotation(Metric.class) != null)
-            pp.setProducer(new MetricProducer<>(pp.getProducer(), bm, pp.getAnnotatedMember().getAnnotation(Metric.class).name()));
+        if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
+            String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name();
+            pp.setProducer(new MetricProducer<>(pp.getProducer(), bm, name));
+        }
     }
 
     void registerProduceMetrics(@Observes AfterDeploymentValidation adv, BeanManager bm) {
-        for (Bean<?> bean : bm.getBeans(com.codahale.metrics.Metric.class, new AnyLiteral()))
-            for (Annotation qualifier : bean.getQualifiers())
-                if (qualifier instanceof Metric)
-                    BeanProvider.getContextualReference(bm, com.codahale.metrics.Metric.class, false, qualifier);
+        BeanProvider.getContextualReferences(com.codahale.metrics.Metric.class, true);
     }
 }
