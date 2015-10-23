@@ -7,7 +7,6 @@ import org.apache.deltaspike.core.util.metadata.builder.AnnotatedTypeBuilder;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
-import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessProducer;
@@ -30,14 +29,14 @@ public class MetricsExtension implements Extension {
             .create());
     }
 
-    <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp, BeanManager bm) {
+    <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp) {
         if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
             String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name();
-            pp.setProducer(new MetricProducer<>(pp.getProducer(), bm, name));
+            pp.setProducer(new MetricProducer<>(pp.getProducer(), name));
         }
     }
 
-    void registerProduceMetrics(@Observes AfterDeploymentValidation adv, BeanManager bm) {
+    void registerProduceMetrics(@Observes AfterDeploymentValidation adv) {
         BeanProvider.getContextualReferences(com.codahale.metrics.Metric.class, true);
     }
 }
