@@ -8,6 +8,6 @@ public class FileToJmsRouteBean extends RouteBuilder {
     public void configure() {
         from("file:target/input?delay=1000")
             .log("Sending message [${body}] to JMS...")
-            .to("sjms:queue:output").id("join point");
+            .to("sjms:queue:output");
     }
 }
