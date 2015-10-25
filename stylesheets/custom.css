@@ -12,7 +12,7 @@
 
 section.intro h1,
 section.intro h2 {
-    text-transform: none;
+    text-transform: none !important;
 }
 
 section.intro  p {
@@ -21,7 +21,7 @@ section.intro  p {
 
 section.recap > h1,
 section.recap > h2 {
-    text-transform: none;
+    text-transform: none !important;
 }
 
 section.recap .line-through:after {
@@ -44,11 +44,11 @@ section.recap hgroup h2 {
 }
 
 section.recap hgroup h3 {
-    text-transform: none;
+    text-transform: none !important;
 }
 
 section.ending > h2 {
-    text-transform: none;
+    text-transform: none !important;
 }
 
 ol.loweralpha {
