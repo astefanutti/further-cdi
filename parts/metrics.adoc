@@ -1,5 +1,5 @@
 [.topic.intro]
-== 3rd party Library
+== Metrics CDI
 
 ====
 Integrating Dropwizard Metrics in CDI
@@ -118,14 +118,14 @@ WARNING: This code create a deployment error (ambiguous dependency)
 
 [source, subs="verbatim,quotes"]
 ----
-    *@Produces*
-    Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES)); <1>
+*@Produces*
+Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES)); <1>
 
-    *@Produces*
-    Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, HOURS)); <2>
+*@Produces*
+Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, HOURS)); <2>
 
-    *@Inject*
-    Timer timer; <3>
+*@Inject*
+Timer timer; <3>
 ----
 <1> This timer that only keeps measurement of last minute is produced as a bean of type `Timer`
 <2> This timer that only keeps measurement of last hour is produced as a bean of type `Timer`
@@ -139,17 +139,17 @@ TIP: We could use the provided `@Metric` annotation to qualify our beans
 
 [source, subs="verbatim,quotes"]
 ----
-    *@Produces*
-    [highlight]*@Metric(name = "myTimer")*
-    Timer timer = new Timer(new SlidingTimeWindowReservoir(1L,MINUTES));
+*@Produces*
+[highlight]*@Metric(name = "myTimer")*
+Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
 
-    *@Produces*
-    [highlight]*@Metric(name = "mySecondTimer")*
-    Timer timer = new Timer(new SlidingTimeWindowReservoir(1L,HOURS));
+*@Produces*
+[highlight]*@Metric(name = "mySecondTimer")*
+Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, HOURS));
 
-    *@Inject*
-    [highlight]*@Metric(name = "myTimer")*
-    Timer timer;
+*@Inject*
+[highlight]*@Metric(name = "myTimer")*
+Timer timer;
 ----
 
 CAUTION: That won't work out of the box since `@Metric` is not a qualifier
@@ -272,17 +272,17 @@ TIP: We can now write:
 
 [source, subs="verbatim,quotes"]
 ----
-    *@Produces*
-    [highlight]*@Metric(name = "myTimer")*
-    Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
+*@Produces*
+[highlight]*@Metric(name = "myTimer")*
+Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
 
-    *@Produces*
-    [highlight]*@Metric(name = "mySecondTimer")*
-    Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, HOURS));
+*@Produces*
+[highlight]*@Metric(name = "mySecondTimer")*
+Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, HOURS));
 
-    *@Inject*
-    [highlight]*@Metric(name = "myTimer")*
-    Timer timer;
+*@Inject*
+[highlight]*@Metric(name = "myTimer")*
+Timer timer;
 ----
 
 TIP: And have the `Timer` injection points satisfied
@@ -305,7 +305,7 @@ TIP: We want to be able to write:
 ----
 [highlight]#@Timed#("timer") <1>
 void timedMethod() {
-  //...
+    //...
 }
 ----
 
@@ -523,10 +523,10 @@ public class MetricsExtension implements Extension {
         Annotation nonBinding = new AnnotationLiteral<Nonbinding>() {};
 
         bdd.addInterceptorBinding(new AnnotatedTypeBuilder<Timed>()
-                .readFromType(Timed.class)
-                .addToMethod(Timed.class.getMethod("name"), nonBinding)
-                .addToMethod(Timed.class.getMethod("absolute"), nonBinding)
-                .create());
+            .readFromType(Timed.class)
+            .addToMethod(Timed.class.getMethod("name"), nonBinding)
+            .addToMethod(Timed.class.getMethod("absolute"), nonBinding)
+            .create());
     }
 }
 ----
@@ -543,7 +543,7 @@ TIP: We can now write:
 ----
 @Timed("timer")
 void timedMethod() {
-  // Business code
+    // Business code
 }
 ----
 
@@ -564,7 +564,7 @@ CAUTION: Other interceptor should be developed for other metrics
 ----
 [highlight]#@Timed#("timer") <1>
 void timedMethod() {
-  //...
+    //...
 }
 ----
 
@@ -737,9 +737,9 @@ class MetricProducer<X extends Metric> implements Producer<X> {
     //...
     public X produce(CreationalContext<X> ctx) { <1>
         MetricRegistry reg = BeanProvider.getContextualReference(MetricRegistry.class, false); <2>
-        if (!reg.getMetrics().containsKey(metricName)) { <3>
+        if (!reg.getMetrics().containsKey(metricName)) <3>
             reg.register(metricName, [highlight]*decorate.produce(ctx)*);
-        }
+
         return (X) reg.getMetrics().get(metricName);
     }
 
