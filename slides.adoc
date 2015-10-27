@@ -1,4 +1,4 @@
-= Going _further_ with _CDI_ 1.2
+= Advanced _CDI_ in Live Coding
 Antoine Sabot-Durand; Antonin Stefanutti
 :description: Going farther with CDI 1.2
 :website: http://astefanutti.github.io/javaone2014
@@ -89,9 +89,9 @@ TIP: If you know most of these you can stay
 
 CAUTION: What's included:
 
-. Real use cases from real life with real users
-. New approach to introduce portable extension concepts
-. Code in IDE with tests
+. Introduction to *portable extensions*
+. *Real* use cases from *real* project
+. *Code* in IDE with *tests*
 
 CAUTION: What's not included:
 
@@ -145,7 +145,7 @@ image::arquillian.png[role="pull-right", width="250"]
 ====
 TIP: Slides available at http://astefanutti.github.io/further-cdi
 
-* icon:info-circle[] Meet CDI SPI
+// * icon:info-circle[] Meet CDI SPI
 * icon:info-circle[] Introducing CDI Extensions
 // * icon:info-circle[] Legacy Code
 * icon:info-circle[] Metrics CDI
@@ -154,7 +154,7 @@ TIP: Slides available at http://astefanutti.github.io/further-cdi
 ====
 
 
-include::parts/spi.adoc[]
+// include::parts/spi.adoc[]
 
 include::parts/extensions.adoc[]
 
