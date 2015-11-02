@@ -1,6 +1,6 @@
 [.topic.intro]
 == Meet CDI SPI
-image:3d-chess.png[width="110%"]
+image:chess.png[width="110%"]
 ==!
 
 
@@ -460,7 +460,7 @@ NOTE: These events fired at boot time can only be observed in CDI extensions
 
 NOTE: For instance:
 
-image:processAnnotatedTypeCart.png[width="280",role="pull-left"]
+image:cart.png[width="280",role="pull-left"]
 
 TIP: A `ProcessAnnotatedType<T>` event is fired for each type being discovered at boot time
 
