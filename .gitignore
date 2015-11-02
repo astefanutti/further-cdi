@@ -2,6 +2,7 @@
 
 ## Asciidoctor
 *.html
+*.pdf
 
 ## Java
 .classpath
