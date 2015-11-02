@@ -145,8 +145,10 @@ image::arquillian.png[role="pull-right", width="250"]
 ====
 TIP: Slides available at http://astefanutti.github.io/further-cdi
 
+image::qr-code.svg[role="pull-right", width="270"]
+
 * icon:info-circle[] Meet CDI SPI
-* icon:info-circle[] Introducing CDI Extensions
+* icon:info-circle[] CDI Extensions
 // * icon:info-circle[] Legacy Code
 * icon:info-circle[] Metrics CDI
 * icon:info-circle[] CDI Quizz
