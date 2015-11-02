@@ -1,7 +1,7 @@
-= Advanced _CDI_ in Live Coding
+= Going _Further_ with _CDI_
 Antoine Sabot-Durand; Antonin Stefanutti
-:description: Going farther with CDI 1.2
-:website: http://astefanutti.github.io/javaone2014
+:description: Going farther with CDI
+:website: https://github.com/astefanutti/further-cdi
 :copyright: CC BY-SA 4.0
 :backend: dzslides
 :sectids!:
@@ -145,16 +145,16 @@ image::arquillian.png[role="pull-right", width="250"]
 ====
 TIP: Slides available at http://astefanutti.github.io/further-cdi
 
-// * icon:info-circle[] Meet CDI SPI
+* icon:info-circle[] Meet CDI SPI
 * icon:info-circle[] Introducing CDI Extensions
 // * icon:info-circle[] Legacy Code
 * icon:info-circle[] Metrics CDI
-// * icon:info-circle[] CDI Quizz
+* icon:info-circle[] CDI Quizz
 * icon:info-circle[] Camel CDI
 ====
 
 
-// include::parts/spi.adoc[]
+include::parts/spi.adoc[]
 
 include::parts/extensions.adoc[]
 
@@ -162,7 +162,7 @@ include::parts/extensions.adoc[]
 
 include::parts/metrics.adoc[]
 
-// include::parts/quizz.adoc[]
+include::parts/quizz.adoc[]
 
 include::parts/camel.adoc[]
 
