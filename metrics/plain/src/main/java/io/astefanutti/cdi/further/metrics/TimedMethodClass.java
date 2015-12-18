@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 public class TimedMethodClass {
 
     public void timedMethod() {
-        Timer timer = MetricsHelper.registry.timer("timer");
+        Timer timer = MetricsHelper.REGISTRY.timer("timer");
         Timer.Context time = timer.time();
         try {
             LoggerFactory.getLogger("PLAIN METRICS").info("Timed method called, timer will be incremented");

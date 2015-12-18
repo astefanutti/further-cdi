@@ -4,5 +4,5 @@ import com.codahale.metrics.MetricRegistry;
 
 public class MetricsHelper {
     
-    public static final MetricRegistry registry = new MetricRegistry();
+    public static final MetricRegistry REGISTRY = new MetricRegistry();
 }

@@ -8,6 +8,6 @@ public class Main {
         TimedMethodClass timedMethodClass = new TimedMethodClass();
         timedMethodClass.timedMethod();
 
-        LoggerFactory.getLogger("PLAIN METRICS").info("Timed method has been invoked [{}] times", MetricsHelper.registry.timer("timer").getCount());
+        LoggerFactory.getLogger("PLAIN METRICS").info("Timed method has been invoked [{}] times", MetricsHelper.REGISTRY.timer("timer").getCount());
     }
 }
