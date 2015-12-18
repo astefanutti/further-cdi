@@ -126,33 +126,7 @@ skinparam activity {
 @enduml
 ----
 
-[plantuml, "lifecycle-legend", "svg", height="40", width="230", role="pull-right"]
-----
-@startuml
-
-skinparam shadowing false
-skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
-
-skinparam activity {
-  StartColor white
-  BackgroundColor #337788
-  BackgroundColor<< Internal >> #888888
-  BackgroundColor<< Once >> #BB3322
-  ArrowColor white
-  BarColor #888888
-  BorderColor White
-  FontName Consolas
-  FontColor White
-  FontSize 20
-}
-
-(*) -down-> "Internal Step" << Internal >>
--right-> "Happen Once" <<Once>>
--right-> "Loop on Elements"
-
-@enduml
-----
+include::legend.adoc[]
 
 
 [.topic.source]

@@ -1,4 +1,4 @@
-[plantuml, "lifecycle-legend-light", "svg", height="10%", width="230", role="pull-right"]
+[plantuml, "lifecycle-legend", "svg", height="40", width="230", role="pull-right"]
 ----
 @startuml
 
@@ -7,24 +7,21 @@ skinparam backgroundColor transparent
 skinparam defaultFontName Consolas
 
 skinparam activity {
-  FontSize 25
-  FontName Consolas
   StartColor white
+  BackgroundColor #337788
+  BackgroundColor<< Internal >> #888888
+  BackgroundColor<< Once >> #BB3322
   ArrowColor white
+  BarColor #888888
   BorderColor White
-  BackgroundColor White
-
-  BorderColor<< Once >> #BB3322
-  FontColor<< Once >> #BB3322
-  BorderColor<< Loop >> #337788
-  FontColor<< Loop >> #337788
-  BorderColor<< Internal >> #888888
-  FontColor<< Internal >> #888888
+  FontName Consolas
+  FontColor White
+  FontSize 20
 }
 
 (*) -down-> "Internal Step" << Internal >>
--right-> "Happen Once" << Once >>
--right-> "Loop on Elements" << Loop >>
+-right-> "Happen Once" <<Once>>
+-right-> "Loop on Elements"
 
 @enduml
 ----
