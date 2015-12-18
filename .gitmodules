@@ -1,6 +1,6 @@
 [submodule "asciidoctor-backends"]
 	path = asciidoctor-backends
-	url = https://github.com/astefanutti/asciidoctor-backends.git
+	url = https://github.com/asciidoctor/asciidoctor-backends.git
 [submodule "dzslides"]
 	path = dzslides
 	url = https://github.com/astefanutti/dzslides.git
