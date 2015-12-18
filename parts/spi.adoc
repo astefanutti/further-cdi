@@ -212,11 +212,11 @@ public @interface [HighLight]#HttpParam# {
 }
 ----
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 @Produces [highlight]#@HttpParam("")#
 [highlight]#String# getParamValue([highlight]#InjectionPoint# ip, [highlight]#HttpServletRequest# req) {
-  return req.getParameter(ip.getAnnotated().getAnnotation(HttpParam.class).value());
+    return req.getParameter(ip.getAnnotated().getAnnotation(HttpParam.class).value());
 }
 ----
 

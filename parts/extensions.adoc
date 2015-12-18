@@ -16,8 +16,8 @@ NOTE: One of the _most powerful feature_ of the CDI specification
 NOTE: Not really popularized, partly due to:
 
 . Their _high level of abstraction_
-. The good knowledge on Basic CDI and SPI
-. Lack of information (CDI is often reduced to a basic DI solution)
+. The pre-requisite knowledge about basic CDI and SPI
+. Lack of information (CDI is often perceived as a basic DI solution)
 ====
 
 

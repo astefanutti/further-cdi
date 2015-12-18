@@ -27,7 +27,7 @@ Discover how we created CDI integration module for Camel
 [.topic.source]
 == Camel out of the box (without CDI)
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes", role="smallest"]
 ----
  public static void main(String[] args) {
     CamelContext context = new DefaultCamelContext();
@@ -38,6 +38,7 @@ Discover how we created CDI integration module for Camel
           .to("sjms:queue:output"); <1>
       }
     });
+
     PropertiesComponent properties = new PropertiesComponent();
     properties.setLocation("classpath:camel.properties");
     context.addComponent("properties", properties); // Registers the "properties" component
@@ -104,7 +105,8 @@ class JmsComponentFactoryBean {
     @ApplicationScoped
     SjmsComponent sjmsComponent(PropertiesComponent properties) throws Exception {
         SjmsComponent jms = new SjmsComponent();
-        jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false"));
+        jms.setConnectionFactory(
+            new ActiveMQConnectionFactory("vm://broker?broker.persistent=false"));
         jms.setConnectionCount(Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")));
         return component;
     }
@@ -126,10 +128,12 @@ class CamelContextBean extends DefaultCamelContext {
         addComponent("sjms", jms);
         addRoutes(route);
     }
+
     @PostConstruct
     void startContext() {
         super.start();
     }
+
     @PreDestroy
     void preDestroy() {
         super.stop();
@@ -176,7 +180,7 @@ TIP: Implement the Camel registry SPI to look up CDI bean references
 
 TIP: Use a custom `InjectionTarget` for CDI beans containing Camel annotations
 
-TIP: Use the magic
+icon:magic[]
 ====
 
 
@@ -336,18 +340,21 @@ public class CamelExtension implements Extension {
 
 TIP: Instantiate the `CamelContext` bean and the `RouteBuilder` beans in the `AfterDeploymentValidation` lifecycle event
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public class CamelExtension implements Extension {
+
     //...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         for (Bean<?> bean : bm.getBeans(RoutesBuilder.class))
             context.[highlight]#addRoutes#(getReference(bm, RouteBuilder.class, bean));
     }
+
     <T> T getReference(BeanManager bm, Class<T> type) {
         return getReference(bm, type, bm.resolve(bm.getBeans(type)));
     }
+
     <T> T getReference(BeanManager bm, Class<T> type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
     }
@@ -360,9 +367,10 @@ public class CamelExtension implements Extension {
 
 TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the `BeforeShutdown`)
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public class CamelExtension implements Extension {
+
     //...
     void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
@@ -370,6 +378,7 @@ public class CamelExtension implements Extension {
             context.addRoutes(getReference(bm, RouteBuilder.class, bean);
         [highlight]#context.start()#;
     }
+
     void stopCamelContext(@Observes [highlight]#BeforeShutdown# bs, BeanManager bm) {
         CamelContext context = getReference(bm, CamelContext.class);
         [highlight]#context.stop();#
@@ -385,7 +394,7 @@ public class CamelExtension implements Extension {
 ====
 TIP: We can get rid of the following code:
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes", role="smallest"]
 ----
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
@@ -431,9 +440,10 @@ TIP: Implement the Camel registry SPI and use the `BeanManager` to lookup for CD
 [.topic.source]
 == Implement the Camel registry SPI
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 class CamelCdiRegistry implements Registry {
+
     private final BeanManager bm;
 
     CamelCdiRegistry(BeanManager bm) { this.bm = bm; }
@@ -441,12 +451,15 @@ class CamelCdiRegistry implements Registry {
     public <T> T lookupByNameAndType(String name, Class<T> type) {
         return getReference(bm, type, bm.resolve(bm.getBeans(name)));
     }
+
     public <T> Set<T> findByType(Class<T> type) {
         return getReference(bm, type, bm.resolve(bm.getBeans(type)));
     }
+
     public Object lookupByName(String name) {
         return lookupByNameAndType(name, Object.class);
     }
+
     <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
         return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
     }
@@ -457,12 +470,16 @@ class CamelCdiRegistry implements Registry {
 [.topic.source]
 == Add the `CamelCdiRegistry` to the Camel context
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 class CamelContextBean implements Bean<CamelContext> {
+
     [highlight]#private final BeanManager bm;#
 
-    [highlight]#CamelContextBean(BeanManager bm) { this.bm = bm; }#
+    [highlight]#CamelContextBean(BeanManager bm) {#
+        [highlight]#this.bm = bm;#
+    [highlight]#}#
+
     //...
     public CamelContext create(CreationalContext<CamelContext> creational) {
         return new DefaultCamelContext([highlight]#new CamelCdiRegistry(bm)#);
@@ -470,11 +487,12 @@ class CamelContextBean implements Bean<CamelContext> {
 }
 ----
 
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public class CamelExtension implements Extension {
+
     //...
-    void addCamelContextBean(@Observes AfterBeanDiscovery abd [highlight]#, BeanManager bm#) {
+    void addCamelContextBean(@Observes AfterBeanDiscovery abd, [highlight]#BeanManager bm#) {
         abd.addBean(new CamelContextBean([highlight]#bm#));
     }
 }
@@ -498,12 +516,14 @@ class JmsComponentFactoryBean {
     SjmsComponent sjmsComponent(PropertiesComponent properties) {
         SjmsComponent jms = new SjmsComponent();
         jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
-        jms.setConnectionCount(Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")));
+        jms.setConnectionCount(
+            Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")));
         return component;
     }
 }
 ----
-...
+
+icon:ellipsis-h[role="pull-right"]
 ====
 
 
@@ -528,7 +548,8 @@ class PropertiesComponentFactoryBean {
     }
 }
 ----
-...
+
+icon:ellipsis-h[role="pull-right"]
 ====
 
 
@@ -540,7 +561,7 @@ class PropertiesComponentFactoryBean {
 
 TIP: And get rid of the code related to the `properties` and `sjms` components registration
 
-[source, subs="verbatim,quotes",role="smaller"]
+[source, subs="verbatim,quotes", role="smallest"]
 ----
 @ApplicationScoped
 class CamelContextBean extends DefaultCamelContext {
@@ -703,7 +724,8 @@ class JmsComponentFactoryBean {
     SjmsComponent sjmsComponent([highlight]#PropertiesComponent properties#) {
         SjmsComponent jms = new SjmsComponent();
         jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
-        jms.setConnectionCount([highlight]#Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")#));
+        jms.setConnectionCount(
+            [highlight]#Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")#));
         return component;
     }
 }
@@ -825,8 +847,8 @@ TIP: Intercept matching nodes and fire a CDI event
 ----
 void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) {
     context.addInterceptStrategy(new InterceptStrategy() {
-      public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition,
-          Processor target, Processor nextTarget) throws Exception {
+      public Processor wrapProcessorInInterceptors(CamelContext context,
+        ProcessorDefinition<?> definition, Processor target, Processor nextTarget) {
             if (definition.hasCustomIdAssigned()) {
                 for (final Node node : joinPoints) {
                     if (node.value().equals(definition.getId())) {
@@ -865,9 +887,10 @@ TIP: And advise them with CDI observers
 [source, subs="verbatim,quotes",role="smaller"]
 ----
 void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
-    List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY, List.class);
+    List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY,
+                                                        List.class);
     logger.info("Sending message [{}] to [{}]...", exchange.getIn().getBody(String.class),
-        history.get(history.size() - 1).getNode().getLabel());
+                history.get(history.size() - 1).getNode().getLabel());
 }
 ----
 

@@ -90,14 +90,14 @@ TIP: If you know most of these you can stay
 CAUTION: What's included:
 
 . Introduction to *portable extensions*
-. *Real* use cases from *real* project
+. *Real* use cases from *real* projects
 . *Code* in IDE with *tests*
 
 CAUTION: What's not included:
 
 . Introduction to CDI
-. Old content on extension
-. Work with Context (need 2 more hours)
+. Existing content on CDI extensions
+. Work with contexts (need 2 more hours)
 
 
 [.topic.source]
@@ -110,7 +110,7 @@ Apache Deltaspike
 image::deltaspike.png[role="pull-right", width="300"]
 
 . Apache DeltaSpike is a great CDI toolbox
-. Provide helpers to develop extension
+. Provide helpers to develop extensions
 . And a collection of modules like:
 .. Security
 .. Data
@@ -128,12 +128,12 @@ Arquillian
 
 image::arquillian.png[role="pull-right", width="250"]
 
-. Arquillian is an integration test platform
+. Arquillian is an integration testing platform
 . It integrates with JUnit
-. Create your deployment in a dedicated method
-. And launch your tests against the container of your choice
+. Create your SUT in a dedicated method
+. Run tests in the target containers of your choice
 . We'll use the `weld-se-embedded` and `weld-ee-embedded` container
-. The right solution to test Java EE code
+. The proper solution to test Java EE code
 . More info on http://arquillian.org
 ====
 

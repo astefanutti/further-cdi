@@ -57,7 +57,7 @@ class MySuperBean {
 
 
 [.topic.source]
-== Find Beans candidates without `beans.xml` in jar (CDI 1.2)
+== Find Beans candidates without `beans.xml` in JAR (CDI 1.2)
 
 [source, subs="verbatim,quotes"]
 ----
@@ -113,17 +113,17 @@ public class MyBean {/\*...*/}                                       // F [X]
 public class MyBean {
 
   @Produces
-  public Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/} // A [ ]
+  Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/} // A [ ]
 
   @Produces
   @SessionScoped
-  public Service produce2(InjectionPoint ip) {/\*...*/}                       // B [ ]
+  Service produce2(InjectionPoint ip) {/\*...*/}                       // B [ ]
 
   @Produces
-  public Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                   // C [ ]
+  Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                   // C [ ]
 
   @Produces
-  public Map<String, ? extends Service> produceMap2() {/\*...*/}              // D [ ]
+  Map<String, ? extends Service> produceMap2() {/\*...*/}              // D [ ]
 }
 ----
 
@@ -137,17 +137,17 @@ public class MyBean {
 public class MyBean {
 
   @Produces
-  public Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/} // A [X]
+  Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/} // A [X]
 
   @Produces
   @SessionScoped
-  public Service produce2(InjectionPoint ip) {/\*...*/}                       // B [ ]
+  Service produce2(InjectionPoint ip) {/\*...*/}                       // B [ ]
 
   @Produces
-  public Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                   // C [X]
+  Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                   // C [X]
 
   @Produces
-  public Map<String, ? extends Service> produceMap2() {/\*...*/}              // D [ ]
+  Map<String, ? extends Service> produceMap2() {/\*...*/}              // D [ ]
 }
 ----
 
