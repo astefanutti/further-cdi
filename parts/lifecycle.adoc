@@ -25,46 +25,46 @@ skinparam activity {
 
 |<size:30>**Application lifecycle**</size>|
 start
-#BB3322:<color:#FFFFFF>BeforeBeanDiscovery</color>;
+#BB3322:BeforeBeanDiscovery;
 
 |<size:30>**Type Discovery**</size>|
 
 while (<size:14><color:#FFFFFF>while types in</color></size>\n<size:14><color:#FFFFFF>deployment archive?</color></size>) is (yes)
 fork
-    :<color:#FFFFFF>ProcessAnnotatedType<X></color>;
+    :ProcessAnnotatedType<X>;
 /' fork again
-    :<color:#FFFFFF>ProcessSyntheticAnnotatedType<X></color>; '/
+    :ProcessSyntheticAnnotatedType<X>; '/
 end fork
 endwhile (no)
 
 |<size:30>**Application lifecycle**</size>|
-#BB3322:<color:#FFFFFF>AfterTypeDiscovery</color>;
+#BB3322:AfterTypeDiscovery;
 
 |<size:30>**Bean Discovery**</size>|
 fork
 partition "**For each discovered types during type discovery**" {
-    :<color:#FFFFFF>ProcessInjectionPoint<T, X></color>;
-    :<color:#FFFFFF>ProcessInjectionTarget<X></color>;
-    :<color:#FFFFFF>ProcessBeanAttributes<T></color>;
-    :<color:#FFFFFF>ProcessManagedBean<X></color>;
+    :ProcessInjectionPoint<T, X>;
+    :ProcessInjectionTarget<X>;
+    :ProcessBeanAttributes<T>;
+    :ProcessManagedBean<X>;
 }
 fork again
 partition "**For each producer methods / fields of enabled beans**" {
-    :<color:#FFFFFF>ProcessInjectionPoint<T, X></color>;
-    :<color:#FFFFFF>ProcessProducer<T, X></color>;
-    :<color:#FFFFFF>ProcessBeanAttributes<T></color>;
-    :<color:#FFFFFF>ProcessProducerMethod<T, X></color>\n<color:#FFFFFF>ProcessProducerField<T, X></color>;
+    :ProcessInjectionPoint<T, X>;
+    :ProcessProducer<T, X>;
+    :ProcessBeanAttributes<T>;
+    :ProcessProducerMethod<T, X>\nProcessProducerField<T, X>;
 }
 fork again
 partition "**For each observer methods of enabled beans**" {
-    :<color:#FFFFFF>ProcessInjectionPoint<T, X></color>;
-    :<color:#FFFFFF>ProcessObserverMethod<T, X></color>;
+    :ProcessInjectionPoint<T, X>;
+    :ProcessObserverMethod<T, X>;
 }
 end fork
 
 |<size:30>**Application lifecycle**</size>|
-#BB3322:<color:#FFFFFF>AfterBeanDiscovery</color>;
-#BB3322:<color:#FFFFFF>AfterDeploymentValidation</color>;
+#BB3322:AfterBeanDiscovery;
+#BB3322:AfterDeploymentValidation;
 stop
 
 @enduml
