@@ -10,6 +10,14 @@
     font-size: .5em;
 }
 
+section *:not(pre) > code {
+    font-family: 'Ubuntu Mono', monospace;
+}
+
+section pre code, section pre.literal {
+    font-family: 'Ubuntu Mono', monospace;
+}
+
 section.intro h1,
 section.intro h2 {
     text-transform: none !important;

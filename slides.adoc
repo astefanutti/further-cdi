@@ -23,7 +23,7 @@ Antoine Sabot-Durand; Antonin Stefanutti
 :dzslides-style: asciidoctor
 :dzslides-highlight: github
 :dzslides-transition: fade
-:dzslides-fonts: family=Neuton:400,700,800,400italic|Cedarville+Cursive
+:dzslides-fonts: family=Neuton:400,700,800,400italic|Ubuntu+Mono:400,700
 :hide-uri-scheme:
 :includegifs:
 :stylesdir: stylesheets
