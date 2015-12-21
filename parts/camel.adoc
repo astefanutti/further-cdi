@@ -370,12 +370,11 @@ public class CamelExtension implements Extension {
 [.topic.source]
 == Managed the Camel context lifecycle
 
-TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the `BeforeShutdown`)
+TIP: Start the context when the `AfterDeploymentValidation` event is fired
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 public class CamelExtension implements Extension {
-
     // ...
     void configureContext(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, _BeanManager_ manager) {
         CamelContext context = getReference(manager, CamelContext.class);
@@ -383,10 +382,17 @@ public class CamelExtension implements Extension {
             context.addRoutes(getReference(manager, RouteBuilder.class, bean);
         [highlight]#context.start()#;
     }
+}
+----
 
-    void stopCamelContext(_@Observes_ [highlight]_BeforeShutdown_ bs, _BeanManager_ manager) {
-        CamelContext context = getReference(manager, CamelContext.class);
-        [highlight]#context.stop();#
+TIP: Stop the context when the `Bean.destroy()` method is called
+
+[source, subs="verbatim,quotes", role="smaller"]
+----
+class CamelContextBean implements Bean<CamelContext> {
+    // ...
+    public void destroy(CamelContext context, CreationalContext<CamelContext> creational) {
+        context.stop();
     }
 }
 ----

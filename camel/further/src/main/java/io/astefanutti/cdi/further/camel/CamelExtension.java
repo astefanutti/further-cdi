@@ -26,7 +26,6 @@ import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
@@ -51,18 +50,12 @@ public class CamelExtension implements Extension {
         abd.addBean(new CamelContextBean(manager));
     }
 
-    private void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) throws Exception {
+    private void configureCamelContext(@Observes AfterDeploymentValidation adv, BeanManager manager) throws Exception {
         CamelContext context = (CamelContext) manager.getReference(manager.resolve(manager.getBeans(CamelContext.class)), CamelContext.class, manager.createCreationalContext(null));
 
         for (Bean<?> bean : manager.getBeans(RoutesBuilder.class))
             context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(bean)));
 
         context.start();
-    }
-
-    private void stopCamelContext(@Observes BeforeShutdown bs, BeanManager manager) throws Exception {
-        CamelContext context = (CamelContext) manager.getReference(manager.resolve(manager.getBeans(CamelContext.class)), CamelContext.class, manager.createCreationalContext(null));
-
-        context.stop();
     }
 }

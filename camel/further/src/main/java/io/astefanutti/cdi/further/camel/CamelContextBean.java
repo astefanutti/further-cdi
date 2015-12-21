@@ -1,6 +1,7 @@
 package io.astefanutti.cdi.further.camel;
 
 import org.apache.camel.CamelContext;
+import org.apache.camel.RuntimeCamelException;
 import org.apache.camel.impl.DefaultCamelContext;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -39,7 +40,12 @@ class CamelContextBean implements Bean<CamelContext> {
         return new DefaultCamelContext(new CamelCdiRegistry(manager));
     }
 
-    public void destroy(CamelContext instance, CreationalContext<CamelContext> creational) {
+    public void destroy(CamelContext context, CreationalContext<CamelContext> creational) {
+        try {
+            context.stop();
+        } catch (Exception cause) {
+            throw new RuntimeCamelException("Exception while stopping " + context, cause);
+        }
     }
 
     public Class<?> getBeanClass() {
