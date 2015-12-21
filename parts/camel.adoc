@@ -15,7 +15,7 @@ NOTE: Provides a variety of DSLs to write routing and mediation rules
 
 NOTE: Provides support for _bean binding_ and seamless integration with DI frameworks
 
-image::eip.gif[height="150"]
+image::eip.gif[height="150", role="pull-right"]
 
 
 == !
@@ -27,7 +27,7 @@ Discover how we created CDI integration module for Camel
 [.topic.source]
 == Camel out of the box (without CDI)
 
-[source, subs="verbatim,quotes", role="smallest"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
  public static void main(String[] args) {
     CamelContext context = new DefaultCamelContext();
@@ -80,6 +80,9 @@ class FileToJmsRouteBean extends RouteBuilder {
 }
 ----
 
+icon:ellipsis-h[role="pull-right"]
+
+
 [.topic.source]
 == Basic CDI integration (2/3)
 
@@ -87,8 +90,7 @@ class FileToJmsRouteBean extends RouteBuilder {
 ----
 class PropertiesComponentFactoryBean {
 
-    @Produces
-    @ApplicationScoped
+    [highlight]_@Produces_ [highlight]_@ApplicationScoped_
     PropertiesComponent propertiesComponent() {
         PropertiesComponent properties = new PropertiesComponent();
         properties.setLocation("classpath:camel.properties");
@@ -101,17 +103,17 @@ class PropertiesComponentFactoryBean {
 ----
 class JmsComponentFactoryBean {
 
-    @Produces
-    @ApplicationScoped
-    SjmsComponent sjmsComponent(PropertiesComponent properties) throws Exception {
+    [highlight]_@Produces_ [highlight]_@ApplicationScoped_
+    SjmsComponent sjmsComponent([highlight]#PropertiesComponent properties#) throws Exception {
         SjmsComponent jms = new SjmsComponent();
-        jms.setConnectionFactory(
-            new ActiveMQConnectionFactory("vm://broker?broker.persistent=false"));
+        jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?broker.persistent=false"));
         jms.setConnectionCount(Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")));
         return component;
     }
 }
 ----
+
+icon:ellipsis-h[role="pull-right"]
 
 
 [.topic.source]
@@ -119,22 +121,22 @@ class JmsComponentFactoryBean {
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-@ApplicationScoped
+[highlight]_@ApplicationScoped_
 class CamelContextBean extends DefaultCamelContext {
 
-    @Inject
-    CamelContextBean(FileToJmsRouteBean route, SjmsComponent jms, PropertiesComponent properties) {
+    [highlight]_@Inject_
+    CamelContextBean([highlight]#FileToJmsRouteBean route#, [highlight]#SjmsComponent jms#, [highlight]#PropertiesComponent properties#) {
         addComponent("properties", properties);
         addComponent("sjms", jms);
         addRoutes(route);
     }
 
-    @PostConstruct
+    [highlight]_@PostConstruct_
     void startContext() {
         super.start();
     }
 
-    @PreDestroy
+    [highlight]_@PreDestroy_
     void preDestroy() {
         super.stop();
     }
@@ -270,15 +272,17 @@ icon:question-circle[] How to add a bean programmatically?
 
 TIP: We need to implement the `Bean` SPI
 
+.`javax.enterprise.inject.spi.Bean`
 [source]
 ----
 public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
-
     Class<?> getBeanClass();
     Set<InjectionPoint> getInjectionPoints();
-    T create(CreationalContext<T> creationalContext); // Contextual<T>
+    // Contextual<T>
+    T create(CreationalContext<T> creationalContext);
     void destroy(T instance, CreationalContext<T> creationalContext);
-    Set<Type> getTypes(); // BeanAttributes<T>
+    // BeanAttributes<T>
+    Set<Type> getTypes();
     Set<Annotation> getQualifiers();
     Class<? extends Annotation> getScope();
     String getName();
@@ -298,7 +302,7 @@ class CamelContextBean implements [highlight]#Bean<CamelContext># {
     public Class<? extends Annotation> getScope() { return [highlight]#ApplicationScoped.class#; }
 
     public Set<Annotation> getQualifiers() {
-        return Collections.<Annotation>singleton([highlight]#new AnnotationLiteral<Default>(){}#);
+        return Collections.<Annotation>singleton(new AnnotationLiteral< [highlight]#Default# >() {});
     }
     public Set<Type> getTypes() { return Collections.<Type>singleton([highlight]#CamelContext.class#); }
 
@@ -312,9 +316,10 @@ class CamelContextBean implements [highlight]#Bean<CamelContext># {
     public Set<InjectionPoint> getInjectionPoints() { return Collections.emptySet(); }
 
     public Set<Class<? extends Annotation>> getStereotypes() { return Collections.emptySet(); }
+
     public String getName() { return null; } // Only called for @Named bean
+
     public boolean isAlternative() { return false; }
-    public boolean isNullable() { return false; }
 }
 ----
 
@@ -328,7 +333,7 @@ TIP: Then add the `CamelContextBean` bean programmatically by observing the `Aft
 ----
 public class CamelExtension implements Extension {
 
-    void addCamelContextBean(@Observes [highlight]#AfterBeanDiscovery# abd) {
+    void addCamelContextBean(_@Observes_ [highlight]_AfterBeanDiscovery_ abd) {
         abd.[highlight]#addBean#(new CamelContextBean());
     }
 }
@@ -344,19 +349,19 @@ TIP: Instantiate the `CamelContext` bean and the `RouteBuilder` beans in the `Af
 ----
 public class CamelExtension implements Extension {
 
-    //...
-    void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
-        CamelContext context = getReference(bm, CamelContext.class);
-        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class))
-            context.[highlight]#addRoutes#(getReference(bm, RouteBuilder.class, bean));
+    // ...
+    void configureContext(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, _BeanManager_ manager) {
+        CamelContext context = getReference(manager, CamelContext.class);
+        for (_Bean<?>_ bean : manager.getBeans(RoutesBuilder.class))
+            context.[highlight]#addRoutes#(getReference(manager, RouteBuilder.class, bean));
     }
 
-    <T> T getReference(BeanManager bm, Class<T> type) {
-        return getReference(bm, type, bm.resolve(bm.getBeans(type)));
+    <T> T getReference(_BeanManager_ manager, Class<T> type) {
+        return getReference(manager, type, manager.resolve(manager.getBeans(type)));
     }
 
-    <T> T getReference(BeanManager bm, Class<T> type, Bean<?> bean) {
-        return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
+    <T> T getReference(_BeanManager_ manager, Class<T> type, _Bean<?>_ bean) {
+        return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
     }
 }
 ----
@@ -371,16 +376,16 @@ TIP: Start (resp. stop) the Camel context when the `AfterDeploymentValidation` e
 ----
 public class CamelExtension implements Extension {
 
-    //...
-    void configureContext(@Observes [highlight]#AfterDeploymentValidation# adv, BeanManager bm) {
-        CamelContext context = getReference(bm, CamelContext.class);
-        for (Bean<?> bean : bm.getBeans(RoutesBuilder.class)
-            context.addRoutes(getReference(bm, RouteBuilder.class, bean);
+    // ...
+    void configureContext(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, _BeanManager_ manager) {
+        CamelContext context = getReference(manager, CamelContext.class);
+        for (_Bean<?>_ bean : manager.getBeans(RoutesBuilder.class)
+            context.addRoutes(getReference(manager, RouteBuilder.class, bean);
         [highlight]#context.start()#;
     }
 
-    void stopCamelContext(@Observes [highlight]#BeforeShutdown# bs, BeanManager bm) {
-        CamelContext context = getReference(bm, CamelContext.class);
+    void stopCamelContext(_@Observes_ [highlight]_BeforeShutdown_ bs, _BeanManager_ manager) {
+        CamelContext context = getReference(manager, CamelContext.class);
         [highlight]#context.stop();#
     }
 }
@@ -396,19 +401,22 @@ TIP: We can get rid of the following code:
 
 [source, subs="verbatim,quotes", role="smallest"]
 ----
-@ApplicationScoped
+_@ApplicationScoped_
 class CamelContextBean extends DefaultCamelContext {
-    @Inject
+
+    _@Inject_
     CamelContextBean([highlight]#FileToJmsRouteBean route,# SjmsComponent jms, PropertiesComponent properties) {
         addComponent("properties", propertiesComponent);
         addComponent("sjms", sjmsComponent);
         [highlight]#addRoutes(route);#
     }
-    [highlight]#@PostConstruct#
+
+    [highlight]_@PostConstruct_
     [highlight]#void startContext() {#
         [highlight]#super.start();#
     [highlight]#}#
-    [highlight]#@PreDestroy#
+
+    [highlight]_@PreDestroy_
     [highlight]#void stopContext() {#
         [highlight]#super.stop();#
     [highlight]#}#
@@ -442,26 +450,28 @@ TIP: Implement the Camel registry SPI and use the `BeanManager` to lookup for CD
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-class CamelCdiRegistry implements Registry {
+class CamelCdiRegistry [highlight]#implements Registry# {
 
-    private final BeanManager bm;
+    private final _BeanManager_ manager;
 
-    CamelCdiRegistry(BeanManager bm) { this.bm = bm; }
+    CamelCdiRegistry(_BeanManager_ manager) {
+    this.manager = manager;
+    }
 
     public <T> T lookupByNameAndType(String name, Class<T> type) {
-        return getReference(bm, type, bm.resolve(bm.getBeans(name)));
+        return getReference(manager, type, manager.resolve(manager.getBeans(name)));
     }
 
     public <T> Set<T> findByType(Class<T> type) {
-        return getReference(bm, type, bm.resolve(bm.getBeans(type)));
+        return getReference(manager, type, manager.resolve(manager.getBeans(type)));
     }
 
     public Object lookupByName(String name) {
         return lookupByNameAndType(name, Object.class);
     }
 
-    <T> T getReference(BeanManager bm, Type type, Bean<?> bean) {
-        return (T) bm.getReference(bean, type, bm.createCreationalContext(bean));
+    <T> T getReference(_BeanManager_ manager, Type type, Bean<?> bean) {
+        return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
     }
 }
 ----
@@ -474,15 +484,15 @@ class CamelCdiRegistry implements Registry {
 ----
 class CamelContextBean implements Bean<CamelContext> {
 
-    [highlight]#private final BeanManager bm;#
+    [highlight]#private final _BeanManager_ manager;#
 
-    [highlight]#CamelContextBean(BeanManager bm) {#
-        [highlight]#this.bm = bm;#
+    [highlight]#CamelContextBean(_BeanManager_ manager) {#
+        [highlight]#this.manager = manager;#
     [highlight]#}#
 
-    //...
+    // ...
     public CamelContext create(CreationalContext<CamelContext> creational) {
-        return new DefaultCamelContext([highlight]#new CamelCdiRegistry(bm)#);
+        return new DefaultCamelContext([highlight]#new CamelCdiRegistry(manager)#);
     }
 }
 ----
@@ -491,9 +501,9 @@ class CamelContextBean implements Bean<CamelContext> {
 ----
 public class CamelExtension implements Extension {
 
-    //...
-    void addCamelContextBean(@Observes AfterBeanDiscovery abd, [highlight]#BeanManager bm#) {
-        abd.addBean(new CamelContextBean([highlight]#bm#));
+    // ...
+    void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd, [highlight]_BeanManager manager_) {
+        abd.addBean(new CamelContextBean([highlight]#manager#));
     }
 }
 ----
@@ -506,13 +516,13 @@ public class CamelExtension implements Extension {
 ====
 TIP: We can declare the `sjms` component with the `@Named` qualifier
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 class JmsComponentFactoryBean {
 
-    @Produces
-    [highlight]#@Named("sjms")#
-    @ApplicationScoped
+    _@Produces_
+    [highlight]_@Named("sjms")_
+    _@ApplicationScoped_
     SjmsComponent sjmsComponent(PropertiesComponent properties) {
         SjmsComponent jms = new SjmsComponent();
         jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
@@ -534,13 +544,13 @@ icon:ellipsis-h[role="pull-right"]
 ====
 TIP: Declare the `properties` component with the `@Named` qualifier
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 class PropertiesComponentFactoryBean {
 
-    @Produces
-    [highlight]#@Named("properties")#
-    @ApplicationScoped
+    _@Produces_
+    [highlight]_@Named("properties")_
+    _@ApplicationScoped_
     PropertiesComponent propertiesComponent() {
         PropertiesComponent properties = new PropertiesComponent();
         properties.setLocation("classpath:camel.properties");
@@ -559,23 +569,26 @@ icon:ellipsis-h[role="pull-right"]
 [.statement]
 ====
 
-TIP: And get rid of the code related to the `properties` and `sjms` components registration
+TIP: And get rid of the code related to the components registration:
 
 [source, subs="verbatim,quotes", role="smallest"]
 ----
-@ApplicationScoped
+_@ApplicationScoped_
 class CamelContextBean extends DefaultCamelContext {
-    @Inject
+
+    _@Inject_
     CamelContextBean([highlight]#FileToJmsRouteBean route,# [highlight]#SjmsComponent jms, PropertiesComponent properties#) {
         [highlight]#addComponent("properties", propertiesComponent);#
         [highlight]#addComponent("sjms", sjmsComponent);#
         [highlight]#addRoutes(route);#
     }
-    [highlight]#@PostConstruct#
+
+    [highlight]_@PostConstruct_
     [highlight]#void startContext() {#
         [highlight]#super.start();#
     [highlight]#}#
-    [highlight]#@PreDestroy#
+
+    [highlight]_@PreDestroy_
     [highlight]#void stopContext() {#
         [highlight]#super.stop();#
     [highlight]#}#
@@ -611,7 +624,8 @@ icon:question-circle[] How to support custom annotations injection?
 
 TIP: Create a custom `InjectionTarget` that uses the default Camel bean post processor `DefaultCamelBeanPostProcessor`
 
-[source, subs="verbatim,quotes"]
+.`javax.enterprise.inject.spi.InjectionTarget`
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public interface InjectionTarget<T> extends Producer<T> {
     [highlight]#void inject(T instance, CreationalContext<T> ctx);#
@@ -632,18 +646,19 @@ TIP: Only for beans containing Camel annotations by observing the `ProcessAnnota
 ----
 class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 
-    final InjectionTarget<T> delegate;
+    final _InjectionTarget<T>_ delegate;
 
     final DefaultCamelBeanPostProcessor processor;
 
-    CamelInjectionTarget(InjectionTarget<T> target, final BeanManager bm) {
+    CamelInjectionTarget(_InjectionTarget<T>_ target, final _BeanManager_ manager) {
         delegate = target;
         processor = new DefaultCamelBeanPostProcessor() {
             public CamelContext getOrLookupCamelContext() {
-                return getReference(bm, CamelContext.class);
+                return getReference(manager, CamelContext.class);
             }
         };
     }
+
     public void [highlight]#inject#(T instance, CreationalContext<T> ctx) {
         [highlight]#processor.postProcessBeforeInitialization(instance, null)#; <1>
         delegate.inject(instance, ctx);
@@ -657,14 +672,15 @@ class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
 [.topic.source]
 == Register the custom `InjectionTarget`
 
-TIP: Observe the `ProcessInjectionTarget` lifecycle event and set the `InjectionTarget`
+TIP: Observe the `ProcessInjectionTarget` event and set the `InjectionTarget`
 
+.`javax.enterprise.inject.spi.ProcessInjectionTarget`
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 public interface ProcessInjectionTarget<X> {
     AnnotatedType<X> getAnnotatedType();
     InjectionTarget<X> getInjectionTarget();
-    void setInjectionTarget(InjectionTarget<X> injectionTarget);
+    [highlight]#void setInjectionTarget(InjectionTarget<X> injectionTarget);#
     void addDefinitionError(Throwable t);
 }
 ----
@@ -673,10 +689,10 @@ TIP: To decorate it with the `CamelInjectionTarget`
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-class CamelExtension implements Extension {
+public class CamelExtension implements Extension {
 
-    <T> void camelBeansPostProcessor(@Observes [highlight]#ProcessInjectionTarget<T># pit, BeanManager bm) {
-        pit.[highlight]#setInjectionTarget#(new CamelInjectionTarget<>(pit.getInjectionTarget(), bm));
+    <T> void camelBeansPostProcessor(_@Observes_ [highlight]_ProcessInjectionTarget<T>_ pit, _BeanManager_ manager) {
+        pit.[highlight]#setInjectionTarget#(new CamelInjectionTarget<>(pit.getInjectionTarget(), manager));
     }
 }
 ----
@@ -687,19 +703,19 @@ class CamelExtension implements Extension {
 
 [source, subs="verbatim,quotes"]
 ----
-class CamelExtension implements Extension {
+public class CamelExtension implements Extension {
+
     final Set<AnnotatedType<?>> camelBeans = new HashSet<>();
 
-    void camelAnnotatedTypes(@Observes [highlight]#@WithAnnotations(PropertyInject.class)#
-        ProcessAnnotatedType<?> pat) { <1>
-            camelBeans.add(pat.getAnnotatedType());
+    void camelAnnotatedTypes(_@Observes_ [highlight]#_@WithAnnotations_(PropertyInject.class)#
+      _ProcessAnnotatedType<?>_ pat) { <1>
+        camelBeans.add(pat.getAnnotatedType());
     }
 
-    <T> void camelBeansPostProcessor(@Observes ProcessInjectionTarget<T> pit,
-        BeanManager bm) {
-        if ([highlight]#camelBeans.contains(pit.getAnnotatedType())#) <2>
-            pit.setInjectionTarget(
-                new CamelInjectionTarget<>(pit.getInjectionTarget(), bm));
+    <T> void camelBeansPostProcessor(_@Observes_ _ProcessInjectionTarget<T>_ pit,
+      _BeanManager_ manager) {
+      if ([highlight]#camelBeans.contains(pit.getAnnotatedType())#) <2>
+        pit.setInjectionTarget(new CamelInjectionTarget<>(pit.getInjectionTarget(), manager));
     }
 }
 ----
@@ -718,19 +734,19 @@ TIP: Instead of injecting the `PropertiesComponent` bean to resolve a configurat
 ----
 class JmsComponentFactoryBean {
 
-    @Produces
-    @Named("sjms")
-    @ApplicationScoped
+    _@Produces_
+    _@Named("sjms")_
+    _@ApplicationScoped_
     SjmsComponent sjmsComponent([highlight]#PropertiesComponent properties#) {
         SjmsComponent jms = new SjmsComponent();
         jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
-        jms.setConnectionCount(
-            [highlight]#Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")#));
+        jms.setConnectionCount([highlight]#Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")#));
         return component;
     }
 }
 ----
 
+icon:ellipsis-h[role="pull-right"]
 ====
 
 
@@ -748,9 +764,9 @@ class JmsComponentFactoryBean {
     [highlight]#@PropertyInject("jms.maxConnections")#
     [highlight]#int# maxConnections;
 
-    @Produces
-    @Named("sjms")
-    @ApplicationScoped
+    _@Produces_
+    _@Named("sjms")_
+    _@ApplicationScoped_
     SjmsComponent sjmsComponent() {
         SjmsComponent component = new SjmsComponent();
         jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
@@ -782,8 +798,8 @@ TIP: With CDI observers
 from("file:target/input?delay=1000")
     .to("sjms:queue:output")[highlight]#.id("join point")#;
 }
-void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
-    logger.info("Sending message [{}] to JMS...", exchange.getIn().getBody());
+void advice([highlight]#_@Observes_ @NodeId("join point")# Exchange exchange) {
+    logger.info("Sending message [{}] to JMS...", exchange.getIn().getBody(String.class));
 }
 ----
 
@@ -795,7 +811,7 @@ TIP: We can create a CDI qualifier to hold the Camel node id metadata:
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-[highlight]#@Qualifier#
+[highlight]_@Qualifier_
 @Retention(RetentionPolicy.RUNTIME)
 public @interface NodeId {
     String value();
@@ -813,11 +829,12 @@ TIP: And create an extension that will:
 
 TIP: Observe the `ProcessObserverMethod` lifecycle event
 
-[source, subs="verbatim,quotes", role="smaller"]
+.`javax.enterprise.inject.spi.ProcessObserverMethod`
+[source, subs="verbatim,quotes", role="smallest"]
 ----
 public interface ProcessObserverMethod<T, X> {
     AnnotatedMethod<X> getAnnotatedMethod();
-    ObserverMethod<T> getObserverMethod();
+    [highlight]#ObserverMethod<T> getObserverMethod();#
     void addDefinitionError(Throwable t);
 }
 ----
@@ -826,13 +843,13 @@ TIP: And collect the observer method metadata
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-class CamelExtension implements Extension {
+public class CamelExtension implements Extension {
+
     final Set<NodeId> joinPoints = new HashSet<>();
 
-    void pointcuts(@Observes [highlight]#ProcessObserverMethod<Exchange, ?># pom) {
+    void pointcuts(_@Observes_ [highlight]#_ProcessObserverMethod_<Exchange, ?># pom) {
         for (Annotation qualifier : pom.getObserverMethod().getObservedQualifiers())
-            if (qualifier instanceof NodeId)
-                joinPoints.add(NodeId.class.cast(qualifier));
+            if (qualifier instanceof NodeId) joinPoints.add(NodeId.class.cast(qualifier));
     }
 }
 ----
@@ -845,10 +862,10 @@ TIP: Intercept matching nodes and fire a CDI event
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) {
+void configureCamelContext(_@Observes_ _AfterDeploymentValidation_ adv, final _BeanManager_ manager) {
     context.addInterceptStrategy(new InterceptStrategy() {
-      public Processor wrapProcessorInInterceptors(CamelContext context,
-        ProcessorDefinition<?> definition, Processor target, Processor nextTarget) {
+        public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition,
+                                                     Processor target, Processor nextTarget) {
             if (definition.hasCustomIdAssigned()) {
                 for (final Node node : joinPoints) {
                     if (node.value().equals(definition.getId())) {
@@ -875,21 +892,20 @@ void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanMa
 ====
 TIP: We can define join points in the Camel DSL
 
-[source, subs="verbatim,quotes",role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
-from("file:target/input?delay=1000")
-    .to("sjms:queue:output")[highlight]#.id("join point")#;
-}
+from("file:target/input?delay=1000").to("sjms:queue:output")[highlight]#.id("join point")#;
 ----
 
 TIP: And advise them with CDI observers
 
-[source, subs="verbatim,quotes",role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
     List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY,
                                                         List.class);
-    logger.info("Sending message [{}] to [{}]...", exchange.getIn().getBody(String.class),
+    logger.info("Sending message [{}] to [{}]...",
+                exchange.getIn().getBody(String.class),
                 history.get(history.size() - 1).getNode().getLabel());
 }
 ----

@@ -30,14 +30,14 @@ Discover how we created CDI integration module for Metrics
 
 [.topic.source]
 == Metrics out of the box (without CDI)
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 class MetricsHelper {
     public static MetricRegistry REGISTRY = new MetricRegistry();
 }
 ----
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 class TimedMethodClass {
 
@@ -61,13 +61,17 @@ class TimedMethodClass {
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 class MetricRegistryBean {
-    [highlight]#@Produces#
-    [highlight]#@ApplicationScoped#
+    [highlight]_@Produces_
+    [highlight]_@ApplicationScoped_
     MetricRegistry registry = new MetricRegistry();
 }
+----
 
+[source, subs="verbatim,quotes", role="smaller"]
+----
 class TimedMethodBean {
-    [highlight]#@Inject# MetricRegistry registry;
+
+    [highlight]_@Inject_ MetricRegistry registry;
 
     void timedMethod() {
         Timer timer = registry.timer("timer");
@@ -141,15 +145,15 @@ TIP: We could use the provided `@Metric` annotation to qualify our beans
 [source, subs="verbatim,quotes"]
 ----
 *@Produces*
-[highlight]*@Metric(name = "myTimer")*
+[highlight]#@Metric(name = "my_timer")#
 Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
 
 *@Produces*
-[highlight]*@Metric(name = "mySecondTimer")*
+[highlight]#@Metric(name = "my_other_timer")#
 Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, HOURS));
 
 *@Inject*
-[highlight]*@Metric(name = "myTimer")*
+[highlight]#@Metric(name = "my_timer")#
 Timer timer;
 ----
 
@@ -157,14 +161,14 @@ CAUTION: That won't work out of the box since `@Metric` is not a qualifier
 
 
 [.source]
-== How to make `@Metric` a qualifier?
+== How to declare `@Metric` as a qualifier?
 
 TIP: By observing `BeforeBeanDiscovery` lifecycle event in an extension
 
+.`javax.enterprise.inject.spi.BeforeBeanDiscovery`
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 public interface BeforeBeanDiscovery {
-
     [highlight]#addQualifier(Class<? extends Annotation> qualifier);#  <1>
     addQualifier(AnnotatedType<? extends Annotation> qualifier);
     addScope(Class<? extends Annotation> scopeType, boolean normal, boolean passivation);
@@ -251,7 +255,7 @@ TIP: A CDI extension is a class implementing the `Extension` tag interface
 ----
 public class MetricsExtension implements [highlight]*Extension* {
 
-    void addMetricAsQualifier(*@Observes* BeforeBeanDiscovery bdd) {
+    void addMetricAsQualifier(*@Observes* _BeforeBeanDiscovery_ bdd) {
         bdd.addQualifier(Metric.class);
     }
 }
@@ -274,15 +278,15 @@ TIP: We can now write:
 [source, subs="verbatim,quotes"]
 ----
 *@Produces*
-[highlight]*@Metric(name = "myTimer")*
+[highlight]#@Metric(name = "my_timer")#
 Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
 
 *@Produces*
-[highlight]*@Metric(name = "mySecondTimer")*
+[highlight]#@Metric(name = "my_other_timer")#
 Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, HOURS));
 
 *@Inject*
-[highlight]*@Metric(name = "myTimer")*
+[highlight]#@Metric(name = "my_timer")#
 Timer timer;
 ----
 
@@ -304,13 +308,13 @@ TIP: We want to be able to write:
 
 [source, subs="verbatim,quotes"]
 ----
-[highlight]#@Timed#("timer") <1>
+[highlight]#@Timed("timer")#  <1>
 void timedMethod() {
-    //...
+    // Business code
 }
 ----
 
-TIP: And have the _timer_ `"timer"` activated during method invocation
+TIP: And have the timer `"timer"` activated during method invocation
 
 CAUTION: The solution is to declare an interceptor and bind it to `@Timed`
 
@@ -339,7 +343,8 @@ TIP: We should find the _technical code_ that will wrap the _business code_
 ----
 class TimedMethodBean {
 
-    [highlight]#@Inject MetricRegistry registry;#
+    [highlight]_@Inject_
+    [highlight]#MetricRegistry registry;#
 
     void timedMethod() {
         [highlight]#Timer timer = registry.timer("timer");#
@@ -360,10 +365,11 @@ TIP: Interceptor code is highlighted below
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-[highlight]*@Interceptor*
+[highlight]_@Interceptor_
 class TimedInterceptor {
-    @Inject MetricRegistry registry; <1>
-    [highlight]*@AroundInvoke*
+    _@Inject_ MetricRegistry registry; <1>
+
+    [highlight]_@AroundInvoke_
     Object timedMethod([highlight]_InvocationContext_ context) throws Exception {
         Timer timer = registry.timer(context.getMethod().getAnnotation(Timed.class).name());
         Timer.Context time = timer.time();
@@ -376,7 +382,7 @@ class TimedInterceptor {
 }
 ----
 <1> In CDI an interceptor is a bean, you can inject other beans in it
-<2> Here the *business* of the application is called. All the code around is the *technical* one.
+<2> Here the *business code* of the application is called. All the code around is the *technical code*.
 
 
 [.topic.source]
@@ -384,19 +390,19 @@ class TimedInterceptor {
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-@Interceptor
-[highlight]*@Priority(Interceptor.Priority.LIBRARY_BEFORE)*  <1>
+_@Interceptor_
+[highlight]_@Priority(Interceptor.Priority.LIBRARY_BEFORE)_  <1>
 class TimedInterceptor {
 
-    @Inject
+    _@Inject_
     MetricRegistry registry;
 
-    @AroundInvoke
-    Object timedMethod(InvocationContext context) throws Exception {
+    _@AroundInvoke_
+    Object timedMethod(_InvocationContext_ context) throws Exception {
         Timer timer = registry.timer(context.getMethod().getAnnotation(Timed.class).name());
         Timer.Context time = timer.time();
         try {
-            return context.proceed();
+            return _context.proceed()_;
         } finally {
             time.stop();
         }
@@ -412,19 +418,19 @@ class TimedInterceptor {
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 [highlight]#@Timed#  <1>
-@Interceptor
-@Priority(Interceptor.Priority.LIBRARY_BEFORE)
+_@Interceptor_
+_@Priority(Interceptor.Priority.LIBRARY_BEFORE)_
 class TimedInterceptor {
 
-    @Inject
+    _@Inject_
     MetricRegistry registry;
 
-    @AroundInvoke
-    Object timedMethod(InvocationContext context) throws Exception {
+    _@AroundInvoke_
+    Object timedMethod(_InvocationContext_ context) throws Exception {
         Timer timer = registry.timer(context.getMethod().getAnnotation(Timed.class).name());
         Timer.Context time = timer.time();
         try {
-            return context.proceed();
+            return _context.proceed()_;
         } finally {
             time.stop();
         }
@@ -438,19 +444,19 @@ class TimedInterceptor {
 == Back on interceptor binding
 TIP: An *interceptor binding* is an annotation used in 2 places:
 
-. On the *interceptor class* to bind it to this annotation
-. On the *methods* or *classes* to be intercepted by this interceptor
+. On the _interceptor class_ to bind it to this annotation
+. On the _methods_ or _classes_ to be intercepted by this interceptor
 
 TIP: An interceptor binding should have the `@InterceptorBinding` annotation or should be declared programmatically
 
 TIP: If the interceptor binding annotation has members:
 
-. Their values are *taken into account* to resolve interceptor
+. Their values are _taken into account_ to resolve interceptor
 . Unless members are annotated with `@NonBinding`
 
 
 [.topic.source]
-== `@Timed` source code is not an interceptor binding
+== `@Timed` annotation is not an interceptor binding
 
 [source, subs="verbatim,quotes"]
 ----
@@ -476,12 +482,12 @@ public @interface Timed {
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.ANNOTATION_TYPE })
-[highlight]#@InterceptorBinding#
+[highlight]_@InterceptorBinding_
 public @interface Timed {
 
-    [highlight]#@NonBinding# String name() default "";
+    [highlight]_@NonBinding_ String name() default "";
 
-    [highlight]#@NonBinding# boolean absolute() default false;
+    [highlight]_@NonBinding_ boolean absolute() default false;
 }
 ----
 
@@ -499,6 +505,7 @@ TIP: Thanks to _DeltaSpike_ we can easily create the required `AnnotatedType`
 ----
 AnnotatedType createTimedAnnotatedType() throws Exception {
     Annotation nonBinding = new AnnotationLiteral<Nonbinding>() {}; <1>
+
     return new AnnotatedTypeBuilder().readFromType(Timed.class) <2>
         .addToMethod(Timed.class.getMethod("name"), nonBinding) <3>
         .addToMethod(Timed.class.getMethod("absolute"), nonBinding) <3>
@@ -519,7 +526,7 @@ TIP: We observe `BeforeBeanDiscovery` to add a new interceptor binding
 ----
 public class MetricsExtension implements Extension {
 
-    void addTimedBinding(*@Observes* BeforeBeanDiscovery bdd) throws Exception {
+    void addTimedBinding(_@Observes_ [highlight]_BeforeBeanDiscovery_ bdd) throws Exception {
         Annotation nonBinding = new AnnotationLiteral<Nonbinding>() {};
 
         bdd.addInterceptorBinding(new AnnotatedTypeBuilder<Timed>()
@@ -564,7 +571,7 @@ And have a Metrics `Timer` applied to the method
 ----
 [highlight]#@Timed#("timer") <1>
 void timedMethod() {
-    //...
+    // Business code
 }
 ----
 
@@ -572,11 +579,11 @@ void timedMethod() {
 +
 [source, subs="verbatim,quotes", role="smallest"]
 ----
-@Produces
-[highlight]#@Metric#(name = "myTimer") <1>
+*@Produces*
+[highlight]#@Metric#(name = "my_timer") <1>
 Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
-//...
-[highlight]#@Timed#("myTimer") <1>
+// ...
+[highlight]#@Timed#("my_timer") <1>
 void timedMethod() { /\*...*/ }
 ----
 <1> Annotations provided by Metrics
@@ -599,13 +606,12 @@ TIP: When writing:
 [source, subs="verbatim,quotes"]
 ----
 @Inject
-@Metric(name = "myTimer")
+@Metric(name = "my_timer")
 Timer [highlight]*timer1*;
 
 @Inject
 MetricRegistry registry;
-
-Timer [highlight]*timer2* = registry.timer("myTimer");
+Timer [highlight]*timer2* = registry.timer("my_timer");
 ----
 
 TIP: ... We want that `timer1 == timer2`
@@ -616,21 +622,20 @@ TIP: ... We want that `timer1 == timer2`
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-@Produces
-@Metric(name = "myTimer") <1>
+_@Produces_
+@Metric(name = "my_timer") <1>
 Timer [highlight]*timer* = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
 
-@Inject
-@Metric(name = "myTimer")
+_@Inject_
+@Metric(name = "my_timer")
 Timer [highlight]*timer*;
 
-@Inject
+_@Inject_
 MetricRegistry registry;
-
-Timer [highlight]*timer* = registry.timer("myTimer"); <2>
+Timer [highlight]*timer* = registry.timer("my_timer"); <2>
 ----
-<1> Produced `Timer` should be added to MetricRegistry when produced
-<2> When retrieved from registry, a `Metric` should be *identical* to the produced instance and vice versa
+<1> Produced `Timer` should be added to the Metrics registry when produced
+<2> When retrieved from the registry, a `Metric` should be _identical_ to the produced instance and vice versa
 
 WARNING: There are 2 `Metric` classes, the `com.codahale.metrics.Metric` interface and the `com.codahale.metrics.annotation.Metric` annotation
 
@@ -726,33 +731,32 @@ class MetricProducer<X extends Metric> implements Producer<X> {
         this.metricName = metricName;
     }
 
-    //...
+    // ...
 ----
+icon:ellipsis-h[role="pull-right"]
 
 
 [.topic.source]
 == Customizing `Metric` producing process (continued)
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
-    //...
     public X produce(CreationalContext<X> ctx) { <1>
-        MetricRegistry reg = BeanProvider.getContextualReference(MetricRegistry.class, false); <2>
+        MetricRegistry reg = getContextualReference(MetricRegistry.class, false); <2>
         if (!reg.getMetrics().containsKey(metricName)) <3>
-            reg.register(metricName, [highlight]*decorate.produce(ctx)*);
-
+            reg.register(metricName, [highlight]_decorate.produce(ctx)_);
         return (X) reg.getMetrics().get(metricName);
     }
 
-    public void dispose(X instance) { }
+    public void dispose(X instance) {}
 
     public Set<InjectionPoint> getInjectionPoints() {
         return decorate.getInjectionPoints();
     }
 }
 ----
-<1> Produce method will be used by the container at runtime to decorate declared producer with our logic
-<2> `BeanProvider` is a DeltaSpike helper class to easily retrieve a bean or bean instance
+<1> The `produce` method is used by the container at runtime to decorate declared producer with our logic
+<2> `BeanProvider.getContextualReference` is helper class from *DeltaSpike* to easily retrieve a bean or bean instance
 <3> If metric name is not in the registry, the original producer is called and its result is added to the registry
 
 
@@ -761,16 +765,13 @@ class MetricProducer<X extends Metric> implements Producer<X> {
 
 NOTE: This event allow us to substitute the original producer with ours
 
+.`javax.enterprise.inject.spi.ProcessProducer`
 [source, subs="verbatim,quotes"]
 ----
 public interface ProcessProducer<T, X> {
-
     AnnotatedMember<T> getAnnotatedMember(); <1>
-
     Producer<X> getProducer(); <2>
-
-    void setProducer(Producer<X> producer); <3>
-
+    [highlight]#void setProducer(Producer<X> producer);#  <3>
     void addDefinitionError(Throwable t);
 }
 ----
@@ -784,18 +785,18 @@ public interface ProcessProducer<T, X> {
 
 TIP: Here's the extension code to do this producer decoration
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 public class MetricsExtension implements Extension {
-    //...
-    <X extends Metric> void decorateMetricProducer([highlight]*@Observes* ProcessProducer<?, X> pp) {
+    // ...
+    <X extends Metric> void decorateMetricProducer(_@Observes_ [highlight]_ProcessProducer<?, X>_ pp) {
         String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name(); <1>
-        pp.setProducer(new [highlight]#MetricProducer<>#([highlight]*pp.getProducer()*, name)); <2>
+        new [highlight]_pp.setProducer_(new [highlight]#MetricProducer<>#([highlight]_pp.getProducer()_, name)); <2>
     }
-    //...
+    // ...
 }
 ----
-<1> We retrieve metric name from the `name()` member in `@Metric`
+<1> We retrieve metric's name by calling the `name()` member from `@Metric`
 <2> We replace the original producer by our producer (which decorates the former)
 
 
@@ -806,17 +807,17 @@ public class MetricsExtension implements Extension {
 ====
 NOTE: We do that by observing the `AfterDeploymentValidation` event
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 public class MetricsExtension implements Extension {
-    //...
-    void registerProducedMetrics([highlight]*@Observes* AfterDeploymentValidation adv) {
-        List<Metric> metrics = BeanProvider.getContextualReferences(Metric.class, true); <1>
+    // ...
+    void registerProducedMetrics(_@Observes_ [highlight]_AfterDeploymentValidation_ adv) {
+        BeanProvider.getContextualReferences(com.codahale.metrics.Metric.class, true); <1>
     }
-    //...
+    // ...
 }
 ----
-<1> `getContextualReferences()` is a method from *DeltaSpike* `BeanProvider` helper class. +
+<1> `BeanProvider.getContextualReferences()` is a method from *DeltaSpike* `BeanProvider` helper class. +
 It creates the list of bean instances for a given bean type (ignoring qualifiers).
 ====
 
@@ -830,30 +831,33 @@ TIP: We can now write:
 
 [source, subs="verbatim,quotes"]
 ----
-@Produces
-@Metric(name = "myTimer")
-Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
+_@Produces_
+@Metric(name = "my_timer")
+Timer *timer1* = new Timer(new SlidingTimeWindowReservoir(1L, MINUTES));
 
-@Inject
+_@Inject_
+@Metric(name = "my_timer")
+Timer *timer2*;
+
+_@Inject_
 MetricRegistry registry;
-
-@Inject
-@Metric("myTimer")
-Metric timer;
+Timer *timer3* = registry.timer("my_timer");
 ----
 
-TIP: And be sure that `registry.getMetrics().get("myTimer")` and `timer` are the same object (our custom `Timer`)
+TIP: And make sure that `timer1 == timer2 == timer3`
 ====
 
 
 [.topic.source]
 == Complete extension code
 
-[source, subs="verbatim,quotes", role="smallest"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public class MetricsExtension implements Extension {
 
-    void addMetricAsQualifier(@Observes BeforeBeanDiscovery bdd) {bdd.addQualifier(Metric.class);}
+    void addMetricAsQualifier(@Observes BeforeBeanDiscovery bdd) {
+        bdd.addQualifier(Metric.class);
+    }
 
     void addTimedBinding(@Observes BeforeBeanDiscovery bdd) throws Exception {
         Annotation nonBinding = new AnnotationLiteral<Nonbinding>() {};
@@ -870,8 +874,7 @@ public class MetricsExtension implements Extension {
     }
 
     void registerProducedMetrics(@Observes AfterDeploymentValidation adv) {
-        List<com.codahale.metrics.Metric> metrics = BeanProvider
-            .getContextualReferences(com.codahale.metrics.Metric.class, true);
+        BeanProvider.getContextualReferences(com.codahale.metrics.Metric.class, true);
     }
 }
 ----

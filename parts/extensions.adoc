@@ -64,7 +64,7 @@ NOTE: Service provider of the service `javax.enterprise.inject.spi.Extension` de
 
 TIP: Just put the fully qualified name of your extension class in this file
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.Extension;
@@ -73,8 +73,7 @@ public class CdiExtension [highlight]#implements Extension# {
 
     void beforeBeanDiscovery([highlight]#@Observes BeforeBeanDiscovery# bbd) {
     }
-    //...
-
+    // ...
     void afterDeploymentValidation([highlight]#@Observes AfterDeploymentValidation# adv) {
     }
 }
@@ -140,8 +139,7 @@ NOTE: This is a commonly admitted good practice
 ----
 public class VetoEntity implements Extension {
 
-    void vetoEntity(@Observes @WithAnnotations(Entity.class)
-                    ProcessAnnotatedType<?> pat) {
+    void vetoEntity(@Observes @WithAnnotations(Entity.class) ProcessAnnotatedType<?> pat) {
         pat.veto();
     }
 }

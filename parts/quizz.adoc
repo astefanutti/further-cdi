@@ -14,21 +14,23 @@ Test your CDI knowledge
 class MySuperBean {
 
     @Inject
-    Bean<MySuperBean> myMeta;                                   // A [ ]
+    Bean<MySuperBean> myMeta;                                           // A [ ]
 
     @Inject
-    Bean<MyService> serviceMeta;                                // B [ ]
+    Bean<MyService> serviceMeta;                                        // B [ ]
 
-    public MySuperBean(@Inject MyService service) {/\*...*/}     // C [ ]
+    public MySuperBean(@Inject MyService service) {/\*...*/}             // C [ ]
 
     @Inject
-    private void myInitMethod(MyService service) {/\*...*/}      // D [ ]
+    private void myInitMethod(MyService service) {/\*...*/}              // D [ ]
 
     @Inject
     @PostConstruct
-    public void myInitMethod2(MyService service) {/\*...*/}      // E [ ]
+    public void myInitMethod2(MyService service) {/\*...*/}              // E [ ]
 }
 ----
+
+icon:ellipsis-h[role="pull-right"]
 
 
 [.topic.source]
@@ -39,19 +41,19 @@ class MySuperBean {
 class MySuperBean {
 
     @Inject
-    Bean<MySuperBean> myMeta;                                   // A [X]
+    Bean<MySuperBean> myMeta;                                           // A [X]
 
     @Inject
-    Bean<MyService> serviceMeta;                                // B [ ]
+    Bean<MyService> serviceMeta;                                        // B [ ]
 
-    public MySuperBean(@Inject MyService service) {/\*...*/}     // C [ ]
+    public MySuperBean(@Inject MyService service) {/\*...*/}             // C [ ]
 
     @Inject
-    private void myInitMethod(MyService service) {/\*...*/}      // D [X]
+    private void myInitMethod(MyService service) {/\*...*/}              // D [X]
 
     @Inject
     @PostConstruct
-    public void myInitMethod2(MyService service) {/\*...*/}      // E [ ]
+    public void myInitMethod2(MyService service) {/\*...*/}              // E [ ]
 }
 ----
 
@@ -62,22 +64,24 @@ class MySuperBean {
 [source, subs="verbatim,quotes"]
 ----
 @Decorator
-public abstract class MyDecorator implements MyService {/\*...*/}    // A [ ]
+public abstract class MyDecorator implements MyService {/\*...*/}        // A [ ]
 
 @Stateless
-public class MyServiceImpl implements MyService {/\*...*/}           // B [ ]
+public class MyServiceImpl implements MyService {/\*...*/}               // B [ ]
 
-public class MyBean {/\*...*/}                                       // C [ ]
+public class MyBean {/\*...*/}                                           // C [ ]
 
 @Model
-public class MyBean {/\*...*/}                                       // D [ ]
+public class MyBean {/\*...*/}                                           // D [ ]
 
 @Singleton
-public class MyBean {/\*...*/}                                       // E [ ]
+public class MyBean {/\*...*/}                                           // E [ ]
 
 @ConversationScoped
-public class MyBean {/\*...*/}                                       // F [ ]
+public class MyBean {/\*...*/}                                           // F [ ]
 ----
+
+icon:ellipsis-h[role="pull-right"]
 
 
 [.topic.source]
@@ -86,21 +90,21 @@ public class MyBean {/\*...*/}                                       // F [ ]
 [source, subs="verbatim,quotes"]
 ----
 @Decorator
-public abstract class MyDecorator implements MyService {/\*...*/}    // A [X]
+public abstract class MyDecorator implements MyService {/\*...*/}        // A [X]
 
 @Stateless
-public class MyServiceImpl implements MyService {/\*...*/}           // B [X]
+public class MyServiceImpl implements MyService {/\*...*/}               // B [X]
 
-public class MyBean {/\*...*/}                                       // C [ ]
+public class MyBean {/\*...*/}                                           // C [ ]
 
 @Model
-public class MyBean {/\*...*/}                                       // D [X]
+public class MyBean {/\*...*/}                                           // D [X]
 
 @Singleton
-public class MyBean {/\*...*/}                                       // E [ ]
+public class MyBean {/\*...*/}                                           // E [ ]
 
 @ConversationScoped
-public class MyBean {/\*...*/}                                       // F [X]
+public class MyBean {/\*...*/}                                           // F [X]
 ----
 
 
@@ -113,19 +117,21 @@ public class MyBean {/\*...*/}                                       // F [X]
 public class MyBean {
 
   @Produces
-  Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/} // A [ ]
+  Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/}   // A [ ]
 
   @Produces
   @SessionScoped
-  Service produce2(InjectionPoint ip) {/\*...*/}                       // B [ ]
+  Service produce2(InjectionPoint ip) {/\*...*/}                         // B [ ]
 
   @Produces
-  Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                   // C [ ]
+  Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                     // C [ ]
 
   @Produces
-  Map<String, ? extends Service> produceMap2() {/\*...*/}              // D [ ]
+  Map<String, ? extends Service> produceMap2() {/\*...*/}                // D [ ]
 }
 ----
+
+icon:ellipsis-h[role="pull-right"]
 
 
 [.topic.source]
@@ -137,17 +143,17 @@ public class MyBean {
 public class MyBean {
 
   @Produces
-  Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/} // A [X]
+  Service produce1(InjectionPoint ip, Bean<Service> myMeta) {/\*...*/}   // A [X]
 
   @Produces
   @SessionScoped
-  Service produce2(InjectionPoint ip) {/\*...*/}                       // B [ ]
+  Service produce2(InjectionPoint ip) {/\*...*/}                         // B [ ]
 
   @Produces
-  Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                   // C [X]
+  Map<K, V> produceMap(InjectionPoint ip) {/\*...*/}                     // C [X]
 
   @Produces
-  Map<String, ? extends Service> produceMap2() {/\*...*/}              // D [ ]
+  Map<String, ? extends Service> produceMap2() {/\*...*/}                // D [ ]
 }
 ----
 
@@ -169,12 +175,14 @@ class FirstBean {
 
 class SecondBean {
 
-    void listenFrPost(@Observes @French Post post) {/\*...*/}     // A [ ]
-    void listenPost(@Observes Post post) {/\*...*/}               // B [ ]
-    void listenEnPost(@Observes @English Post post) {/\*...*/}    // C [ ]
-    void listenObject(@Observes Object obj) {/\*...*/}            // D [ ]
+    void listenFrPost(@Observes @French Post post) {/\*...*/}            // A [ ]
+    void listenPost(@Observes Post post) {/\*...*/}                      // B [ ]
+    void listenEnPost(@Observes @English Post post) {/\*...*/}           // C [ ]
+    void listenObject(@Observes Object obj) {/\*...*/}                   // D [ ]
 }
 ----
+
+icon:ellipsis-h[role="pull-right"]
 
 
 [.topic.source]
@@ -194,9 +202,9 @@ class FirstBean {
 
 class SecondBean {
 
-    void listenFrPost(@Observes @French Post post) {/\*...*/}     // A [X]
-    void listenPost(@Observes Post post) {/\*...*/}               // B [X]
-    void listenEnPost(@Observes @English Post post) {/\*...*/}    // C [ ]
-    void listenObject(@Observes Object obj) {/\*...*/}            // D [X]
+    void listenFrPost(@Observes @French Post post) {/\*...*/}            // A [X]
+    void listenPost(@Observes Post post) {/\*...*/}                      // B [X]
+    void listenEnPost(@Observes @English Post post) {/\*...*/}           // C [ ]
+    void listenObject(@Observes Object obj) {/\*...*/}                   // D [X]
 }
 ----

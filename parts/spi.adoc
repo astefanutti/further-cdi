@@ -208,11 +208,11 @@ TIP: `InjectionPoint` can be used to get info about what's being injected
 [highlight]#@Qualifier#
 @Retention(RetentionPolicy.RUNTIME)
 public @interface [HighLight]#HttpParam# {
-    [highlight]#@Nonbinding# public String value();
+    [highlight]#@Nonbinding# String value();
 }
 ----
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 @Produces [highlight]#@HttpParam("")#
 [highlight]#String# getParamValue([highlight]#InjectionPoint# ip, [highlight]#HttpServletRequest# req) {
