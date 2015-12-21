@@ -169,7 +169,7 @@ class FirstBean {
     Event<Post> postEvent;
 
     public void saveNewPost(Post myPost) {
-        postEvent.select(new AnnotationLiteral() < French > {}).fire(myPost);
+        postEvent.select(new AnnotationLiteral()<French> {}).fire(myPost);
     }
 }
 
@@ -196,7 +196,7 @@ class FirstBean {
     Event<Post> postEvent;
 
     public void saveNewPost(Post myPost) {
-        postEvent.select(new AnnotationLiteral() < French > {}).fire(myPost);
+        postEvent.select(new AnnotationLiteral()<French> {}).fire(myPost);
     }
 }
 

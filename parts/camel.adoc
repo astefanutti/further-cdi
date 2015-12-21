@@ -302,7 +302,7 @@ class CamelContextBean implements [highlight]#Bean<CamelContext># {
     public Class<? extends Annotation> getScope() { return [highlight]#ApplicationScoped.class#; }
 
     public Set<Annotation> getQualifiers() {
-        return Collections.<Annotation>singleton(new AnnotationLiteral< [highlight]#Default# >() {});
+        return Collections.<Annotation>singleton(new AnnotationLiteral<[highlight]##Default##>() {});
     }
     public Set<Type> getTypes() { return Collections.<Type>singleton([highlight]#CamelContext.class#); }
 
@@ -405,7 +405,7 @@ _@ApplicationScoped_
 class CamelContextBean extends DefaultCamelContext {
 
     _@Inject_
-    CamelContextBean([highlight line-through]#FileToJmsRouteBean route,# SjmsComponent jms, PropertiesComponent properties) {
+    CamelContextBean([highlight line-through]##FileToJmsRouteBean route, ##SjmsComponent jms, PropertiesComponent properties) {
         addComponent("properties", propertiesComponent);
         addComponent("sjms", sjmsComponent);
         [highlight line-through]#addRoutes(route);#
@@ -470,7 +470,7 @@ class CamelCdiRegistry [highlight]#implements Registry# {
         return lookupByNameAndType(name, Object.class);
     }
 
-    <T> T getReference(_BeanManager_ manager, Type type, Bean<?> bean) {
+    <T> T getReference(_BeanManager_ manager, Type type, _Bean<?>_ bean) {
         return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
     }
 }
@@ -478,7 +478,7 @@ class CamelCdiRegistry [highlight]#implements Registry# {
 
 
 [.topic.source]
-== Add the `CamelCdiRegistry` to the Camel context
+== Add `CamelCdiRegistry` to the Camel context
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
@@ -502,7 +502,7 @@ class CamelContextBean implements Bean<CamelContext> {
 public class CamelExtension implements Extension {
 
     // ...
-    void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd, [highlight]_BeanManager manager_) {
+    void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd[highlight]##, _BeanManager_ manager##) {
         abd.addBean(new CamelContextBean([highlight]#manager#));
     }
 }
