@@ -405,21 +405,21 @@ _@ApplicationScoped_
 class CamelContextBean extends DefaultCamelContext {
 
     _@Inject_
-    CamelContextBean([highlight]#FileToJmsRouteBean route,# SjmsComponent jms, PropertiesComponent properties) {
+    CamelContextBean([highlight line-through]#FileToJmsRouteBean route,# SjmsComponent jms, PropertiesComponent properties) {
         addComponent("properties", propertiesComponent);
         addComponent("sjms", sjmsComponent);
-        [highlight]#addRoutes(route);#
+        [highlight line-through]#addRoutes(route);#
     }
 
-    [highlight]_@PostConstruct_
-    [highlight]#void startContext() {#
-        [highlight]#super.start();#
-    [highlight]#}#
+    [highlight line-through]_@PostConstruct_
+    [highlight line-through]#void startContext() {#
+        [highlight line-through]#super.start();#
+    [highlight line-through]#}#
 
-    [highlight]_@PreDestroy_
-    [highlight]#void stopContext() {#
-        [highlight]#super.stop();#
-    [highlight]#}#
+    [highlight line-through]_@PreDestroy_
+    [highlight line-through]#void stopContext() {#
+        [highlight line-through]#super.stop();#
+    [highlight line-through]#}#
 }
 ----
 
@@ -577,21 +577,21 @@ _@ApplicationScoped_
 class CamelContextBean extends DefaultCamelContext {
 
     _@Inject_
-    CamelContextBean([highlight]#FileToJmsRouteBean route,# [highlight]#SjmsComponent jms, PropertiesComponent properties#) {
-        [highlight]#addComponent("properties", propertiesComponent);#
-        [highlight]#addComponent("sjms", sjmsComponent);#
-        [highlight]#addRoutes(route);#
+    CamelContextBean([line-through]#FileToJmsRouteBean route,# [highlight line-through]#SjmsComponent jms, PropertiesComponent properties#) {
+        [highlight line-through]#addComponent("properties", propertiesComponent);#
+        [highlight line-through]#addComponent("sjms", sjmsComponent);#
+        [line-through]#addRoutes(route);#
     }
 
-    [highlight]_@PostConstruct_
-    [highlight]#void startContext() {#
-        [highlight]#super.start();#
-    [highlight]#}#
+    [line-through]_@PostConstruct_
+    [line-through]#void startContext() {#
+        [line-through]#super.start();#
+    [line-through]#}#
 
-    [highlight]_@PreDestroy_
-    [highlight]#void stopContext() {#
-        [highlight]#super.stop();#
-    [highlight]#}#
+    [line-through]_@PreDestroy_
+    [line-through]#void stopContext() {#
+        [line-through]#super.stop();#
+    [line-through]#}#
 }
 ----
 
@@ -737,10 +737,10 @@ class JmsComponentFactoryBean {
     _@Produces_
     _@Named("sjms")_
     _@ApplicationScoped_
-    SjmsComponent sjmsComponent([highlight]#PropertiesComponent properties#) {
+    SjmsComponent sjmsComponent([highlight line-through]#PropertiesComponent properties#) {
         SjmsComponent jms = new SjmsComponent();
         jms.setConnectionFactory(new ActiveMQConnectionFactory("vm://broker?..."));
-        jms.setConnectionCount([highlight]#Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")#));
+        jms.setConnectionCount([highlight line-through]#Integer.valueOf(properties.parseUri("{{jms.maxConnections}}")#));
         return component;
     }
 }

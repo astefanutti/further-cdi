@@ -14,6 +14,10 @@ section pre code, section pre.literal {
     font-family: 'Ubuntu Mono', monospace;
 }
 
+.line-through {
+    text-decoration: line-through;
+}
+
 section.intro h1,
 section.intro h2 {
     text-transform: none !important;
