@@ -1,4 +1,4 @@
-= Going further with CDI
+= Going Further with CDI
 
 image:https://travis-ci.org/astefanutti/further-cdi.svg[Travis CI build, link="https://travis-ci.org/astefanutti/further-cdi"] image:https://www.versioneye.com/user/projects/56791996107997002d001363/badge.svg[VersionEye build, link="https://www.versioneye.com/user/projects/56791996107997002d001363"]
 
@@ -8,8 +8,11 @@ Presentation material about advanced features and use cases of http://www.cdi-sp
 
 This presentation introduces the CDI type and metadata SPI. It then focuses on the concept of http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#spi[portable extensions] and covers the complete bean manager lifecycle, depicted in the diagram below. Lastly, it illustrates the use of these concepts through practical examples like the https://github.com/astefanutti/camel-cdi[Camel CDI] and https://github.com/astefanutti/metrics-cdi[Metrics CDI] extensions.
 
-.Bean manager lifecycle
+.Application initialization and shutdown lifecycle
 image::http://astefanutti.github.io/further-cdi/lifecycle.svg[]
+
+.Container lifecycle events
+image::http://astefanutti.github.io/further-cdi/events.svg[]
 
 == History
 
