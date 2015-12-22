@@ -78,6 +78,22 @@ $ bundle exec guard
 
 . Browse to the generated file you want to refresh and activate the LiveReload plugin (don't forget to configure the plugin to accept refreshing local files)
 
+=== Docker
+
+Alternatively to installing Ruby and Graphviz, you can use the https://hub.docker.com/r/asciidoctor/docker-asciidoctor/[`asciidoctor/docker-asciidoctor`] Docker image available on https://hub.docker.com[Docker Hub]:
+
+. Run an interactive container with the `documents` volume bind-mounted to the working directory:
++
+----
+$ docker run --rm -it -v `pwd`:/documents/ asciidoctor/docker-asciidoctor
+----
+
+. Generate the HTML presentation:
++
+----
+[root@... documents]# asciidoctor -r asciidoctor-diagram -T asciidoctor-backends/slim -a data-uri -a linkcss! slides.adoc
+----
+
 == License
 
 The content of this project is licensed under the http://creativecommons.org/licenses/by/4.0/[Creative Commons Attribution 4.0 license], and the underlying source code used for the examples is licensed under the http://opensource.org/licenses/mit-license.php[MIT license].
