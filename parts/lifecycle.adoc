@@ -12,6 +12,7 @@
 skinparam shadowing false
 skinparam backgroundColor transparent
 skinparam defaultFontName Consolas
+skinparam titleFontSize 30
 
 skinparam activity {
   BackgroundColor #337788
@@ -23,11 +24,11 @@ skinparam activity {
   FontSize 20
 }
 
-|<size:30>**Application lifecycle**</size>|
+|**Application Lifecycle**|
 start
 #BB3322:BeforeBeanDiscovery>
 
-|<size:30>**Type Discovery**</size>|
+|**Type Discovery**|
 
 while (<size:14><color:#FFFFFF>while types in</color></size>\n<size:14><color:#FFFFFF>deployment archive?</color></size>) is (yes)
 fork
@@ -37,10 +38,10 @@ fork
 end fork
 endwhile (no)
 
-|<size:30>**Application lifecycle**</size>|
+|**Application lifecycle**|
 #BB3322:AfterTypeDiscovery>
 
-|<size:30>**Bean Discovery**</size>|
+|**Bean Discovery**|
 fork
 partition "**For each discovered types during type discovery**" {
     :ProcessInjectionPoint<T, X> >
@@ -62,7 +63,7 @@ partition "**For each observer methods of enabled beans**" {
 }
 end fork
 
-|<size:30>**Application lifecycle**</size>|
+|**Application lifecycle**|
 #BB3322:AfterBeanDiscovery>
 #BB3322:AfterDeploymentValidation>
 stop
