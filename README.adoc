@@ -30,6 +30,12 @@ This presentation has been used as material for the following sessions:
 
 === Environment
 
+. Install http://rvm.io[RVM]:
++
+----
+\curl -sSL https://get.rvm.io | bash -s stable --ruby
+----
+
 . Install http://bundler.io/[Bundler]:
 +
 ----
