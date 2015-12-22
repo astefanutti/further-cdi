@@ -39,7 +39,7 @@ fork
 end fork
 endwhile (no)
 
-|**Application lifecycle**|
+|**Application Lifecycle**|
 #BB3322:AfterTypeDiscovery>
 
 |**Bean Discovery**|
@@ -64,7 +64,7 @@ partition "**For each observer methods of enabled beans**" {
 }
 end fork
 
-|**Application lifecycle**|
+|**Application Lifecycle**|
 #BB3322:AfterBeanDiscovery>
 #BB3322:AfterDeploymentValidation>
 stop
