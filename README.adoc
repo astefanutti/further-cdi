@@ -8,12 +8,12 @@ Presentation material about advanced features and use cases of http://www.cdi-sp
 
 This presentation introduces the CDI type and metadata SPI. It then focuses on the concept of http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#spi[portable extensions] and covers the complete bean manager lifecycle, depicted in the diagram below. Lastly, it illustrates the use of these concepts through practical examples like the https://github.com/astefanutti/camel-cdi[Camel CDI] and https://github.com/astefanutti/metrics-cdi[Metrics CDI] extensions.
 
-=== Content
-
 .Bean manager lifecycle
 image::http://astefanutti.github.io/further-cdi/lifecycle.svg[]
 
-=== History
+== History
+
+This presentation has been used as material for the following sessions:
 
 |===
 
@@ -36,13 +36,7 @@ image::http://astefanutti.github.io/further-cdi/lifecycle.svg[]
 $ gem install bundler
 ----
 
-. Install the required gems:
-+
-----
-$ bundle install
-----
-
-. Install http://www.graphviz.org/[Graphviz] and have the `dot` executable in the path.
+. Install http://www.graphviz.org/[Graphviz] and have the `dot` executable in the path
 
 === Instructions
 
@@ -50,6 +44,12 @@ $ bundle install
 +
 ----
 $ git submodule update --init
+----
+
+. Install the required gems:
++
+----
+$ bundle install
 ----
 
 . Generate the HTML presentation:
@@ -62,12 +62,6 @@ $ asciidoctor -r asciidoctor-diagram -T asciidoctor-backends/slim -a data-uri -a
 
 With http://guardgem.org/[Guard] and http://livereload.com/[LiveReload], you can modify the content of the presentation and have the files automatically generated and reloaded into your Web browser.
 
-. Make sure that you have all the needed gems installed:
-+
-----
-$ bundle update
-----
-
 . Install the http://feedback.livereload.com/knowledgebase/articles/86242-how-do-i-install-and-use-the-browser-extensions-[LiveReload plugin] for your Web browser (Chrome, Firefox and Safari are supported)
 
 . Launch Guard:
@@ -76,7 +70,7 @@ $ bundle update
 $ bundle exec guard
 ----
 
-. Browse to the generated file you want to refresh and activate the LiveReload plugin (don't forget to configure the plugin to accept refreshing local files).
+. Browse to the generated file you want to refresh and activate the LiveReload plugin (don't forget to configure the plugin to accept refreshing local files)
 
 == License
 
