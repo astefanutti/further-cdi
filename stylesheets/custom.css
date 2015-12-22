@@ -1,3 +1,4 @@
+/* Text size */
 .smaller {
     font-size: .8em;
 }
@@ -6,19 +7,15 @@
     font-size: .7em;
 }
 
-section *:not(pre) > code {
-    font-family: 'Ubuntu Mono', monospace;
+ol.loweralpha {
+    font-size: 0.9em;
 }
 
-section pre code, section pre.literal {
-    font-family: 'Ubuntu Mono', monospace;
+ol.lowerroman {
+    font-size: 0.9em;
 }
 
-.hljs-meta {
-    color: inherit;
-    font-weight: normal;
-}
-
+/* Text decoration */
 .highlight {
     background-color: #ffff00;
 }
@@ -27,33 +24,35 @@ section pre code, section pre.literal {
     text-decoration: line-through;
 }
 
+/* Code blocks and literals */
+section *:not(pre) > code {
+    font-family: 'Ubuntu Mono', monospace;
+}
+
+section pre code, section pre.literal {
+    font-family: 'Ubuntu Mono', monospace;
+}
+
+/* Override highlight.js annotations style */
+.hljs-meta {
+    color: inherit;
+    font-weight: normal;
+}
+
+/* Brighter introduction text */
+section.intro p {
+    color: #555555;
+}
+
+/* Turn text transformation off */
 section.intro h1,
 section.intro h2 {
     text-transform: none !important;
 }
 
-section.intro p {
-    color: #555555;
-}
-
 section.recap > h1,
 section.recap > h2 {
     text-transform: none !important;
-}
-
-section.recap .line-through:after {
-    content:" ";
-    height:0.2em;
-    width:90%;
-    background-color:#FFFF00;
-    opacity: 0.8;
-    position:absolute;
-    right: 5%;
-    top: 50%;
-    -webkit-transform: rotate(10deg);
-    -moz-transform: rotate(10deg);
-    -o-transform: rotate(10deg);
-    transform: rotate(10deg);
 }
 
 section.recap hgroup h2 {
@@ -68,10 +67,18 @@ section.ending > h2 {
     text-transform: none !important;
 }
 
-ol.loweralpha {
-    font-size: 0.9em;
-}
-
-ol.lowerroman {
-    font-size: 0.9em;
+/* Fancy line-through in recap title */
+section.recap .line-through:after {
+    content:" ";
+    height:0.2em;
+    width:90%;
+    background-color:#FFFF00;
+    opacity: 0.8;
+    position:absolute;
+    right: 5%;
+    top: 50%;
+    -webkit-transform: rotate(10deg);
+    -moz-transform: rotate(10deg);
+    -o-transform: rotate(10deg);
+    transform: rotate(10deg);
 }
