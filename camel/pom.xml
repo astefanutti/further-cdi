@@ -21,6 +21,11 @@
         <module>live</module>
     </modules>
 
+    <properties>
+        <camel.version>2.16.0</camel.version>
+        <activemq.version>5.13.0</activemq.version>
+    </properties>
+
     <build>
         <testResources>
             <testResource>

@@ -52,10 +52,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cdi.version>1.2</cdi.version>
-        <camel.version>2.16.0</camel.version>
-        <metrics.version>3.1.2</metrics.version>
-        <activemq.version>5.12.0</activemq.version>
-        <deltaspike.version>1.5.0</deltaspike.version>
         <weld.version>2.3.0.Final</weld.version>
         <wildfly.version>9.0.1.Final</wildfly.version>
         <arquillian.version>1.1.9.Final</arquillian.version>
