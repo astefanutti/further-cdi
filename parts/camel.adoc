@@ -793,7 +793,7 @@ TIP: AOP instrumentation of the Camel DSL
 [source, subs="verbatim,quotes"]
 ----
 from("file:target/input?delay=1000")
-    [highlight]#.log("Sending message [${body}] to JMS...")#
+    [highlight line-through]#.log("Sending message [${body}] to JMS...")#
     .to("sjms:queue:output");
 ----
 
@@ -801,9 +801,11 @@ TIP: With CDI observers
 
 [source, subs="verbatim,quotes"]
 ----
-from("file:target/input?delay=1000")
-    .to("sjms:queue:output")[highlight]#.id("join point")#;
-}
+from("file:target/input?delay=1000").to("sjms:queue:output")[highlight]#.id("join point")#;
+----
+
+[source, subs="verbatim,quotes"]
+----
 void advice([highlight]#_@Observes_ @NodeId("join point")# Exchange exchange) {
     logger.info("Sending message [{}] to JMS...", exchange.getIn().getBody(String.class));
 }
