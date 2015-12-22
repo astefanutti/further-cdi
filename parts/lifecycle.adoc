@@ -22,6 +22,7 @@ skinparam activity {
   FontName Consolas
   FontColor White
   FontSize 20
+  DiamondFontSize 14
 }
 
 |**Application Lifecycle**|
@@ -30,7 +31,7 @@ start
 
 |**Type Discovery**|
 
-while (<size:14><color:#FFFFFF>while types in</color></size>\n<size:14><color:#FFFFFF>deployment archive?</color></size>) is (yes)
+while (<color:#FFFFFF>while types in</color>\n<color:#FFFFFF>deployment archive?</color>) is (yes)
 fork
     :ProcessAnnotatedType<X> >
 /' fork again
