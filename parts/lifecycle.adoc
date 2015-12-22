@@ -25,46 +25,46 @@ skinparam activity {
 
 |<size:30>**Application lifecycle**</size>|
 start
-#BB3322:BeforeBeanDiscovery;
+#BB3322:BeforeBeanDiscovery>
 
 |<size:30>**Type Discovery**</size>|
 
 while (<size:14><color:#FFFFFF>while types in</color></size>\n<size:14><color:#FFFFFF>deployment archive?</color></size>) is (yes)
 fork
-    :ProcessAnnotatedType<X>;
+    :ProcessAnnotatedType<X> >
 /' fork again
-    :ProcessSyntheticAnnotatedType<X>; '/
+    :ProcessSyntheticAnnotatedType<X> > '/
 end fork
 endwhile (no)
 
 |<size:30>**Application lifecycle**</size>|
-#BB3322:AfterTypeDiscovery;
+#BB3322:AfterTypeDiscovery>
 
 |<size:30>**Bean Discovery**</size>|
 fork
 partition "**For each discovered types during type discovery**" {
-    :ProcessInjectionPoint<T, X>;
-    :ProcessInjectionTarget<X>;
-    :ProcessBeanAttributes<T>;
-    :ProcessManagedBean<X>;
+    :ProcessInjectionPoint<T, X> >
+    :ProcessInjectionTarget<X> >
+    :ProcessBeanAttributes<T> >
+    :ProcessManagedBean<X> >
 }
 fork again
 partition "**For each producer methods / fields of enabled beans**" {
-    :ProcessInjectionPoint<T, X>;
-    :ProcessProducer<T, X>;
-    :ProcessBeanAttributes<T>;
-    :ProcessProducerMethod<T, X>\nProcessProducerField<T, X>;
+    :ProcessInjectionPoint<T, X> >
+    :ProcessProducer<T, X> >
+    :ProcessBeanAttributes<T> >
+    :ProcessProducerMethod<T, X>\nProcessProducerField<T, X> >
 }
 fork again
 partition "**For each observer methods of enabled beans**" {
-    :ProcessInjectionPoint<T, X>;
-    :ProcessObserverMethod<T, X>;
+    :ProcessInjectionPoint<T, X> >
+    :ProcessObserverMethod<T, X> >
 }
 end fork
 
 |<size:30>**Application lifecycle**</size>|
-#BB3322:AfterBeanDiscovery;
-#BB3322:AfterDeploymentValidation;
+#BB3322:AfterBeanDiscovery>
+#BB3322:AfterDeploymentValidation>
 stop
 
 @enduml
