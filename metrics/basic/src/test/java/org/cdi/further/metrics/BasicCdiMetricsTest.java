@@ -41,7 +41,7 @@ public class BasicCdiMetricsTest {
     public void shouldTimedInterceptorBeCalled() {
         bean.timedMethod();
 
-        Timer timer = registry.getTimers().get("myTimer");
+        Timer timer = registry.getTimers().get("my_timer");
         Assert.assertEquals(1, timer.getCount());
     }
 }

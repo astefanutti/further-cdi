@@ -13,11 +13,11 @@ import java.util.concurrent.TimeUnit;
 public class TimedMethodBean {
 
     @Produces
-    @Metric(name = "myTimer")
+    @Metric(name = "my_timer")
     Timer timer = new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES));
 
-    @Timed(name = "myTimer")
+    @Timed(name = "my_timer")
     public void timedMethod() {
-        LoggerFactory.getLogger("FURTHER METRICS").info("Timed method called, timer [{}] will be incremented", "myTimer");
+        LoggerFactory.getLogger("FURTHER METRICS").info("Timed method called, timer [{}] will be incremented", "my_timer");
     }
 }

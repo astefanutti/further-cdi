@@ -18,15 +18,15 @@ public class TimedMethodBean {
 
     @PostConstruct
     void registerTimer() {
-        registry.register("myTimer", new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES)));
+        registry.register("my_timer", new Timer(new SlidingTimeWindowReservoir(1L, TimeUnit.MINUTES)));
     }
 
-    @Timed(name = "myTimer")
+    @Timed(name = "my_timer")
     public void timedMethod() {
-        Timer timer = registry.timer("myTimer");
+        Timer timer = registry.timer("my_timer");
         Timer.Context time = timer.time();
         try {
-            LoggerFactory.getLogger("BASIC METRICS").info("Timed method called, timer [{}] will be incremented", "myTimer");
+            LoggerFactory.getLogger("BASIC METRICS").info("Timed method called, timer [{}] will be incremented", "my_timer");
         } finally {
             time.stop();
         }

@@ -40,7 +40,7 @@ public class FurtherCdiMetricsTest {
     }
 
     @Inject
-    @Metric(name = "myTimer")
+    @Metric(name = "my_timer")
     Timer timer;
 
     @Inject
@@ -51,7 +51,7 @@ public class FurtherCdiMetricsTest {
 
     @Test
     public void shouldMetricsBeTheSame() {
-        Timer timer = registry.timer("myTimer");
+        Timer timer = registry.timer("my_timer");
         Assert.assertSame(timer, this.timer);
     }
 
