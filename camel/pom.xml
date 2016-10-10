@@ -23,7 +23,7 @@
 
     <properties>
         <camel.version>2.18.0</camel.version>
-        <activemq.version>5.13.0</activemq.version>
+        <activemq.version>5.14.1</activemq.version>
     </properties>
 
     <build>
