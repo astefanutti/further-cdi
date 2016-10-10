@@ -72,7 +72,7 @@ $ asciidoctor -r asciidoctor-diagram -T asciidoctor-backends/slim -a data-uri -a
 .. Export the HTML presentation:
 +
 ----
-$ ./bin/phantomjs decktape.js dzslides slides.html slides.pdf
+$ ./phantomjs decktape.js dzslides slides.html slides.pdf
 ----
 
 === LiveReload
