@@ -20,9 +20,6 @@ script:
   - mvn test -Pwildfly -pl metrics/further
 
 jdk:
-  - oraclejdk7
-# Buffer overflow detected with WildFly 9.0.1.Final
-#  - openjdk7
   - oraclejdk8
 
 notifications:
