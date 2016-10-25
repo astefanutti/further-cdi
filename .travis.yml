@@ -15,9 +15,10 @@ install:
 
 script:
   - mvn test
-  - mvn test -Pwildfly -pl camel/further
-  - mvn test -Pwildfly -pl camel/bonus
-  - mvn test -Pwildfly -pl metrics/further
+# To reactive with WildFly CDI 2.0 patching
+#  - mvn test -Pwildfly -pl camel/further
+#  - mvn test -Pwildfly -pl camel/bonus
+#  - mvn test -Pwildfly -pl metrics/further
 
 jdk:
   - oraclejdk8
