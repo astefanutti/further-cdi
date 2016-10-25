@@ -22,10 +22,13 @@ import org.apache.camel.Exchange;
 import org.apache.camel.Processor;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.RoutesBuilder;
+import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.processor.DelegateAsyncProcessor;
 import org.apache.camel.spi.InterceptStrategy;
+import org.apache.camel.util.ObjectHelper;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
@@ -63,7 +66,17 @@ public class CamelExtension implements Extension {
     }
 
     private void addCamelContext(@Observes AfterBeanDiscovery abd, BeanManager manager) {
-        abd.addBean(new CamelContextBean(manager));
+        abd.addBean()
+            .types(CamelContext.class)
+            .scope(ApplicationScoped.class)
+            .produceWith(() -> new DefaultCamelContext(new CamelCdiRegistry(manager)))
+            .disposeWith(context -> {
+                try {
+                    context.stop();
+                } catch (Exception cause) {
+                    throw ObjectHelper.wrapRuntimeCamelException(cause);
+                }
+            });
     }
 
     private void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) throws Exception {
@@ -96,11 +109,11 @@ public class CamelExtension implements Extension {
         context.start();
     }
 
-    <T> T getReference(BeanManager manager, Class<T> type) {
+    private <T> T getReference(BeanManager manager, Class<T> type) {
         return getReference(manager, type, manager.resolve(manager.getBeans(type)));
     }
 
-    <T> T getReference(BeanManager manager, Class<T> type, Bean<?> bean) {
+    private <T> T getReference(BeanManager manager, Class<T> type, Bean<?> bean) {
         return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
     }
 }

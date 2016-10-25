@@ -270,56 +270,24 @@ icon:question-circle[] How to add a bean programmatically?
 [.topic.source]
 == Declaring a bean programmatically
 
-TIP: We need to implement the `Bean` SPI
+TIP: Use the `BeanConfigurator<T>` API introduced in *CDI 2.0*
 
-.`javax.enterprise.inject.spi.Bean`
+.`javax.enterprise.inject.spi.builder.BeanConfigurator<T>`
 [source]
 ----
-public interface Bean<T> extends Contextual<T>, BeanAttributes<T> {
-    Class<?> getBeanClass();
-    Set<InjectionPoint> getInjectionPoints();
-    // Contextual<T>
-    T create(CreationalContext<T> creationalContext);
-    void destroy(T instance, CreationalContext<T> creationalContext);
-    // BeanAttributes<T>
-    Set<Type> getTypes();
-    Set<Annotation> getQualifiers();
-    Class<? extends Annotation> getScope();
-    String getName();
-    Set<Class<? extends Annotation>> getStereotypes();
-    boolean isAlternative();
-}
-----
-
-
-[.topic.source]
-== Implementing the `Bean` SPI
-
-[source, subs="verbatim,quotes", role="smaller"]
-----
-class CamelContextBean implements [highlight]#Bean<CamelContext># {
-
-    public Class<? extends Annotation> getScope() { return [highlight]#ApplicationScoped.class#; }
-
-    public Set<Annotation> getQualifiers() {
-        return Collections.<Annotation>singleton(new AnnotationLiteral<[highlight]##Default##>() {});
-    }
-    public Set<Type> getTypes() { return Collections.<Type>singleton([highlight]#CamelContext.class#); }
-
-    public CamelContext create(CreationalContext<CamelContext> creational) {
-        return [highlight]#new DefaultCamelContext()#;
-    }
-    public void destroy(CamelContext instance, CreationalContext<CamelContext> creational) {}
-
-    public Class<?> getBeanClass() { return DefaultCamelContext.class; }
-
-    public Set<InjectionPoint> getInjectionPoints() { return Collections.emptySet(); }
-
-    public Set<Class<? extends Annotation>> getStereotypes() { return Collections.emptySet(); }
-
-    public String getName() { return null; } // Only called for @Named bean
-
-    public boolean isAlternative() { return false; }
+public interface BeanConfigurator<T> {
+    BeanConfigurator<T> beanClass(Class<?> beanClass);
+    <U extends T> BeanConfigurator<U> createWith(Function<CreationalContext<U>, U> callback);
+    <U extends T> BeanConfigurator<U> produceWith(Supplier<U> callback);
+    BeanConfigurator<T> destroyWith(BiConsumer<T, CreationalContext<T>> callback);
+    BeanConfigurator<T> disposeWith(Consumer<T> callback);
+    <U extends T> BeanConfigurator<U> read(AnnotatedType<U> type);
+    BeanConfigurator<T> read(BeanAttributes<?> beanAttributes);
+    BeanConfigurator<T> addType(Type type);
+    BeanConfigurator<T> scope(Class<? extends Annotation> scope);
+    BeanConfigurator<T> addQualifier(Annotation qualifier);
+    BeanConfigurator<T> name(String name);
+    // ...
 }
 ----
 
@@ -327,14 +295,17 @@ class CamelContextBean implements [highlight]#Bean<CamelContext># {
 [.topic.source]
 == Adding a programmatic bean to the deployment
 
-TIP: Then add the `CamelContextBean` bean programmatically by observing the `AfterBeanDiscovery` lifecycle event
+TIP: Access the `BeanConfigurator<T>` API by observing the `AfterBeanDiscovery` lifecycle event
 
 [source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
 
     void addCamelContextBean(_@Observes_ [highlight]_AfterBeanDiscovery_ abd) {
-        abd.[highlight]#addBean#(new CamelContextBean());
+        abd.[highlight]#addBean()#
+            .types(CamelContext.class)
+            .scope(ApplicationScoped.class)
+            .produceWith(() -> new DefaultCamelContext());
     }
 }
 ----
@@ -368,11 +339,11 @@ public class CamelExtension implements Extension {
 
 
 [.topic.source]
-== Managed the Camel context lifecycle
+== Managed the Camel context lifecycle (start)
 
 TIP: Start the context when the `AfterDeploymentValidation` event is fired
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
     // ...
@@ -385,14 +356,22 @@ public class CamelExtension implements Extension {
 }
 ----
 
-TIP: Stop the context when the `Bean.destroy()` method is called
 
-[source, subs="verbatim,quotes", role="smaller"]
+[.topic.source]
+== Managed the Camel context lifecycle (stop)
+
+TIP: Stop the context when the associated bean is destroyed
+
+[source, subs="verbatim,quotes"]
 ----
-class CamelContextBean implements Bean<CamelContext> {
+public class CamelExtension implements Extension {
     // ...
-    public void destroy(CamelContext context, CreationalContext<CamelContext> creational) {
-        context.stop();
+    void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd) {
+        abd.addBean()
+            .types(CamelContext.class)
+            .scope(ApplicationScoped.class)
+            .produceWith(() -> new DefaultCamelContext())
+            .[highlight]#disposeWith(context -> context.stop())#;
     }
 }
 ----
@@ -485,30 +464,16 @@ class CamelCdiRegistry [highlight]#implements Registry# {
 [.topic.source]
 == Add `CamelCdiRegistry` to the Camel context
 
-[source, subs="verbatim,quotes", role="smaller"]
-----
-class CamelContextBean implements Bean<CamelContext> {
-
-    [highlight]#private final _BeanManager_ manager;#
-
-    [highlight]#CamelContextBean(_BeanManager_ manager) {#
-        [highlight]#this.manager = manager;#
-    [highlight]#}#
-
-    // ...
-    public CamelContext create(CreationalContext<CamelContext> creational) {
-        return new DefaultCamelContext([highlight]#new CamelCdiRegistry(manager)#);
-    }
-}
-----
-
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
 
-    // ...
-    void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd[highlight]##, _BeanManager_ manager##) {
-        abd.addBean(new CamelContextBean([highlight]#manager#));
+    void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd, [highlight]#_BeanManager_ manager#) {
+        abd.addBean()
+            .types(CamelContext.class)
+            .scope(ApplicationScoped.class)
+            .produceWith(() -> new DefaultCamelContext([highlight]#new CamelCdiRegistry(manager)#))
+            .disposeWith(context -> context.stop());
     }
 }
 ----
