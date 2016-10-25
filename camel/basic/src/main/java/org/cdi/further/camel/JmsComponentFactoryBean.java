@@ -1,7 +1,6 @@
 package org.cdi.further.camel;
 
 import org.apache.activemq.ActiveMQConnectionFactory;
-import org.apache.camel.CamelContext;
 import org.apache.camel.component.properties.PropertiesComponent;
 import org.apache.camel.component.sjms.SjmsComponent;
 
