@@ -2,11 +2,15 @@ package org.cdi.further.camel;
 
 import org.apache.camel.spi.Registry;
 
+import javax.enterprise.inject.Any;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 class CamelCdiRegistry implements Registry {
 
@@ -23,37 +27,45 @@ class CamelCdiRegistry implements Registry {
 
     @Override
     public <T> T lookupByNameAndType(String name, Class<T> type) {
-        Bean<?> bean = manager.resolve(manager.getBeans(name));
-        return bean == null ? null : (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
+        return Optional.of(manager.getBeans(name))
+            .map(manager::resolve)
+            .map(bean -> manager.getReference(bean, type, manager.createCreationalContext(bean)))
+            .map(type::cast)
+            .orElse(null);
     }
 
     @Override
-    // Not used
+    // Not used in the examples
     public <T> Map<String, T> findByTypeWithName(Class<T> type) {
-        return Collections.emptyMap();
+        return manager.getBeans(type, Any.Literal.INSTANCE).stream()
+            .filter(bean -> bean.getName() != null)
+            .collect(toMap(Bean::getName, bean -> type.cast(manager.getReference(bean, type, manager.createCreationalContext(bean)))));
     }
 
     @Override
-    // Deprecated
+    // Not used in the examples
     public <T> Set<T> findByType(Class<T> type) {
-        return null;
+        return manager.getBeans(type, Any.Literal.INSTANCE).stream()
+            .map(bean -> manager.getReference(bean, type, manager.createCreationalContext(bean)))
+            .map(type::cast)
+            .collect(toSet());
     }
 
     @Override
     // Deprecated
     public Object lookup(String name) {
-        return null;
+        return lookupByName(name);
     }
 
     @Override
     // Deprecated
     public <T> T lookup(String name, Class<T> type) {
-        return null;
+        return lookupByNameAndType(name, type);
     }
 
     @Override
     // Deprecated
     public <T> Map<String, T> lookupByType(Class<T> type) {
-        return null;
+        return findByTypeWithName(type);
     }
 }
