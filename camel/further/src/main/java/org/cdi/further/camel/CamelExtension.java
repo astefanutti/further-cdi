@@ -48,19 +48,11 @@ public class CamelExtension implements Extension {
     }
 
     private void configureCamelContext(@Observes AfterDeploymentValidation adv, BeanManager manager) throws Exception {
-        CamelContext context = getReference(manager, CamelContext.class);
+        CamelContext context = (CamelContext) manager.getReference(manager.resolve(manager.getBeans(CamelContext.class)), CamelContext.class, manager.createCreationalContext(null));
 
         for (Bean<?> bean : manager.getBeans(RoutesBuilder.class))
-            context.addRoutes(getReference(manager, RoutesBuilder.class, bean));
+            context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(bean)));
 
         context.start();
-    }
-
-    private <T> T getReference(BeanManager manager, Class<T> type) {
-        return getReference(manager, type, manager.resolve(manager.getBeans(type)));
-    }
-
-    private <T> T getReference(BeanManager manager, Class<T> type, Bean<?> bean) {
-        return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
     }
 }
