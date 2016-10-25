@@ -193,13 +193,13 @@ TIP: We need to write an extension that will:
 
 . Declare a `CamelContext` bean by observing the `AfterBeanDiscovery` lifecycle event
 . Instantiate the beans of type `RouteBuilder` and add them to the Camel context
-. Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the `BeforeShutdown` event)
+. Start (resp. stop) the Camel context when the `AfterDeploymentValidation` event is fired (resp. the bean `destroy` method is called)
 . Customize the Camel context to query the `BeanManager` to lookup CDI beans by name and type
 . Detect CDI beans containing Camel annotations by observing the `ProcessAnnotatedType` event and modify how they get injected by observing the `ProcessInjectionTarget` lifecycle event
 
 
 [.topic.source]
-== So we will `@Observes` these 5 events to add our features
+== So we will `@Observes` these 4 events to add our features
 
 [plantuml, "lifecycle-PAT-PIT-ABD-ADV-BS", "svg", height="85%", width="95%"]
 ----
@@ -249,7 +249,7 @@ skinparam activity {
 -right-> "After\nBean\nDiscovery" << HighlightOnce >>
 -down-> "After\nDeployment\nValidation" << HighlightOnce >>
 -left-> "Application\nRunning" << Internal >>
--left-> "Before\nShutdown" << HighlightOnce >>
+-left-> "Before\nShutdown"
 -left-> "Undeploy\nApplication" << Internal >>
 -left-> (*)
 
