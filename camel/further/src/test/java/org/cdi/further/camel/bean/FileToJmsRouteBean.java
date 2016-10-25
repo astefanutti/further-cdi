@@ -6,7 +6,7 @@ public class FileToJmsRouteBean extends RouteBuilder {
 
     @Override
     public void configure() {
-        from("file:target/input?delay=1000")
+        from("file:target/input?delay=1s")
             .log("Sending message [${body}] to JMS...")
             .to("sjms:queue:output");
     }

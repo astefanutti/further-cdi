@@ -33,7 +33,7 @@ Discover how we created CDI integration module for Camel
     CamelContext context = new DefaultCamelContext();
     context.addRoutes(new RouteBuilder() {
       public void configure() {
-        from("file:target/input?delay=1000")
+        from("file:target/input?delay=1s")
           .log("Sending message [${body}] to JMS ...")
           .to("sjms:queue:output"); <1>
       }
@@ -73,7 +73,7 @@ class FileToJmsRouteBean extends RouteBuilder {
 
     @Override
     public void configure() {
-        from("file:target/input?delay=1000")
+        from("file:target/input?delay=1s")
             .log("Sending message [${body}] to JMS...")
             .to("sjms:queue:output");
     }
@@ -792,7 +792,7 @@ TIP: AOP instrumentation of the Camel DSL
 
 [source, subs="verbatim,quotes"]
 ----
-from("file:target/input?delay=1000")
+from("file:target/input?delay=1s")
     [highlight line-through]#.log("Sending message [${body}] to JMS...")#
     .to("sjms:queue:output");
 ----
@@ -801,7 +801,7 @@ TIP: With CDI observers
 
 [source, subs="verbatim,quotes"]
 ----
-from("file:target/input?delay=1000").to("sjms:queue:output")[highlight]#.id("join point")#;
+from("file:target/input?delay=1s").to("sjms:queue:output")[highlight]#.id("join point")#;
 ----
 
 [source, subs="verbatim,quotes"]
@@ -902,7 +902,7 @@ TIP: We can define join points in the Camel DSL
 
 [source, subs="verbatim,quotes"]
 ----
-from("file:target/input?delay=1000").to("sjms:queue:output")[highlight]#.id("join point")#;
+from("file:target/input?delay=1s").to("sjms:queue:output")[highlight]#.id("join point")#;
 ----
 
 TIP: And advise them with CDI observers
