@@ -813,15 +813,17 @@ public interface ProcessObserverMethod<T, X> {
 
 TIP: And collect the observer method metadata
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes", role="smallest"]
 ----
 public class CamelExtension implements Extension {
 
     final Set<NodeId> joinPoints = new HashSet<>();
 
     void pointcuts(_@Observes_ [highlight]#_ProcessObserverMethod_<Exchange, ?># pom) {
-        for (Annotation qualifier : pom.getObserverMethod().getObservedQualifiers())
-            if (qualifier instanceof NodeId) joinPoints.add(NodeId.class.cast(qualifier));
+        pom.getObserverMethod().getObservedQualifiers().stream()
+            .filter(q -> q instanceof NodeId)
+            .map(NodeId.class::cast)
+            .forEach(joinPoints::add);
     }
 }
 ----
