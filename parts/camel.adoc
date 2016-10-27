@@ -839,7 +839,7 @@ void configureCamelContext(_@Observes_ _AfterDeploymentValidation_ adv, final _B
         public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition,
                                                      Processor target, Processor nextTarget) {
             if (definition.hasCustomIdAssigned()) {
-                for (final Node node : joinPoints) {
+                for (final NodeId node : joinPoints) {
                     if (node.value().equals(definition.getId())) {
                         return new DelegateAsyncProcessor(target) {
                             public boolean process(Exchange exchange, AsyncCallback callback) {
