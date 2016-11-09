@@ -4,7 +4,7 @@
 
 skinparam shadowing false
 skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 skinparam activity {
   StartColor white
@@ -14,7 +14,7 @@ skinparam activity {
   ArrowColor white
   BarColor #888888
   BorderColor White
-  FontName Consolas
+  FontName "Courier New", Courier, monospace
   FontColor White
   FontSize 20
 }

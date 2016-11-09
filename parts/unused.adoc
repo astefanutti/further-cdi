@@ -67,11 +67,11 @@ public interface ProcessAnnotatedType<X> {
 
 skinparam shadowing false
 skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 skinparam activity {
   FontSize 20
-  FontName Consolas
+  FontName "Courier New", Courier, monospace
   FontColor #337788
   ArrowColor #888888
   BorderColor #337788
@@ -260,11 +260,11 @@ NOTE: `ProcessManagedBean<X>` and `ProcessProducerMethod<T, X>` are fired for ma
 
 skinparam shadowing false
 skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 skinparam activity {
   FontSize 20
-  FontName Consolas
+  FontName "Courier New", Courier, monospace
   FontColor #337788
   ArrowColor #888888
   BorderColor #337788

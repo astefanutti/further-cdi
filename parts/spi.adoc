@@ -46,7 +46,7 @@ TIP: ...for annotated types
 @startuml
 
 skinparam shadowing false
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 Annotated <|-- AnnotatedMember
 Annotated <|-- AnnotatedParameter
@@ -117,7 +117,7 @@ interface AnnotatedMethod<X> {
 @startuml
 
 skinparam shadowing false
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 BeanAttributes <|-- Bean
 Bean <|-- Interceptor
@@ -307,7 +307,7 @@ public class MyService {
 @startuml
 
 skinparam shadowing false
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 Unmanaged *-- UnmanagedInstance
 
@@ -376,7 +376,7 @@ class CDI<T> {
 @startuml
 
 skinparam shadowing false
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 interface BeforeBeanDiscovery {
     +addQualifier(Class<? extends Annotation>)

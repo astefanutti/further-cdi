@@ -89,7 +89,7 @@ public class CdiExtension [highlight]#implements Extension# {
 
 skinparam shadowing false
 skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 skinparam activity {
   BackgroundColor #337788
@@ -98,7 +98,7 @@ skinparam activity {
   ArrowColor #888888
   BarColor #888888
   BorderColor White
-  FontName Consolas
+  FontName "Courier New", Courier, monospace
   FontColor White
   FontSize 20
 }

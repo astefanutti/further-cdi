@@ -19,14 +19,14 @@ scale 400 height
 
 skinparam shadowing false
 skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 skinparam class {
   BackgroundColor #337788
   ArrowColor #888888
   BarColor #888888
   BorderColor White
-  FontName Consolas
+  FontName "Courier New", Courier, monospace
   FontColor White
   FontSize 20
   AttributeFontColor White
@@ -221,11 +221,11 @@ TIP: We need to write an extension that will:
 
 skinparam shadowing false
 skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 skinparam activity {
   FontSize 20
-  FontName Consolas
+  FontName "Courier New", Courier, monospace
   FontColor #337788
   ArrowColor #888888
   BorderColor #337788

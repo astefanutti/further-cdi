@@ -207,11 +207,11 @@ TIP: We need to write an extension that will:
 
 skinparam shadowing false
 skinparam backgroundColor transparent
-skinparam defaultFontName Consolas
+skinparam defaultFontName "Courier New", Courier, monospace
 
 skinparam activity {
   FontSize 20
-  FontName Consolas
+  FontName "Courier New", Courier, monospace
   FontColor #337788
   ArrowColor #888888
   BorderColor #337788
