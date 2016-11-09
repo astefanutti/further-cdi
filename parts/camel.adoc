@@ -201,7 +201,7 @@ TIP: We need to write an extension that will:
 [.topic.source]
 == So we will `@Observes` these 4 events to add our features
 
-[plantuml, "lifecycle-PAT-PIT-ABD-ADV-BS", "svg", height="85%", width="95%"]
+[plantuml, "lifecycle-PAT-PIT-ABD-ADV", "svg", height="85%", width="95%"]
 ----
 @startuml
 
