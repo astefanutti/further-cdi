@@ -272,15 +272,15 @@ icon:question-circle[] How to add a bean programmatically?
 
 TIP: Use the `BeanConfigurator<T>` API introduced in *CDI 2.0*
 
-.`javax.enterprise.inject.spi.builder.BeanConfigurator<T>`
+.`javax.enterprise.inject.spi.configurator.BeanConfigurator<T>`
 [source]
 ----
 public interface BeanConfigurator<T> {
     BeanConfigurator<T> beanClass(Class<?> beanClass);
     <U extends T> BeanConfigurator<U> createWith(Function<CreationalContext<U>, U> callback);
-    <U extends T> BeanConfigurator<U> produceWith(Supplier<U> callback);
+    <U extends T> BeanConfigurator<U> produceWith(Function<Instance<Object>, U> callback);
     BeanConfigurator<T> destroyWith(BiConsumer<T, CreationalContext<T>> callback);
-    BeanConfigurator<T> disposeWith(Consumer<T> callback);
+    BeanConfigurator<T> disposeWith(BiConsumer<T, Instance<Object>> callback);
     <U extends T> BeanConfigurator<U> read(AnnotatedType<U> type);
     BeanConfigurator<T> read(BeanAttributes<?> beanAttributes);
     BeanConfigurator<T> addType(Type type);
