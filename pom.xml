@@ -47,12 +47,16 @@
             <id>maven-central</id>
             <url>http://repo1.maven.org/maven2/</url>
         </repository>
+        <repository>
+            <id>jboss-releases</id>
+            <url>http://repository.jboss.org/nexus/content/repositories/releases</url>
+        </repository>
     </repositories>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cdi.version>2.0.Beta1</cdi.version>
-        <weld.version>3.0.0.Alpha17</weld.version>
+        <weld.version>3.0.0.Beta1</weld.version>
         <wildfly.version>10.1.0.Final</wildfly.version>
         <arquillian.version>1.1.11.Final</arquillian.version>
         <shrinkwrap.descriptors.version>2.0.0-alpha-10</shrinkwrap.descriptors.version>
