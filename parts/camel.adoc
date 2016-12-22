@@ -302,10 +302,10 @@ TIP: Access the `BeanConfigurator<T>` API by observing the `AfterBeanDiscovery` 
 public class CamelExtension implements Extension {
 
     void addCamelContextBean(_@Observes_ [highlight]_AfterBeanDiscovery_ abd) {
-        abd.[highlight]#addBean()#
+        abd.<CamelContext>[highlight]##addBean()##
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith(() -> new DefaultCamelContext());
+            .produceWith((instance) -> new DefaultCamelContext());
     }
 }
 ----
@@ -367,11 +367,11 @@ TIP: Stop the context when the associated bean is destroyed
 public class CamelExtension implements Extension {
     // ...
     void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd) {
-        abd.addBean()
+        abd.<CamelContext>addBean()
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith(() -> new DefaultCamelContext())
-            .[highlight]#disposeWith(context -> context.stop())#;
+            .produceWith((instance) -> new DefaultCamelContext())
+            .[highlight]#disposeWith((context, instance) -> context.stop())#;
     }
 }
 ----
@@ -469,11 +469,11 @@ class CamelCdiRegistry [highlight]#implements Registry# {
 public class CamelExtension implements Extension {
 
     void addCamelContextBean(_@Observes_ _AfterBeanDiscovery_ abd, [highlight]#_BeanManager_ manager#) {
-        abd.addBean()
+        abd.<CamelContext>addBean()
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith(() -> new DefaultCamelContext([highlight]#new CamelCdiRegistry(manager)#))
-            .disposeWith(context -> context.stop());
+            .produceWith((instance) -> new DefaultCamelContext([highlight]#new CamelCdiRegistry(manager)#))
+            .disposeWith((context, instance) -> context.stop());
     }
 }
 ----
