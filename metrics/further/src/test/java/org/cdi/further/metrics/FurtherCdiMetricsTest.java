@@ -29,9 +29,7 @@ public class FurtherCdiMetricsTest {
             .addClasses(TimedMethodBean.class, MetricRegistryFactoryBean.class)
             .addAsLibraries(Maven.resolver()
                 .loadPomFromFile("pom.xml")
-                .resolve("org.apache.deltaspike.core:deltaspike-core-api",
-                    "io.dropwizard.metrics:metrics-core",
-                    "io.dropwizard.metrics:metrics-annotation")
+                .resolve("io.dropwizard.metrics:metrics-core", "io.dropwizard.metrics:metrics-annotation")
                 .withTransitivity()
                 .as(JavaArchive.class))
             .addPackage(MetricsExtension.class.getPackage())

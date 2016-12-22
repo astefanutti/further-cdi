@@ -101,26 +101,7 @@ CAUTION: What's not included:
 
 
 [.topic.source]
-== Tools used in the code 1/2
-
-[.statement]
-====
-Apache Deltaspike
-
-image::deltaspike.png[role="pull-right", width="300"]
-
-. Apache DeltaSpike is a great CDI toolbox
-. Provide helpers to develop extensions
-. And a collection of modules like:
-.. Security
-.. Data
-.. Scheduler
-. More info on http://deltaspike.apache.org
-====
-
-
-[.topic.source]
-== Tools used in the code 2/2
+== Tools used in the code
 
 [.statement]
 ====

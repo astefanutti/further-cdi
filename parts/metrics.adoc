@@ -497,46 +497,23 @@ icon:ban[] We cannot touch the component source / binary!
 
 
 [.topic.source]
-== Using the `AnnotatedType` SPI
-
-TIP: Thanks to _DeltaSpike_ we can easily create the required `AnnotatedType`
-
-[source, subs="verbatim,quotes"]
-----
-AnnotatedType createTimedAnnotatedType() throws Exception {
-    Annotation nonBinding = new AnnotationLiteral<Nonbinding>() {}; <1>
-
-    return new AnnotatedTypeBuilder().readFromType(Timed.class) <2>
-        .addToMethod(Timed.class.getMethod("name"), nonBinding) <3>
-        .addToMethod(Timed.class.getMethod("absolute"), nonBinding) <3>
-        .create();
-}
-----
-<1> This creates an instance of `@NonBinding` annotation
-<2> It would have been possible but far more verbose to create this `AnnotatedType` without the help of DeltaSpike. The `AnnotatedTypeBuilder` is initialized from the Metrics `@Timed` annotation.
-<3> `@NonBinding` is added to both members of the `@Timed` annotation
-
-
-[.topic.source]
-== This extension will do the job
+== Using the `AnnotatedTypeConfigurator` SPI
 
 TIP: We observe `BeforeBeanDiscovery` to add a new interceptor binding
+
+TIP: Use the `AnnotatedTypeConfigurator<T>` API introduced in *CDI 2.0*
 
 [source, subs="verbatim,quotes"]
 ----
 public class MetricsExtension implements Extension {
 
-    void addTimedBinding(_@Observes_ [highlight]_BeforeBeanDiscovery_ bdd) throws Exception {
-        Annotation nonBinding = new AnnotationLiteral<Nonbinding>() {};
-
-        bdd.addInterceptorBinding(new AnnotatedTypeBuilder<Timed>()
-            .readFromType(Timed.class)
-            .addToMethod(Timed.class.getMethod("name"), nonBinding)
-            .addToMethod(Timed.class.getMethod("absolute"), nonBinding)
-            .create());
+    void addTimedInterceptorBinding(_@Observes_ [highlight]_BeforeBeanDiscovery_ bdd) {
+        bbd.[highlight]#configureInterceptorBinding#(Timed.class).methods()
+            .forEach(method -> method.add(Nonbinding.Literal.INSTANCE)); <1>
     }
 }
 ----
+<1> `@NonBinding` is added to all members of the `@Timed` annotation
 
 
 [.topic]
@@ -722,11 +699,14 @@ NOTE: We first need to create our implementation of the `Producer<X>` SPI
 ----
 class MetricProducer<X extends Metric> implements Producer<X> {
 
+    final BeanManager manager;
+
     final Producer<X> decorate;
 
     final String metricName;
 
-    MetricProducer(Producer<X> decorate, String metricName) {
+    MetricProducer(BeanManager manager, Producer<X> decorate, String metricName) {
+        this.manager = manager;
         this.decorate = decorate;
         this.metricName = metricName;
     }
@@ -742,13 +722,14 @@ icon:ellipsis-h[role="pull-right"]
 [source, subs="verbatim,quotes"]
 ----
     public X produce(CreationalContext<X> ctx) { <1>
-        MetricRegistry reg = getContextualReference(MetricRegistry.class, false); <2>
-        if (!reg.getMetrics().containsKey(metricName)) <3>
+        MetricRegistry registry = manager.createInstance().select(MetricRegistry.class).get();
+        if (!reg.getMetrics().containsKey(metricName)) <2>
             reg.register(metricName, [highlight]_decorate.produce(ctx)_);
         return (X) reg.getMetrics().get(metricName);
     }
 
-    public void dispose(X instance) {}
+    public void dispose(X instance) {
+    }
 
     public Set<InjectionPoint> getInjectionPoints() {
         return decorate.getInjectionPoints();
@@ -756,8 +737,7 @@ icon:ellipsis-h[role="pull-right"]
 }
 ----
 <1> The `produce` method is used by the container at runtime to decorate declared producer with our logic
-<2> `BeanProvider.getContextualReference` is helper class from *DeltaSpike* to easily retrieve a bean or bean instance
-<3> If metric name is not in the registry, the original producer is called and its result is added to the registry
+<2> If metric name is not in the registry, the original producer is called and its result is added to the registry
 
 
 [.topic.source]
@@ -789,9 +769,12 @@ TIP: Here's the extension code to do this producer decoration
 ----
 public class MetricsExtension implements Extension {
     // ...
-    <X extends Metric> void decorateMetricProducer(_@Observes_ [highlight]_ProcessProducer<?, X>_ pp) {
-        String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name(); <1>
-        new [highlight]_pp.setProducer_(new [highlight]#MetricProducer<>#([highlight]_pp.getProducer()_, name)); <2>
+    <X extends Metric> void decorateMetricProducer(_@Observes_ [highlight]_ProcessProducer<?, X>_ pp,
+                                                   BeanManager manager) {
+       if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
+            String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name(); <1>
+            [highlight]_pp.setProducer_(new [highlight]#MetricProducer<>#(manager, [highlight]_pp.getProducer()_, name)); <2>
+        }
     }
     // ...
 }
@@ -810,15 +793,14 @@ NOTE: We do that by observing the `AfterDeploymentValidation` event
 [source, subs="verbatim,quotes"]
 ----
 public class MetricsExtension implements Extension {
-    // ...
-    void registerProducedMetrics(_@Observes_ [highlight]_AfterDeploymentValidation_ adv) {
-        BeanProvider.getContextualReferences(com.codahale.metrics.Metric.class, true); <1>
-    }
-    // ...
+  // ...
+  void registerProducedMetrics(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, BeanManager manager) {
+        manager.createInstance().select(com.codahale.metrics.Metric.class)
+            .forEach(Object::toString);
+  }
+  // ...
 }
 ----
-<1> `BeanProvider.getContextualReferences()` is a method from *DeltaSpike* `BeanProvider` helper class. +
-It creates the list of bean instances for a given bean type (ignoring qualifiers).
 ====
 
 
@@ -859,22 +841,21 @@ public class MetricsExtension implements Extension {
         bdd.addQualifier(Metric.class);
     }
 
-    void addTimedBinding(@Observes BeforeBeanDiscovery bdd) throws Exception {
-        Annotation nonBinding = new AnnotationLiteral<Nonbinding>() {};
-        bdd.addInterceptorBinding(new AnnotatedTypeBuilder<Timed>().readFromType(Timed.class)
-            .addToMethod(Timed.class.getMethod("name"), nonBinding)
-            .addToMethod(Timed.class.getMethod("absolute"),nonBinding).create());
+    void addTimedInterceptorBinding(@Observes BeforeBeanDiscovery bbd) {
+        bbd.configureInterceptorBinding(Timed.class).methods()
+            .forEach(method -> method.add(Nonbinding.Literal.INSTANCE));
     }
 
-    <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp) {
+    <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp,
+                                                                        BeanManager manager) {
         if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
             String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name();
-            pp.setProducer(new MetricProducer(pp.getProducer(), name));
+            pp.setProducer(new MetricProducer(manager, pp.getProducer(), name));
         }
     }
 
-    void registerProducedMetrics(@Observes AfterDeploymentValidation adv) {
-        BeanProvider.getContextualReferences(com.codahale.metrics.Metric.class, true);
+    void registerProduceMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
+        manager.createInstance().select(com.codahale.metrics.Metric.class).forEach(Object::toString);
     }
 }
 ----
