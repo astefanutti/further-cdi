@@ -3,10 +3,10 @@ package org.cdi.further.camel;
 import org.apache.camel.spi.Registry;
 
 import javax.enterprise.inject.Any;
+import javax.enterprise.inject.literal.NamedLiteral;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toMap;
@@ -27,15 +27,10 @@ class CamelCdiRegistry implements Registry {
 
     @Override
     public <T> T lookupByNameAndType(String name, Class<T> type) {
-        return Optional.of(manager.getBeans(name))
-            .map(manager::resolve)
-            .map(bean -> manager.getReference(bean, type, manager.createCreationalContext(bean)))
-            .map(type::cast)
-            .orElse(null);
+        return manager.createInstance().select(type, NamedLiteral.of(name)).stream().findAny().orElse(null);
     }
 
     @Override
-    // Not used in the examples
     public <T> Map<String, T> findByTypeWithName(Class<T> type) {
         return manager.getBeans(type, Any.Literal.INSTANCE).stream()
             .filter(bean -> bean.getName() != null)
@@ -43,28 +38,21 @@ class CamelCdiRegistry implements Registry {
     }
 
     @Override
-    // Not used in the examples
     public <T> Set<T> findByType(Class<T> type) {
-        return manager.getBeans(type, Any.Literal.INSTANCE).stream()
-            .map(bean -> manager.getReference(bean, type, manager.createCreationalContext(bean)))
-            .map(type::cast)
-            .collect(toSet());
+        return manager.createInstance().select(type).stream().collect(toSet());
     }
 
     @Override
-    // Deprecated
     public Object lookup(String name) {
         return lookupByName(name);
     }
 
     @Override
-    // Deprecated
     public <T> T lookup(String name, Class<T> type) {
         return lookupByNameAndType(name, type);
     }
 
     @Override
-    // Deprecated
     public <T> Map<String, T> lookupByType(Class<T> type) {
         return findByTypeWithName(type);
     }

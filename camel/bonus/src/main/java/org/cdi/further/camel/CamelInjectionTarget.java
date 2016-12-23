@@ -21,7 +21,7 @@ class CamelInjectionTarget<T> implements InjectionTarget<T> {
         processor = new DefaultCamelBeanPostProcessor() {
             @Override
             public CamelContext getOrLookupCamelContext() {
-                return (CamelContext) manager.getReference(manager.resolve(manager.getBeans(CamelContext.class)), CamelContext.class, manager.createCreationalContext(null));
+                return manager.createInstance().select(CamelContext.class).get();
             }
         };
     }

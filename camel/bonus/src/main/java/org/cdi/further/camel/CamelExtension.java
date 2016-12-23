@@ -17,8 +17,8 @@ import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedType;
-import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
@@ -64,7 +64,7 @@ public class CamelExtension implements Extension {
     }
 
     private void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) throws Exception {
-        CamelContext context = (CamelContext) manager.getReference(manager.resolve(manager.getBeans(CamelContext.class)), CamelContext.class, manager.createCreationalContext(null));
+        CamelContext context = manager.createInstance().select(CamelContext.class).get();
 
         if (!nodePointcuts.isEmpty()) {
             context.addInterceptStrategy(new InterceptStrategy() {
@@ -87,8 +87,13 @@ public class CamelExtension implements Extension {
             });
         }
 
-        for (Bean<?> bean : manager.getBeans(RoutesBuilder.class))
-            context.addRoutes((RoutesBuilder) manager.getReference(bean, RoutesBuilder.class, manager.createCreationalContext(bean)));
+        manager.createInstance().select(RoutesBuilder.class).forEach(routes -> {
+            try {
+                context.addRoutes(routes);
+            } catch (Exception cause) {
+                throw new DeploymentException(cause);
+            }
+        });
 
         context.start();
     }

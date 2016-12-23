@@ -316,23 +316,13 @@ public class CamelExtension implements Extension {
 
 TIP: Instantiate the `CamelContext` bean and the `RouteBuilder` beans in the `AfterDeploymentValidation` lifecycle event
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 public class CamelExtension implements Extension {
-
     // ...
     void configureContext(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, _BeanManager_ manager) {
-        CamelContext context = getReference(manager, CamelContext.class);
-        for (_Bean<?>_ bean : manager.getBeans(RoutesBuilder.class))
-            context.[highlight]#addRoutes#(getReference(manager, RouteBuilder.class, bean));
-    }
-
-    <T> T getReference(_BeanManager_ manager, Class<T> type) {
-        return getReference(manager, type, manager.resolve(manager.getBeans(type)));
-    }
-
-    <T> T getReference(_BeanManager_ manager, Class<T> type, _Bean<?>_ bean) {
-        return (T) manager.getReference(bean, type, manager.createCreationalContext(bean));
+        CamelContext context = manager.createInstance().select(CamelContext.class).get();
+        manager.createInstance().select(RoutesBuilder.class).forEach([highlight]#context::addRoutes#);
     }
 }
 ----
@@ -348,9 +338,8 @@ TIP: Start the context when the `AfterDeploymentValidation` event is fired
 public class CamelExtension implements Extension {
     // ...
     void configureContext(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, _BeanManager_ manager) {
-        CamelContext context = getReference(manager, CamelContext.class);
-        for (_Bean<?>_ bean : manager.getBeans(RoutesBuilder.class)
-            context.addRoutes(getReference(manager, RouteBuilder.class, bean);
+        CamelContext context = manager.createInstance().select(CamelContext.class).get();
+        manager.createInstance().select(RoutesBuilder.class).forEach(context::addRoutes);
         [highlight]#context.start()#;
     }
 }
@@ -433,7 +422,7 @@ TIP: Implement the Camel registry SPI and use the `BeanManager` to lookup for CD
 [.topic.source]
 == Implement the Camel registry SPI
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes"]
 ----
 class CamelCdiRegistry [highlight]#implements Registry# {
 
@@ -449,13 +438,9 @@ class CamelCdiRegistry [highlight]#implements Registry# {
 
     @Override
     public <T> T lookupByNameAndType(String name, Class<T> type) {
-        return Optional.of(manager.getBeans(name))
-            .map(manager::resolve)
-            .map(bean -> manager.getReference(bean, type, manager.createCreationalContext(bean)))
-            .map(type::cast)
-            .orElse(null);
+        return manager.createInstance().select(type, NamedLiteral.of(name)).stream()
+            .findAny().orElse(null);
     }
-
     // ...
 }
 ----
@@ -624,7 +609,7 @@ class CamelInjectionTarget<T> [highlight]#implements InjectionTarget<T># {
         delegate = target;
         processor = new DefaultCamelBeanPostProcessor() {
             public CamelContext getOrLookupCamelContext() {
-                return getReference(manager, CamelContext.class);
+                return manager.createInstance().select(CamelContext.class).get();
             }
         };
     }
