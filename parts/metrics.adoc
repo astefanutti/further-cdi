@@ -169,14 +169,17 @@ TIP: By observing the `BeforeBeanDiscovery` lifecycle event in an extension
 [source, subs="verbatim,quotes", role="smaller"]
 ----
 public interface BeforeBeanDiscovery {
-    [highlight]#addQualifier(Class<? extends Annotation> qualifier);#  <1>
-    addQualifier(AnnotatedType<? extends Annotation> qualifier);
-    addScope(Class<? extends Annotation> scopeType, boolean normal, boolean passivation);
-    addStereotype(Class<? extends Annotation> stereotype, Annotation... stereotypeDef);
-    addInterceptorBinding(AnnotatedType<? extends Annotation> bindingType);
-    addInterceptorBinding(Class<? extends Annotation> bindingType, Annotation... bindingTypeDef);
-    addAnnotatedType(AnnotatedType<?> type);
-    addAnnotatedType(AnnotatedType<?> type, String id);
+    void [highlight]#addQualifier(Class<? extends Annotation> qualifier);#  <1>
+    void addQualifier(AnnotatedType<? extends Annotation> qualifier);
+    void addScope(Class<? extends Annotation> scopeType, boolean normal, boolean passivation);
+    void addStereotype(Class<? extends Annotation> stereotype, Annotation... stereotypeDef);
+    void addInterceptorBinding(AnnotatedType<? extends Annotation> bindingType);
+    void addInterceptorBinding(Class<? extends Annotation> bindingType, Annotation... bindingTypeDef);
+    void addAnnotatedType(AnnotatedType<?> type);
+    void addAnnotatedType(AnnotatedType<?> type, String id);
+    <T> AnnotatedTypeConfigurator<T> addAnnotatedType(Class<T> type, String id);
+    <T extends Annotation> AnnotatedTypeConfigurator<T> configureQualifier(Class<T> qualifier);
+    <T extends Annotation> AnnotatedTypeConfigurator<T> configureInterceptorBinding(Class<T> bindingType);
 }
 ----
 <1> The method we need to declare the `@Metric` annotation as a CDI qualifier
