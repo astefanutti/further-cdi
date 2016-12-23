@@ -721,7 +721,7 @@ public interface ProcessProducer<T, X> {
 ----
 public class MetricsExtension implements Extension {
     // ...
-    <T extends Metric> void decorateMetricProducer(_@Observes_ [highlight]_ProcessProducer<?, T>_ pp, _BeanManager_ manager) {
+    <T extends c.c.m.Metric> void decorateMetricProducer(_@Observes_ [highlight]_ProcessProducer<?, T>_ pp, _BeanManager_ manager) {
        if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
            String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name(); <1>
            _Producer<T>_ producer = pp.getProducer();
