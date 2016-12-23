@@ -5,6 +5,7 @@ import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.Any;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
@@ -20,8 +21,7 @@ public class MetricsExtension implements Extension {
     }
 
     void addTimedInterceptorBinding(@Observes BeforeBeanDiscovery bbd) {
-        bbd.configureInterceptorBinding(Timed.class).methods()
-            .forEach(method -> method.add(Nonbinding.Literal.INSTANCE));
+        bbd.configureInterceptorBinding(Timed.class).methods().forEach(method -> method.add(Nonbinding.Literal.INSTANCE));
     }
 
     <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp, BeanManager manager) {
@@ -38,6 +38,6 @@ public class MetricsExtension implements Extension {
     }
 
     void registerProduceMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
-        manager.createInstance().select(com.codahale.metrics.Metric.class).forEach(Object::toString);
+        manager.createInstance().select(com.codahale.metrics.Metric.class, Any.Literal.INSTANCE).forEach(Object::toString);
     }
 }

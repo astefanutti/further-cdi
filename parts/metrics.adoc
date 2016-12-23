@@ -753,7 +753,7 @@ NOTE: We do that by observing the `AfterDeploymentValidation` event
 public class MetricsExtension implements Extension {
   // ...
   void registerProducedMetrics(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, _BeanManager_ manager) {
-      manager.createInstance().select(com.codahale.metrics.Metric.class)
+      manager.createInstance().select(com.codahale.metrics.Metric.class, _Any.Literal.INSTANCE_)
         .forEach(Object::toString);
   }
   // ...
@@ -817,7 +817,7 @@ public class MetricsExtension implements Extension {
     }
 
     void registerProduceMetrics(_@Observes_ _AfterDeploymentValidation_ adv, _BeanManager_ manager) {
-        manager.createInstance().select(com.codahale.metrics.Metric.class).forEach(Object::toString);
+        manager.createInstance().select(com.codahale.metrics.Metric.class, _Any.Literal.INSTANCE_).forEach(Object::toString);
     }
 }
 ----
