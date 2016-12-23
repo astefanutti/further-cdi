@@ -864,3 +864,39 @@ void advice([highlight]#@Observes @Node("join point")# Exchange exchange) {
 ----
 
 ====
+
+
+[.topic.source]
+== Complete extension code
+
+[source, subs="verbatim,quotes", role="smallest"]
+----
+public class MetricsExtension implements Extension {
+  final Set<AnnotatedType<?>> camelBeans = new HashSet<>();
+  final Set<Node> nodes = new HashSet<>();
+  void camelAnnotatedTypes(_@Observes_ _@WithAnnotations_(PropertyInject.class) _ProcessAnnotatedType<?>_ pat) {
+      camelBeans.add(pat.getAnnotatedType());
+  }
+  <T> void camelBeansPostProcessor(_@Observes_ _ProcessInjectionTarget<T>_ pit, _BeanManager_ manager) {
+    if (camelBeans.contains(pit.getAnnotatedType()))
+      pit.setInjectionTarget(new CamelInjectionTarget<>(pit.getInjectionTarget(), manager));
+  }
+  void camelNodePointcuts(_@Observes_ _ProcessObserverMethod_<Exchange, ?> pom) {
+    pom.getObserverMethod().getObservedQualifiers().stream().filter(q -> q instanceof Node).map(Node.class::cast).forEach(nodes::add);
+  }
+  void configureCamelContext(_@Observes_ _AfterDeploymentValidation_ adv, _BeanManager_ manager) {
+    CamelContext context = manager.createInstance().select(CamelContext.class).get();
+    context.addInterceptStrategy((camel, definition, target, next) -> definition.hasCustomIdAssigned()
+      ? nodes.stream().filter(node -> definition.getId().equals(node.value())).findFirst()
+        .map(node -> (Processor) new DelegateAsyncProcessor(target) {
+          public boolean process(Exchange exchange, AsyncCallback callback) {
+            manager.fireEvent(exchange, node);
+            return super.process(exchange, callback);
+          }
+        }).orElse(target) : target);
+    manager.createInstance().select(RoutesBuilder.class).forEach(rethrow(context::addRoutes));
+    context.start();
+  }
+}
+----
+
