@@ -1,5 +1,6 @@
 package org.cdi.further.metrics;
 
+import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.annotation.Metric;
 import com.codahale.metrics.annotation.Timed;
 
@@ -9,6 +10,7 @@ import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessProducer;
+import javax.enterprise.inject.spi.Producer;
 import javax.enterprise.util.Nonbinding;
 
 public class MetricsExtension implements Extension {
@@ -25,7 +27,13 @@ public class MetricsExtension implements Extension {
     <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp, BeanManager manager) {
         if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
             String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name();
-            pp.setProducer(new MetricProducer<>(manager, pp.getProducer(), name));
+            Producer<T> producer = pp.getProducer();
+            pp.configureProducer().produceWith(context -> {
+                MetricRegistry registry = manager.createInstance().select(MetricRegistry.class).get();
+                if (registry.getMetrics().containsKey(name))
+                    return (T) registry.getMetrics().get(name);
+                return registry.register(name, producer.produce(context));
+            });
         }
     }
 

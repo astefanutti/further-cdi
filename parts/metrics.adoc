@@ -163,7 +163,7 @@ CAUTION: That won't work out of the box since `@Metric` is not a qualifier
 [.source]
 == How to declare `@Metric` as a qualifier?
 
-TIP: By observing `BeforeBeanDiscovery` lifecycle event in an extension
+TIP: By observing the `BeforeBeanDiscovery` lifecycle event in an extension
 
 .`javax.enterprise.inject.spi.BeforeBeanDiscovery`
 [source, subs="verbatim,quotes", role="smaller"]
@@ -509,7 +509,7 @@ public class MetricsExtension implements Extension {
 
     void addTimedInterceptorBinding(_@Observes_ [highlight]_BeforeBeanDiscovery_ bdd) {
         bbd.[highlight]#configureInterceptorBinding#(Timed.class).methods()
-            .forEach(method -> method.add(Nonbinding.Literal.INSTANCE)); <1>
+            .forEach(method -> method.add(_Nonbinding.Literal.INSTANCE_)); <1>
     }
 }
 ----
@@ -626,7 +626,7 @@ TIP: We need to write an extension that will:
 .. observing the `ProcessProducer` lifecycle event
 .. decorating Metric `Producer` to add this new behavior
 . Produce all `Metric` instances at the end of bootstrap to have them in registry for runtime
-.. we'll do this by observing `AfterDeploymentValidation` event
+.. we'll do this by observing the `AfterDeploymentValidation` event
 
 
 [.topic.source]
@@ -693,57 +693,7 @@ include::legend.adoc[]
 [.topic.source]
 == Customizing `Metric` producing process
 
-NOTE: We first need to create our implementation of the `Producer<X>` SPI
-
-[source, subs="verbatim,quotes"]
-----
-class MetricProducer<X extends Metric> implements Producer<X> {
-
-    final BeanManager manager;
-
-    final Producer<X> decorate;
-
-    final String metricName;
-
-    MetricProducer(BeanManager manager, Producer<X> decorate, String metricName) {
-        this.manager = manager;
-        this.decorate = decorate;
-        this.metricName = metricName;
-    }
-
-    // ...
-----
-icon:ellipsis-h[role="pull-right"]
-
-
-[.topic.source]
-== Customizing `Metric` producing process (continued)
-
-[source, subs="verbatim,quotes"]
-----
-    public X produce(CreationalContext<X> ctx) { <1>
-        MetricRegistry registry = manager.createInstance().select(MetricRegistry.class).get();
-        if (!reg.getMetrics().containsKey(metricName)) <2>
-            reg.register(metricName, [highlight]_decorate.produce(ctx)_);
-        return (X) reg.getMetrics().get(metricName);
-    }
-
-    public void dispose(X instance) {
-    }
-
-    public Set<InjectionPoint> getInjectionPoints() {
-        return decorate.getInjectionPoints();
-    }
-}
-----
-<1> The `produce` method is used by the container at runtime to decorate declared producer with our logic
-<2> If metric name is not in the registry, the original producer is called and its result is added to the registry
-
-
-[.topic.source]
-== We'll use our `MetricProducer` in a `ProcessProducer` observer
-
-NOTE: This event allow us to substitute the original producer with ours
+TIP: Observe the `ProcessProducer` lifecycle event to override the original producer using the `ProducerConfigurator<T>` API introduced in *CDI 2.0*
 
 .`javax.enterprise.inject.spi.ProcessProducer`
 [source, subs="verbatim,quotes"]
@@ -751,7 +701,8 @@ NOTE: This event allow us to substitute the original producer with ours
 public interface ProcessProducer<T, X> {
     AnnotatedMember<T> getAnnotatedMember(); <1>
     Producer<X> getProducer(); <2>
-    [highlight]#void setProducer(Producer<X> producer);#  <3>
+    void setProducer(Producer<X> producer);
+    [highlight]#ProducerConfigurator<X> configureProducer();#  <3>
     void addDefinitionError(Throwable t);
 }
 ----
@@ -763,24 +714,28 @@ public interface ProcessProducer<T, X> {
 [.topic.source]
 == Customizing `Metric` producing process (end)
 
-TIP: Here's the extension code to do this producer decoration
-
-[source, subs="verbatim,quotes"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public class MetricsExtension implements Extension {
     // ...
-    <X extends Metric> void decorateMetricProducer(_@Observes_ [highlight]_ProcessProducer<?, X>_ pp,
-                                                   BeanManager manager) {
+    <T extends Metric> void decorateMetricProducer(_@Observes_ [highlight]_ProcessProducer<?, T>_ pp, _BeanManager_ manager) {
        if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
-            String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name(); <1>
-            [highlight]_pp.setProducer_(new [highlight]#MetricProducer<>#(manager, [highlight]_pp.getProducer()_, name)); <2>
-        }
+           String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name(); <1>
+           _Producer<T>_ producer = pp.getProducer();
+           pp.configureProducer().[highlight]#produceWith#(context -> { <2>
+               MetricRegistry registry = manager.createInstance().select(MetricRegistry.class).get();
+               if (registry.getMetrics().containsKey(name))
+                   return (T) registry.getMetrics().get(name);
+               return registry.register(name, [highlight]#producer.produce(context)#); <3>
+           });
+       }
     }
     // ...
 }
 ----
 <1> We retrieve metric's name by calling the `name()` member from `@Metric`
-<2> We replace the original producer by our producer (which decorates the former)
+<2> The `produceWith` method is used by the container at runtime to decorate declared producer with our logic
+<3> If metric name is not in the registry, the original producer is called and its result is added to the registry
 
 
 [.topic.source]
@@ -794,9 +749,9 @@ NOTE: We do that by observing the `AfterDeploymentValidation` event
 ----
 public class MetricsExtension implements Extension {
   // ...
-  void registerProducedMetrics(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, BeanManager manager) {
-        manager.createInstance().select(com.codahale.metrics.Metric.class)
-            .forEach(Object::toString);
+  void registerProducedMetrics(_@Observes_ [highlight]_AfterDeploymentValidation_ adv, _BeanManager_ manager) {
+      manager.createInstance().select(com.codahale.metrics.Metric.class)
+        .forEach(Object::toString);
   }
   // ...
 }
@@ -833,28 +788,32 @@ TIP: And make sure that `timer1 == timer2 == timer3`
 [.topic.source]
 == Complete extension code
 
-[source, subs="verbatim,quotes", role="smaller"]
+[source, subs="verbatim,quotes", role="smallest"]
 ----
 public class MetricsExtension implements Extension {
 
-    void addMetricAsQualifier(@Observes BeforeBeanDiscovery bdd) {
+    void addMetricAsQualifier(_@Observes_ _BeforeBeanDiscovery_ bdd) {
         bdd.addQualifier(Metric.class);
     }
 
-    void addTimedInterceptorBinding(@Observes BeforeBeanDiscovery bbd) {
-        bbd.configureInterceptorBinding(Timed.class).methods()
-            .forEach(method -> method.add(Nonbinding.Literal.INSTANCE));
+    void addTimedInterceptorBinding(_@Observes_ _BeforeBeanDiscovery_ bbd) {
+        bbd.configureInterceptorBinding(Timed.class).methods().forEach(method -> method.add(_Nonbinding.Literal.INSTANCE_));
     }
 
-    <T extends com.codahale.metrics.Metric> void decorateMetricProducer(@Observes ProcessProducer<?, T> pp,
-                                                                        BeanManager manager) {
+    <T extends com.codahale.metrics.Metric> void decorateMetricProducer(_@Observes_ _ProcessProducer<?, T>_ pp, _BeanManager_ manager) {
         if (pp.getAnnotatedMember().isAnnotationPresent(Metric.class)) {
             String name = pp.getAnnotatedMember().getAnnotation(Metric.class).name();
-            pp.setProducer(new MetricProducer(manager, pp.getProducer(), name));
+            _Producer<T>_ producer = pp.getProducer();
+            pp.configureProducer().produceWith(context -> {
+                MetricRegistry registry = manager.createInstance().select(MetricRegistry.class).get();
+                if (registry.getMetrics().containsKey(name))
+                    return (T) registry.getMetrics().get(name);
+                return registry.register(name, producer.produce(context));
+            });
         }
     }
 
-    void registerProduceMetrics(@Observes AfterDeploymentValidation adv, BeanManager manager) {
+    void registerProduceMetrics(_@Observes_ _AfterDeploymentValidation_ adv, _BeanManager_ manager) {
         manager.createInstance().select(com.codahale.metrics.Metric.class).forEach(Object::toString);
     }
 }
