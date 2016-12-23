@@ -819,27 +819,23 @@ TIP: Intercept matching nodes and fire a CDI event
 
 [source, subs="verbatim,quotes", role="smaller"]
 ----
-void configureCamelContext(_@Observes_ _AfterDeploymentValidation_ adv, final _BeanManager_ manager) {
-    context.addInterceptStrategy(new InterceptStrategy() {
-        public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition,
-                                                     Processor target, Processor nextTarget) {
-            if (definition.hasCustomIdAssigned()) {
-                for (final Node node : nodePointcuts) {
-                    if (node.value().equals(definition.getId())) {
-                        return new DelegateAsyncProcessor(target) {
-                            public boolean process(Exchange exchange, AsyncCallback callback) {
-                                [highlight]#manager.fireEvent(exchange, node);#
-                                return super.process(exchange, callback);
-                            }
-                        };
-                    }
+void configureCamelContext(_@Observes_ _AfterDeploymentValidation_ adv, _BeanManager_ manager) {
+    CamelContext context = manager.createInstance().select(CamelContext.class).get();
+    context.[highlight]#addInterceptStrategy#((camel, definition, target, next) -> definition.hasCustomIdAssigned()
+        ? nodePointcuts.stream().filter(node -> [highlight]#definition.getId().equals(node.value())#).findFirst() <1>
+            .map(node -> (Processor) new DelegateAsyncProcessor(target) {
+                public boolean process(Exchange exchange, AsyncCallback callback) {
+                    [highlight]#manager.fireEvent(exchange, node);#  <2>
+                    return super.process(exchange, callback);
                 }
-            }
-            return target;
-        }
-    });
+            }).orElse(target) <2>
+        : target);
+    manager.createInstance().select(RoutesBuilder.class).forEach(rethrow(context::addRoutes));
+    context.start();
 }
 ----
+<1> Checks if there is a `@Node` qualifier matching the processor id (with `customIdAssigned`)
+<2> Returns a delegate processor that fires a event whenever an exchange is processed, or returns the default processor
 
 
 [.topic]

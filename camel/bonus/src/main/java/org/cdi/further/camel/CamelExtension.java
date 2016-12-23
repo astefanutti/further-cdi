@@ -7,9 +7,7 @@ import org.apache.camel.Processor;
 import org.apache.camel.PropertyInject;
 import org.apache.camel.RoutesBuilder;
 import org.apache.camel.impl.DefaultCamelContext;
-import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.processor.DelegateAsyncProcessor;
-import org.apache.camel.spi.InterceptStrategy;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -55,32 +53,18 @@ public class CamelExtension implements Extension {
             .disposeWith(rethrow((context, instance) -> context.stop()));
     }
 
-    private void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) throws Exception {
+    private void configureCamelContext(@Observes AfterDeploymentValidation adv, BeanManager manager) throws Exception {
         CamelContext context = manager.createInstance().select(CamelContext.class).get();
-
-        if (!nodePointcuts.isEmpty()) {
-            context.addInterceptStrategy(new InterceptStrategy() {
-                @Override
-                public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition, Processor target, Processor nextTarget) throws Exception {
-                    if (definition.hasCustomIdAssigned()) {
-                        for (final Node node : nodePointcuts)
-                            if (definition.getId().equals(node.value())) {
-                                return new DelegateAsyncProcessor(target) {
-                                    @Override
-                                    public boolean process(Exchange exchange, AsyncCallback callback) {
-                                        manager.fireEvent(exchange, node);
-                                        return super.process(exchange, callback);
-                                    }
-                                };
-                            }
+        context.addInterceptStrategy((camel, definition, target, next) -> definition.hasCustomIdAssigned()
+            ? nodePointcuts.stream().filter(node -> definition.getId().equals(node.value())).findFirst()
+                .map(node -> (Processor) new DelegateAsyncProcessor(target) {
+                    public boolean process(Exchange exchange, AsyncCallback callback) {
+                        manager.fireEvent(exchange, node);
+                        return super.process(exchange, callback);
                     }
-                    return target;
-                }
-            });
-        }
-
+                }).orElse(target)
+            : target);
         manager.createInstance().select(RoutesBuilder.class).forEach(rethrow(context::addRoutes));
-
         context.start();
     }
 }
