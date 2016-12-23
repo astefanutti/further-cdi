@@ -755,7 +755,7 @@ from("file:target/input?delay=1s").to("sjms:queue:output")[highlight]#.id("join 
 
 [source, subs="verbatim,quotes"]
 ----
-void advice([highlight]#_@Observes_ @NodeId("join point")# Exchange exchange) {
+void advice([highlight]#_@Observes_ @Node("join point")# Exchange exchange) {
     logger.info("Sending message [{}] to JMS...", exchange.getIn().getBody(String.class));
 }
 ----
@@ -770,14 +770,14 @@ TIP: We can create a CDI qualifier to hold the Camel node id metadata:
 ----
 [highlight]_@Qualifier_
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NodeId {
+public @interface Node {
     String value();
 }
 ----
 
 TIP: And create an extension that will:
 
-. Detect the CDI beans containing observer methods with the `@NodeId` qualifier by observing the `ProcessObserverMethod` event and collect the Camel processor nodes to be instrumented
+. Detect the CDI beans containing observer methods with the `@Node` qualifier by observing the `ProcessObserverMethod` event and collect the Camel processor nodes to be instrumented
 . Customize the Camel context by providing an implementation of the Camel `InterceptStrategy` interface that will fire a CDI event each time an `Exchange` is processed by the instrumented nodes
 
 
@@ -798,17 +798,15 @@ public interface ProcessObserverMethod<T, X> {
 
 TIP: And collect the observer method metadata
 
-[source, subs="verbatim,quotes", role="smallest"]
+[source, subs="verbatim,quotes", role="smaller"]
 ----
 public class CamelExtension implements Extension {
 
-    final Set<NodeId> joinPoints = new HashSet<>();
+    final Set<Node> nodePointcuts = new HashSet<>();
 
-    void pointcuts(_@Observes_ [highlight]#_ProcessObserverMethod_<Exchange, ?># pom) {
+    void camelNodePointcuts(_@Observes_ [highlight]#_ProcessObserverMethod_<Exchange, ?># pom) {
         pom.getObserverMethod().getObservedQualifiers().stream()
-            .filter(q -> q instanceof NodeId)
-            .map(NodeId.class::cast)
-            .forEach(joinPoints::add);
+            .filter(q -> q instanceof Node).map(Node.class::cast).forEach(nodePointcuts::add);
     }
 }
 ----
@@ -826,7 +824,7 @@ void configureCamelContext(_@Observes_ _AfterDeploymentValidation_ adv, final _B
         public Processor wrapProcessorInInterceptors(CamelContext context, ProcessorDefinition<?> definition,
                                                      Processor target, Processor nextTarget) {
             if (definition.hasCustomIdAssigned()) {
-                for (final NodeId node : joinPoints) {
+                for (final Node node : nodePointcuts) {
                     if (node.value().equals(definition.getId())) {
                         return new DelegateAsyncProcessor(target) {
                             public boolean process(Exchange exchange, AsyncCallback callback) {
@@ -856,11 +854,11 @@ TIP: We can define join points in the Camel DSL
 from("file:target/input?delay=1s").to("sjms:queue:output")[highlight]#.id("join point")#;
 ----
 
-TIP: And advise them with CDI observers
+TIP: And advice them with CDI observers
 
 [source, subs="verbatim,quotes"]
 ----
-void advice([highlight]#@Observes @NodeId("join point")# Exchange exchange) {
+void advice([highlight]#@Observes @Node("join point")# Exchange exchange) {
     List<MessageHistory> history = exchange.getProperty(Exchange.MESSAGE_HISTORY,
                                                         List.class);
     logger.info("Sending message [{}] to [{}]...",

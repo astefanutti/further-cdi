@@ -22,7 +22,6 @@ import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.enterprise.inject.spi.ProcessObserverMethod;
 import javax.enterprise.inject.spi.WithAnnotations;
-import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,9 +43,8 @@ public class CamelExtension implements Extension {
     }
 
     private void camelNodePointcuts(@Observes ProcessObserverMethod<Exchange, ?> pom) {
-        for (Annotation annotation : pom.getObserverMethod().getObservedQualifiers())
-            if (annotation instanceof Node)
-                nodePointcuts.add(Node.class.cast(annotation));
+        pom.getObserverMethod().getObservedQualifiers().stream()
+            .filter(q -> q instanceof Node).map(Node.class::cast).forEach(nodePointcuts::add);
     }
 
     private void addCamelContext(@Observes AfterBeanDiscovery abd, BeanManager manager) {
