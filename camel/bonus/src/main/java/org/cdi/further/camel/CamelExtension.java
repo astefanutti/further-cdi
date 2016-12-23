@@ -10,7 +10,6 @@ import org.apache.camel.impl.DefaultCamelContext;
 import org.apache.camel.model.ProcessorDefinition;
 import org.apache.camel.processor.DelegateAsyncProcessor;
 import org.apache.camel.spi.InterceptStrategy;
-import org.apache.camel.util.ObjectHelper;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
@@ -18,7 +17,6 @@ import javax.enterprise.inject.spi.AfterBeanDiscovery;
 import javax.enterprise.inject.spi.AfterDeploymentValidation;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.BeanManager;
-import javax.enterprise.inject.spi.DeploymentException;
 import javax.enterprise.inject.spi.Extension;
 import javax.enterprise.inject.spi.ProcessAnnotatedType;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
@@ -27,6 +25,8 @@ import javax.enterprise.inject.spi.WithAnnotations;
 import java.lang.annotation.Annotation;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.cdi.further.camel.Exceptions.rethrow;
 
 public class CamelExtension implements Extension {
 
@@ -54,13 +54,7 @@ public class CamelExtension implements Extension {
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
             .produceWith(instance -> new DefaultCamelContext(new CamelCdiRegistry(manager)))
-            .disposeWith((context, instance) -> {
-                try {
-                    context.stop();
-                } catch (Exception cause) {
-                    throw ObjectHelper.wrapRuntimeCamelException(cause);
-                }
-            });
+            .disposeWith(rethrow((context, instance) -> context.stop()));
     }
 
     private void configureCamelContext(@Observes AfterDeploymentValidation adv, final BeanManager manager) throws Exception {
@@ -87,13 +81,7 @@ public class CamelExtension implements Extension {
             });
         }
 
-        manager.createInstance().select(RoutesBuilder.class).forEach(routes -> {
-            try {
-                context.addRoutes(routes);
-            } catch (Exception cause) {
-                throw new DeploymentException(cause);
-            }
-        });
+        manager.createInstance().select(RoutesBuilder.class).forEach(rethrow(context::addRoutes));
 
         context.start();
     }
