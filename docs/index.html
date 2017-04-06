@@ -1901,10 +1901,10 @@ int maxConnections;</code></pre></div></li></ol></section>
 <div class="listingblock"><pre class="highlight"><code class="java">public class CamelExtension implements Extension {
 
     void addCamelContextBean(<em>@Observes</em> <em class="highlight">AfterBeanDiscovery</em> abd) {
-        abd.&lt;CamelContext&gt;<span class="highlight">addBean()</span>
+        abd.<span class="highlight">addBean()</span>
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith((instance) -&gt; new DefaultCamelContext());
+            .produceWith(instance -&gt; new DefaultCamelContext());
     }
 }</code></pre></div></section>
 <section class="topic source"><h2>Instantiate and assemble the Camel context</h2><div class="admonitionblock tip"><table><tr><td class="icon"><i class="fa icon-tip" title="Tip"></i></td><td class="content">Instantiate the <code>CamelContext</code> bean and the <code>RouteBuilder</code> beans in the <code>AfterDeploymentValidation</code> lifecycle event</td></tr></table></div>
@@ -1928,10 +1928,10 @@ int maxConnections;</code></pre></div></li></ol></section>
 <div class="listingblock"><pre class="highlight"><code class="java">public class CamelExtension implements Extension {
     // ...
     void addCamelContextBean(<em>@Observes</em> <em>AfterBeanDiscovery</em> abd) {
-        abd.&lt;CamelContext&gt;addBean()
+        abd.addBean()
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith((instance) -&gt; new DefaultCamelContext())
+            .produceWith(instance -&gt; new DefaultCamelContext())
             .<span class="highlight">disposeWith((context, instance) -&gt; context.stop())</span>;
     }
 }</code></pre></div></section>
@@ -1987,10 +1987,10 @@ context.resolvePropertyPlaceholders("{{jms.maxConnections}}");
 <section class="topic source"><h2>Add <code>CamelCdiRegistry</code> to the Camel context</h2><div class="listingblock"><pre class="highlight"><code class="java">public class CamelExtension implements Extension {
 
     void addCamelContextBean(<em>@Observes</em> <em>AfterBeanDiscovery</em> abd, <span class="highlight"><em>BeanManager</em> manager</span>) {
-        abd.&lt;CamelContext&gt;addBean()
+        abd.addBean()
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith((instance) -&gt; new DefaultCamelContext(<span class="highlight">new CamelCdiRegistry(manager)</span>))
+            .produceWith(instance -&gt; new DefaultCamelContext(<span class="highlight">new CamelCdiRegistry(manager)</span>))
             .disposeWith((context, instance) -&gt; context.stop());
     }
 }</code></pre></div></section>
@@ -2189,7 +2189,7 @@ public @interface Node {
                 }
             }).orElse(target) <i class="conum" data-value="2"></i><b>(2)</b>
         : target);
-    manager.createInstance().select(RoutesBuilder.class).forEach(rethrow(context::addRoutes));
+    manager.createInstance().select(RoutesBuilder.class).forEach(context::addRoutes);
     context.start();
 }</code></pre></div>
 <div class="colist arabic"><table><tr><td><i class="conum" data-value="1"></i><b>1</b></td><td>Checks if there is a <code>@Node</code> qualifier matching the processor id (with <code>customIdAssigned</code>)</td></tr><tr><td><i class="conum" data-value="2"></i><b>2</b></td><td>Returns a delegate processor that fires a event whenever an exchange is processed, or returns the default processor</td></tr></table></div></section>
@@ -2203,30 +2203,31 @@ public @interface Node {
                 exchange.getIn().getBody(String.class),
                 history.get(history.size() - 1).getNode().getLabel());
 }</code></pre></div></div></div></section>
-<section class="topic source"><h2>Complete extension code</h2><div class="listingblock smallest"><pre class="highlight"><code class="java">public class MetricsExtension implements Extension {
-  final Set&lt;AnnotatedType&lt;?&gt;&gt; camelBeans = new HashSet&lt;&gt;();
-  final Set&lt;Node&gt; nodes = new HashSet&lt;&gt;();
+<section class="topic source"><h2>Complete extension code</h2><div class="listingblock smallest"><pre class="highlight"><code class="java">public class CamelExtension implements Extension {
+  Set&lt;AnnotatedType&lt;?&gt;&gt; camelBeans = new HashSet&lt;&gt;(); Set&lt;Node&gt; nodes = new HashSet&lt;&gt;();
   void camelAnnotatedTypes(<em>@Observes</em> <em>@WithAnnotations</em>(PropertyInject.class) <em>ProcessAnnotatedType&lt;?&gt;</em> pat) {
       camelBeans.add(pat.getAnnotatedType());
   }
-  &lt;T&gt; void camelBeansPostProcessor(<em>@Observes</em> <em>ProcessInjectionTarget&lt;T&gt;</em> pit, <em>BeanManager</em> manager) {
-    if (camelBeans.contains(pit.getAnnotatedType()))
-      pit.setInjectionTarget(new CamelInjectionTarget&lt;&gt;(pit.getInjectionTarget(), manager));
+  &lt;T&gt; void camelBeansPostProcessor(<em>@Observes</em> <em>ProcessInjectionTarget&lt;T&gt;</em> pit, <em>BeanManager</em> m) {
+    if (camelBeans.contains(pit.getAnnotatedType())) pit.setInjectionTarget(new CamelInjectionTarget&lt;&gt;(pit.getInjectionTarget(), m));
   }
   void camelNodePointcuts(<em>@Observes</em> <em>ProcessObserverMethod</em>&lt;Exchange, ?&gt; pom) {
     pom.getObserverMethod().getObservedQualifiers().stream().filter(q -&gt; q instanceof Node).map(Node.class::cast).forEach(nodes::add);
   }
+  void addCamelContext(@Observes AfterBeanDiscovery abd, BeanManager m) {
+    abd.addBean().types(CamelContext.class).scope(ApplicationScoped.class)
+      .produceWith(instance -&gt; new DefaultCamelContext(new CamelCdiRegistry(m))).disposeWith((context, instance) -&gt; context.stop());
+  }
   void configureCamelContext(<em>@Observes</em> <em>AfterDeploymentValidation</em> adv, <em>BeanManager</em> manager) {
     CamelContext context = manager.createInstance().select(CamelContext.class).get();
-    context.addInterceptStrategy((camel, definition, target, next) -&gt; definition.hasCustomIdAssigned()
-      ? nodes.stream().filter(node -&gt; definition.getId().equals(node.value())).findFirst()
-        .map(node -&gt; (Processor) new DelegateAsyncProcessor(target) {
-          public boolean process(Exchange exchange, AsyncCallback callback) {
-            manager.fireEvent(exchange, node);
-            return super.process(exchange, callback);
-          }
-        }).orElse(target) : target);
-    manager.createInstance().select(RoutesBuilder.class).forEach(rethrow(context::addRoutes));
+    context.addInterceptStrategy((camel, definition, target, next) -&gt; definition.hasCustomIdAssigned() ? nodes.stream()
+      .filter(node -&gt; definition.getId().equals(node.value())).findFirst().map(node -&gt; new DelegateAsyncProcessor(target) {
+        public boolean process(Exchange exchange, AsyncCallback callback) {
+          manager.fireEvent(exchange, node);
+          return super.process(exchange, callback);
+        }
+      }).orElse(target) : target);
+    manager.createInstance().select(RoutesBuilder.class).forEach(context::addRoutes);
     context.start();
   }
 }</code></pre></div></section>
