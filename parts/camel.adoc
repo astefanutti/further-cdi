@@ -305,7 +305,7 @@ public class CamelExtension implements Extension {
         abd.[highlight]#addBean()#
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith((instance) -> new DefaultCamelContext());
+            .produceWith(instance -> new DefaultCamelContext());
     }
 }
 ----
@@ -359,7 +359,7 @@ public class CamelExtension implements Extension {
         abd.addBean()
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith((instance) -> new DefaultCamelContext())
+            .produceWith(instance -> new DefaultCamelContext())
             .[highlight]#disposeWith((context, instance) -> context.stop())#;
     }
 }
@@ -457,7 +457,7 @@ public class CamelExtension implements Extension {
         abd.addBean()
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
-            .produceWith((instance) -> new DefaultCamelContext([highlight]#new CamelCdiRegistry(manager)#))
+            .produceWith(instance -> new DefaultCamelContext([highlight]#new CamelCdiRegistry(manager)#))
             .disposeWith((context, instance) -> context.stop());
     }
 }
