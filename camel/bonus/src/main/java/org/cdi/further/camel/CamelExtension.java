@@ -46,7 +46,7 @@ public class CamelExtension implements Extension {
     }
 
     private void addCamelContext(@Observes AfterBeanDiscovery abd, BeanManager manager) {
-        abd.<CamelContext>addBean()
+        abd.addBean()
             .types(CamelContext.class)
             .scope(ApplicationScoped.class)
             .produceWith(instance -> new DefaultCamelContext(new CamelCdiRegistry(manager)))
