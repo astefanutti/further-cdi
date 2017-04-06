@@ -871,7 +871,7 @@ void advice([highlight]#@Observes @Node("join point")# Exchange exchange) {
 
 [source, subs="verbatim,quotes", role="smallest"]
 ----
-public class MetricsExtension implements Extension {
+public class CamelExtension implements Extension {
   final Set<AnnotatedType<?>> camelBeans = new HashSet<>();
   final Set<Node> nodes = new HashSet<>();
   void camelAnnotatedTypes(_@Observes_ _@WithAnnotations_(PropertyInject.class) _ProcessAnnotatedType<?>_ pat) {
