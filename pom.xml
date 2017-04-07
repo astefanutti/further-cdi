@@ -54,7 +54,7 @@
         <cdi.version>2.0-PFD2</cdi.version>
         <weld.version>3.0.0.Beta1</weld.version>
         <wildfly.version>10.1.0.Final</wildfly.version>
-        <arquillian.version>1.1.11.Final</arquillian.version>
+        <arquillian.version>1.1.13.Final</arquillian.version>
         <shrinkwrap.descriptors.version>2.0.0-alpha-10</shrinkwrap.descriptors.version>
         <shrinkwrap-resolver.version>2.2.6</shrinkwrap-resolver.version>
         <slf4j.version>1.7.25</slf4j.version>
