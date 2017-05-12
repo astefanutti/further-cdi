@@ -22,7 +22,7 @@
     </modules>
 
     <properties>
-        <camel.version>2.18.3</camel.version>
+        <camel.version>2.19.0</camel.version>
         <activemq.version>5.14.4</activemq.version>
     </properties>
 
