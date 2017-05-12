@@ -11,6 +11,7 @@
 target/
 logs/
 .idea/
+.vscode/
 *.iml
 *.svg
 *.svg.cache
