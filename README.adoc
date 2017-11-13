@@ -1,6 +1,6 @@
 = Going Further with CDI
 
-image:https://travis-ci.org/astefanutti/further-cdi.svg[Travis CI build, link="https://travis-ci.org/astefanutti/further-cdi"] image:https://www.versioneye.com/user/projects/56791996107997002d001363/badge.svg[VersionEye build, link="https://www.versioneye.com/user/projects/56791996107997002d001363"]
+image:https://travis-ci.org/astefanutti/further-cdi.svg[Travis CI build, link="https://travis-ci.org/astefanutti/further-cdi"]
 
 Presentation material about advanced features and use cases of http://www.cdi-spec.org/[CDI], the Contexts and Dependency Injection standard for the Java platform.
 
